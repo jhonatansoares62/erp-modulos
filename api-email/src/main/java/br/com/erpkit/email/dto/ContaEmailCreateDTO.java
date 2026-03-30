@@ -2,18 +2,16 @@ package br.com.erpkit.email.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
 
 public class ContaEmailCreateDTO {
 
-    @NotBlank(message = "Nome é obrigatório")
+    private String preset;
+
     private String nome;
 
-    @NotBlank(message = "Host SMTP é obrigatório")
     private String host;
 
-    @Positive(message = "Porta deve ser positiva")
-    private int porta;
+    private Integer porta;
 
     @NotBlank(message = "Username é obrigatório")
     private String username;
@@ -25,16 +23,19 @@ public class ContaEmailCreateDTO {
     @Email(message = "Remetente deve ser um email válido")
     private String remetente;
 
-    private boolean tls;
+    private Boolean tls;
 
     private boolean padrao;
 
-    public ContaEmailCreateDTO() {
-        this.porta = 587;
-        this.tls = true;
+    // Getters e Setters
+
+    public String getPreset() {
+        return preset;
     }
 
-    // Getters e Setters
+    public void setPreset(String preset) {
+        this.preset = preset;
+    }
 
     public String getNome() {
         return nome;
@@ -52,11 +53,11 @@ public class ContaEmailCreateDTO {
         this.host = host;
     }
 
-    public int getPorta() {
+    public Integer getPorta() {
         return porta;
     }
 
-    public void setPorta(int porta) {
+    public void setPorta(Integer porta) {
         this.porta = porta;
     }
 
@@ -84,11 +85,11 @@ public class ContaEmailCreateDTO {
         this.remetente = remetente;
     }
 
-    public boolean isTls() {
+    public Boolean getTls() {
         return tls;
     }
 
-    public void setTls(boolean tls) {
+    public void setTls(Boolean tls) {
         this.tls = tls;
     }
 

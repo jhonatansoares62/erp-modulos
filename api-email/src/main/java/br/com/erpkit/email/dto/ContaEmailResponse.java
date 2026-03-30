@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public class ContaEmailResponse {
 
     private Long id;
+    private String preset;
     private String nome;
     private String host;
     private int porta;
@@ -23,6 +24,14 @@ public class ContaEmailResponse {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getPreset() {
+        return preset;
+    }
+
+    public void setPreset(String preset) {
+        this.preset = preset;
     }
 
     public String getNome() {

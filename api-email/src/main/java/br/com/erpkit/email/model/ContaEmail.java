@@ -17,6 +17,9 @@ public class ContaEmail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "preset")
+    private String preset;
+
     @Column(name = "nome", nullable = false)
     private String nome;
 
@@ -67,6 +70,14 @@ public class ContaEmail {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getPreset() {
+        return preset;
+    }
+
+    public void setPreset(String preset) {
+        this.preset = preset;
     }
 
     public String getNome() {

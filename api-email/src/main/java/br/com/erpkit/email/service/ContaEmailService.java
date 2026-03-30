@@ -1,7 +1,9 @@
 package br.com.erpkit.email.service;
 
+import br.com.erpkit.email.config.PresetSmtp;
 import br.com.erpkit.email.dto.ContaEmailCreateDTO;
 import br.com.erpkit.email.dto.ContaEmailResponse;
+import br.com.erpkit.email.dto.PresetSmtpResponse;
 import br.com.erpkit.email.model.ContaEmail;
 import br.com.erpkit.email.repository.ContaEmailRepository;
 import br.com.erpkit.shared.exception.ModuloException;
@@ -11,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ContaEmailService {
@@ -24,13 +27,10 @@ public class ContaEmailService {
     @Transactional
     public ContaEmailResponse criar(ContaEmailCreateDTO dto) {
         ContaEmail conta = new ContaEmail();
-        conta.setNome(dto.getNome());
-        conta.setHost(dto.getHost());
-        conta.setPorta(dto.getPorta());
+        aplicarPresetOuManual(dto, conta);
         conta.setUsername(dto.getUsername());
         conta.setPassword(dto.getPassword());
         conta.setRemetente(dto.getRemetente());
-        conta.setTls(dto.isTls());
 
         if (dto.isPadrao()) {
             removerPadraoExistente();
@@ -46,13 +46,10 @@ public class ContaEmailService {
         ContaEmail conta = contaEmailRepository.findById(id)
                 .orElseThrow(() -> new ModuloException("Conta não encontrada", HttpStatus.NOT_FOUND));
 
-        conta.setNome(dto.getNome());
-        conta.setHost(dto.getHost());
-        conta.setPorta(dto.getPorta());
+        aplicarPresetOuManual(dto, conta);
         conta.setUsername(dto.getUsername());
         conta.setPassword(dto.getPassword());
         conta.setRemetente(dto.getRemetente());
-        conta.setTls(dto.isTls());
         conta.setAtualizadoEm(LocalDateTime.now());
 
         if (dto.isPadrao() && !conta.isPadrao()) {
@@ -99,6 +96,42 @@ public class ContaEmailService {
                 .orElseThrow(() -> new ModuloException("Nenhuma conta padrão configurada. Cadastre uma conta ou informe contaId."));
     }
 
+    public List<PresetSmtpResponse> listarPresets() {
+        return PresetSmtp.todos().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new PresetSmtpResponse(
+                        entry.getKey(),
+                        entry.getValue().getHost(),
+                        entry.getValue().getPorta(),
+                        entry.getValue().isTls(),
+                        entry.getValue().getInstrucoes()
+                ))
+                .toList();
+    }
+
+    private void aplicarPresetOuManual(ContaEmailCreateDTO dto, ContaEmail conta) {
+        if (dto.getPreset() != null && !dto.getPreset().isBlank()) {
+            PresetSmtp preset = PresetSmtp.buscar(dto.getPreset());
+            if (preset == null) {
+                throw new ModuloException("Preset '" + dto.getPreset() + "' não encontrado. Use GET /api/contas/presets para ver os disponíveis.");
+            }
+            conta.setPreset(dto.getPreset().toLowerCase().trim());
+            conta.setHost(dto.getHost() != null ? dto.getHost() : preset.getHost());
+            conta.setPorta(dto.getPorta() != null ? dto.getPorta() : preset.getPorta());
+            conta.setTls(dto.getTls() != null ? dto.getTls() : preset.isTls());
+            conta.setNome(dto.getNome() != null ? dto.getNome() : dto.getPreset().substring(0, 1).toUpperCase() + dto.getPreset().substring(1));
+        } else {
+            if (dto.getHost() == null || dto.getHost().isBlank()) {
+                throw new ModuloException("Informe 'preset' ou 'host'. Use GET /api/contas/presets para ver os presets disponíveis.");
+            }
+            conta.setPreset(null);
+            conta.setHost(dto.getHost());
+            conta.setPorta(dto.getPorta() != null ? dto.getPorta() : 587);
+            conta.setTls(dto.getTls() != null ? dto.getTls() : true);
+            conta.setNome(dto.getNome() != null ? dto.getNome() : dto.getHost());
+        }
+    }
+
     private void removerPadraoExistente() {
         contaEmailRepository.findByPadraoTrueAndAtivoTrue().ifPresent(existente -> {
             existente.setPadrao(false);
@@ -110,6 +143,7 @@ public class ContaEmailService {
     private ContaEmailResponse toResponse(ContaEmail conta) {
         ContaEmailResponse response = new ContaEmailResponse();
         response.setId(conta.getId());
+        response.setPreset(conta.getPreset());
         response.setNome(conta.getNome());
         response.setHost(conta.getHost());
         response.setPorta(conta.getPorta());

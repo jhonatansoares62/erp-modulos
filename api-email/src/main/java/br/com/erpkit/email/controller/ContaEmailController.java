@@ -2,6 +2,7 @@ package br.com.erpkit.email.controller;
 
 import br.com.erpkit.email.dto.ContaEmailCreateDTO;
 import br.com.erpkit.email.dto.ContaEmailResponse;
+import br.com.erpkit.email.dto.PresetSmtpResponse;
 import br.com.erpkit.email.service.ContaEmailService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -51,5 +52,10 @@ public class ContaEmailController {
     public ResponseEntity<Void> desativar(@PathVariable Long id) {
         contaEmailService.desativar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/presets")
+    public ResponseEntity<List<PresetSmtpResponse>> listarPresets() {
+        return ResponseEntity.ok(contaEmailService.listarPresets());
     }
 }
