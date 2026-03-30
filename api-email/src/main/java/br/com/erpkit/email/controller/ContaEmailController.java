@@ -48,6 +48,11 @@ public class ContaEmailController {
         return ResponseEntity.ok(contaEmailService.listar());
     }
 
+    @PutMapping("/{id}/padrao")
+    public ResponseEntity<ContaEmailResponse> definirPadrao(@PathVariable Long id) {
+        return ResponseEntity.ok(contaEmailService.definirPadrao(id));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> desativar(@PathVariable Long id) {
         contaEmailService.desativar(id);

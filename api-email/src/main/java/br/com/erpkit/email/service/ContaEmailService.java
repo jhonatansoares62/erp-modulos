@@ -74,6 +74,20 @@ public class ContaEmailService {
     }
 
     @Transactional
+    public ContaEmailResponse definirPadrao(Long id) {
+        ContaEmail conta = contaEmailRepository.findById(id)
+                .orElseThrow(() -> new ModuloException("Conta não encontrada", HttpStatus.NOT_FOUND));
+        if (!conta.isAtivo()) {
+            throw new ModuloException("Conta está desativada");
+        }
+        removerPadraoExistente();
+        conta.setPadrao(true);
+        conta.setAtualizadoEm(LocalDateTime.now());
+        conta = contaEmailRepository.save(conta);
+        return toResponse(conta);
+    }
+
+    @Transactional
     public void desativar(Long id) {
         ContaEmail conta = contaEmailRepository.findById(id)
                 .orElseThrow(() -> new ModuloException("Conta não encontrada", HttpStatus.NOT_FOUND));
