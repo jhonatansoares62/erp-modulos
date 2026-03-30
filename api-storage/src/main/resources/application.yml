@@ -1,0 +1,42 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: api-storage
+  datasource:
+    url: jdbc:postgresql://localhost:5432/db_api_storage
+    username: erp_calhas
+    password: erp_calhas_dev
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+
+# Configurações do módulo
+modulo:
+  versao: 1.0.0
+  api-key: ${API_KEY:}
+  storage:
+    diretorio: ${STORAGE_DIR:./uploads}
+    max-tamanho-mb: 50
+    thumbnail-largura: 200
+    thumbnail-altura: 200
+    base-url: ${STORAGE_BASE_URL:http://localhost:8085}
+
+# OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

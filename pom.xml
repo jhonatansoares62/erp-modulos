@@ -21,6 +21,7 @@
     <modules>
         <module>lib-shared</module>
         <module>api-email</module>
+        <module>api-storage</module>
     </modules>
 
     <properties>
