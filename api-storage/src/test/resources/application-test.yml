@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb_storage;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+modulo:
+  versao: 1.0.0-test
+  api-key: test-key-123
+  storage:
+    diretorio: ${java.io.tmpdir}/erp-storage-test
+    max-tamanho-mb: 50
+    thumbnail-largura: 200
+    thumbnail-altura: 200
+    base-url: http://localhost:8085

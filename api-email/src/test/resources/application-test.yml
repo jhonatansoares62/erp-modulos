@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb_email;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  mail:
+    host: localhost
+    port: 25
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+modulo:
+  versao: 1.0.0-test
+  api-key: test-key-123
+  email:
+    remetente: test@test.com
+    max-tentativas: 3
+    intervalo-fila: 999999999
