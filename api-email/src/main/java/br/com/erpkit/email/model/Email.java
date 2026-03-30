@@ -38,6 +38,9 @@ public class Email {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @Column(name = "conta_id")
+    private Long contaId;
+
     @Column(name = "tentativas")
     private int tentativas;
 
@@ -134,6 +137,14 @@ public class Email {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Long getContaId() {
+        return contaId;
+    }
+
+    public void setContaId(Long contaId) {
+        this.contaId = contaId;
     }
 
     public int getTentativas() {

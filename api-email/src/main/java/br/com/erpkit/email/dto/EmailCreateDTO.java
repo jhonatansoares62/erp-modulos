@@ -25,6 +25,8 @@ public class EmailCreateDTO {
 
     private Map<String, Object> templateVariaveis;
 
+    private Long contaId;
+
     private String origem;
 
     private String referenciaId;
@@ -87,6 +89,14 @@ public class EmailCreateDTO {
 
     public void setTemplateVariaveis(Map<String, Object> templateVariaveis) {
         this.templateVariaveis = templateVariaveis;
+    }
+
+    public Long getContaId() {
+        return contaId;
+    }
+
+    public void setContaId(Long contaId) {
+        this.contaId = contaId;
     }
 
     public String getOrigem() {

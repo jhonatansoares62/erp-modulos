@@ -2,6 +2,7 @@ package br.com.erpkit.email.service;
 
 import br.com.erpkit.email.dto.EmailCreateDTO;
 import br.com.erpkit.email.dto.EmailResponse;
+import br.com.erpkit.email.model.ContaEmail;
 import br.com.erpkit.email.model.Email;
 import br.com.erpkit.email.repository.EmailRepository;
 import br.com.erpkit.shared.exception.ModuloException;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class EmailService {
@@ -31,28 +35,30 @@ public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
     private final EmailRepository emailRepository;
-    private final JavaMailSender mailSender;
+    private final ContaEmailService contaEmailService;
     private final TemplateEngine templateEngine;
+    private final Map<Long, JavaMailSenderImpl> senderCache = new ConcurrentHashMap<>();
 
     @Value("${modulo.email.max-tentativas:3}")
     private int maxTentativas;
 
-    @Value("${modulo.email.remetente:noreply@erp.local}")
-    private String remetente;
-
-    public EmailService(EmailRepository emailRepository, JavaMailSender mailSender, TemplateEngine templateEngine) {
+    public EmailService(EmailRepository emailRepository, ContaEmailService contaEmailService, TemplateEngine templateEngine) {
         this.emailRepository = emailRepository;
-        this.mailSender = mailSender;
+        this.contaEmailService = contaEmailService;
         this.templateEngine = templateEngine;
     }
 
     public EmailResponse criar(EmailCreateDTO dto) {
+        // Valida conta antes de enfileirar
+        ContaEmail conta = contaEmailService.buscarContaParaEnvio(dto.getContaId());
+
         Email email = new Email();
         email.setDestinatario(dto.getDestinatario());
         email.setCc(dto.getCc());
         email.setAssunto(dto.getAssunto());
         email.setHtml(dto.isHtml());
         email.setTemplate(dto.getTemplate());
+        email.setContaId(conta.getId());
         email.setOrigem(dto.getOrigem());
         email.setReferenciaId(dto.getReferenciaId());
         email.setAgendadoPara(dto.getAgendadoPara());
@@ -66,7 +72,7 @@ public class EmailService {
         }
 
         email = emailRepository.save(email);
-        log.info("Email enfileirado: id={}, para={}, assunto={}", email.getId(), email.getDestinatario(), email.getAssunto());
+        log.info("Email enfileirado: id={}, para={}, conta={}", email.getId(), email.getDestinatario(), conta.getNome());
         return toResponse(email);
     }
 
@@ -139,10 +145,12 @@ public class EmailService {
 
         for (Email email : pendentes) {
             try {
-                enviar(email);
+                ContaEmail conta = contaEmailService.buscarContaParaEnvio(email.getContaId());
+                JavaMailSender sender = criarMailSender(conta);
+                enviar(email, conta, sender);
                 email.setStatus("enviado");
                 email.setEnviadoEm(LocalDateTime.now());
-                log.info("Email enviado: id={}, para={}", email.getId(), email.getDestinatario());
+                log.info("Email enviado: id={}, para={}, via={}", email.getId(), email.getDestinatario(), conta.getNome());
             } catch (Exception e) {
                 email.setTentativas(email.getTentativas() + 1);
                 email.setErroMensagem(e.getMessage());
@@ -158,11 +166,15 @@ public class EmailService {
         }
     }
 
-    private void enviar(Email email) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
+    public void invalidarCacheConta(Long contaId) {
+        senderCache.remove(contaId);
+    }
+
+    private void enviar(Email email, ContaEmail conta, JavaMailSender sender) throws MessagingException {
+        MimeMessage message = sender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-        helper.setFrom(remetente);
+        helper.setFrom(conta.getRemetente());
         helper.setTo(email.getDestinatario());
         helper.setSubject(email.getAssunto());
 
@@ -171,7 +183,29 @@ public class EmailService {
         }
 
         helper.setText(email.getCorpo(), email.isHtml());
-        mailSender.send(message);
+        sender.send(message);
+    }
+
+    private JavaMailSender criarMailSender(ContaEmail conta) {
+        return senderCache.computeIfAbsent(conta.getId(), id -> {
+            JavaMailSenderImpl sender = new JavaMailSenderImpl();
+            sender.setHost(conta.getHost());
+            sender.setPort(conta.getPorta());
+            sender.setUsername(conta.getUsername());
+            sender.setPassword(conta.getPassword());
+
+            Properties props = sender.getJavaMailProperties();
+            props.put("mail.transport.protocol", "smtp");
+            props.put("mail.smtp.auth", "true");
+            if (conta.isTls()) {
+                props.put("mail.smtp.starttls.enable", "true");
+            }
+            props.put("mail.smtp.connectiontimeout", "5000");
+            props.put("mail.smtp.timeout", "5000");
+            props.put("mail.smtp.writetimeout", "5000");
+
+            return sender;
+        });
     }
 
     private String renderizarTemplate(String templateName, Map<String, Object> variaveis) {
@@ -191,6 +225,7 @@ public class EmailService {
         response.setHtml(email.isHtml());
         response.setTemplate(email.getTemplate());
         response.setStatus(email.getStatus());
+        response.setContaId(email.getContaId());
         response.setTentativas(email.getTentativas());
         response.setErroMensagem(email.getErroMensagem());
         response.setOrigem(email.getOrigem());

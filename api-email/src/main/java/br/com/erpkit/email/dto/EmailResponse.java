@@ -11,6 +11,7 @@ public class EmailResponse {
     private boolean html;
     private String template;
     private String status;
+    private Long contaId;
     private int tentativas;
     private String erroMensagem;
     private String origem;
@@ -75,6 +76,14 @@ public class EmailResponse {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Long getContaId() {
+        return contaId;
+    }
+
+    public void setContaId(Long contaId) {
+        this.contaId = contaId;
     }
 
     public int getTentativas() {

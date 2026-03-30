@@ -18,17 +18,10 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+  # SMTP não é mais configurado aqui — gerenciado via API /api/contas
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+    host: localhost
+    port: 25
   thymeleaf:
     prefix: classpath:/templates/
     suffix: .html
@@ -38,7 +31,6 @@ modulo:
   versao: 1.0.0
   api-key: ${API_KEY:}
   email:
-    remetente: ${MAIL_FROM:noreply@erp.local}
     max-tentativas: 3
     intervalo-fila: 30000
 
