@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #333;">Ordem de Servico Cancelada</h2>
+    <p>Ola <span th:text="${clienteNome}">Cliente</span>,</p>
+    <p>Informamos que a Ordem de Servico <strong>#<span th:text="${osNumero}">000</span></strong> foi cancelada.</p>
+    <p>Caso tenha duvidas sobre o cancelamento ou deseje reagendar o servico, entre em contato conosco.</p>
+    <p style="color: #666; font-size: 12px;">Este e um email automatico, nao responda.</p>
+</body>
+</html>

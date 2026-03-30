@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #333;">Ordem de Servico Concluida</h2>
+    <p>Ola <span th:text="${clienteNome}">Cliente</span>,</p>
+    <p>Sua Ordem de Servico <strong>#<span th:text="${osNumero}">000</span></strong> foi concluida com sucesso!</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr style="background: #f5f5f5;">
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Numero da OS</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;" th:text="${osNumero}">OS-0000-000</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Data de Agenda</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;" th:text="${dataAgenda}">00/00/0000</td>
+        </tr>
+        <tr style="background: #f5f5f5;">
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Endereco</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;" th:text="${endereco}">Endereco do cliente</td>
+        </tr>
+    </table>
+    <p>Agradecemos a preferencia! Em caso de duvidas, entre em contato conosco.</p>
+    <p style="color: #666; font-size: 12px;">Este e um email automatico, nao responda.</p>
+</body>
+</html>
