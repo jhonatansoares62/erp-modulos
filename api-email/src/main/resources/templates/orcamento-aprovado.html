@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #333;">Orçamento Aprovado</h2>
+    <p>Olá <span th:text="${clienteNome}">Cliente</span>,</p>
+    <p>Seu orçamento <strong>#<span th:text="${orcamentoNumero}">000</span></strong> foi aprovado!</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr style="background: #f5f5f5;">
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Valor Total</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;" th:text="${valorTotal}">R$ 0,00</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Validade</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;" th:text="${dataValidade}">00/00/0000</td>
+        </tr>
+    </table>
+    <p>Uma Ordem de Serviço foi gerada automaticamente. Entraremos em contato para agendar a instalação.</p>
+    <p style="color: #666; font-size: 12px;">Este é um email automático, não responda.</p>
+</body>
+</html>

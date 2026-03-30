@@ -1,0 +1,50 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: api-email
+  datasource:
+    url: jdbc:postgresql://localhost:5432/db_api_email
+    username: erp_calhas
+    password: erp_calhas_dev
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+
+# Configurações do módulo
+modulo:
+  versao: 1.0.0
+  api-key: ${API_KEY:}
+  email:
+    remetente: ${MAIL_FROM:noreply@erp.local}
+    max-tentativas: 3
+    intervalo-fila: 30000
+
+# OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
