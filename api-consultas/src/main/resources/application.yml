@@ -1,0 +1,25 @@
+server:
+  port: 9192
+
+spring:
+  application:
+    name: api-consultas
+  cache:
+    type: caffeine
+
+# Configurações do módulo
+modulo:
+  versao: 1.1.0
+  api-key: ${API_KEY:}
+  timeout-externo-ms: 5000
+
+# OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    br.com.erpkit.consultas: INFO
