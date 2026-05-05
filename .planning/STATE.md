@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-04-PLAN.md (Wave C — ClienteZapService.identificar + atualizarUltimaMensagemEm REQUIRES_NEW + NOW(), 7 tests verdes, 95 tests api-whatsapp aggregate verde, commit f347de4). PER-05/PER-06/PER-07 fechados. Pronto para Plan 02-06 (MensagemService orquestrador).
-last_updated: "2026-05-05T16:10:00.000Z"
+stopped_at: Completed 02-06-PLAN.md (Wave D — MensagemService orquestrador sincrono + WebhookController.POST atualizado com ack-first defensivo, 4 tests E2E verdes, 99 tests api-whatsapp aggregate verde, zero regressao em Phase 1, commit 24ac27c). WEB-05/06/07 + PER-06/07 fechados. Pronto para Plan 02-07 (Wave E — integration tests E2E + ROADMAP update fechando Phase 2).
+last_updated: "2026-05-05T16:33:44.000Z"
 last_activity: 2026-05-05
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 14
-  completed_plans: 12
-  percent: 86
+  completed_plans: 13
+  percent: 93
 ---
 
 # Project State
@@ -26,26 +26,26 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Current Position
 
 Phase: 02 (persistencia-idempotencia) — EXECUTING
-Plan: 6 of 7
-Status: Ready to execute (Plan 02-06 MensagemService orquestrador — Wave D)
+Plan: 7 of 7
+Status: Ready to execute (Plan 02-07 integration tests E2E + ROADMAP update — Wave E final)
 Last activity: 2026-05-05
 
-Progress: [███████░░░] 71% (5/7 plans of Phase 02; Phase 1 awaiting verifier sign-off)
+Progress: [████████░░] 86% (6/7 plans of Phase 02; Phase 1 awaiting verifier sign-off)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 12
-- Average duration: ~10 min
-- Total execution time: ~113 min
+- Total plans completed: 13
+- Average duration: ~9 min
+- Total execution time: ~120 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 7/7 | ~60 min | ~8 min |
-| 02 | 5/7 | ~53 min | ~11 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m) |
+| 02 | 6/7 | ~60 min | ~10 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m + Wave D MensagemService 6m30s) |
 
 **Recent Trend:**
 
@@ -63,6 +63,7 @@ Progress: [███████░░░] 71% (5/7 plans of Phase 02; Phase 1 a
 | Phase 02 P03 | 720 | 2 tasks | 2 files |
 | Phase 02-persistencia-idempotencia P05 | 510 | 6 tasks | 24 files |
 | Phase 02 P04 | 24min | 3 tasks | 3 files (1 repo modificado + 1 service novo + 1 test novo, 7 tests verdes) |
+| Phase 02 P06 | 6min30s | 4 tasks | 4 files (1 service novo + 1 controller mod + 2 tests, 4 novos verdes, 99 reator) |
 
 ## Accumulated Context
 
@@ -104,6 +105,10 @@ Recent decisions affecting current work:
 - [02-04]: Cross-bean call obrigatorio para REQUIRES_NEW ativar proxy AOP — documentado em Javadoc do service. MensagemService (Plan 06) sera o caller cross-bean; self-call dentro do proprio service viraria no-op de propagation.
 - [02-04]: 2 desvios Rule 1 em test data: input do test 3 precisava prefixo "55" (sem ele, normalizar trata como nao-BR e early return) e input do test 5 do RESEARCH original (`+5599888777666`) tinha local comecando com 8, nao com 9 — corrigido para `+5599988777666` para ativar strip-9. Codigo do service permanece 100% per RESEARCH §7.1.
 - [02-04]: Hibernate `AssertionFailure: Entry for instance ... has a null identifier` no log da thread perdedora do race do test 5 e benigno (esperado, nao falha o test) — entity manager fica inconsistente apos DataIntegrityViolation, mas re-fetch funciona porque devolve snapshot lido. Documentado em SUMMARY como know-issue. Considerar isolar criarNovo em REQUIRES_NEW se virar problema operacional.
+- [02-06]: MensagemService SEM `@Transactional` na classe — orquestrador stateless; cada chamada downstream (idempotency.tentarPersistir REQUIRED, clienteZap.identificar REQUIRED, clienteZap.atualizarUltimaMensagemEm REQUIRES_NEW) gerencia propria transacao. Cross-bean call ativa proxy AOP (test webhook_text_persiste empiricamente popula ultima_mensagem_em via REQUIRES_NEW commit imediato).
+- [02-06]: Ack-first defensivo no WebhookController.POST — try/catch IOException + RuntimeException -> log.error + return 200 mesmo em erro; PITFALLS C-05 (Meta retry storm em payload quebrado) prioriza estabilidade sobre alarme. Trade-off: mascara bugs em prod. Mitigacao: log.error com stack trace + Phase 6 pode adicionar metric counter `whatsapp_webhook_errors_total`.
+- [02-06]: WebhookControllerTest precisou @MockBean MensagemService — `@WebMvcTest` so carrega controller; Phase 2 ganhou nova dependencia. WebhookControllerIntegrationTest (Phase 1) usa @SpringBootTest e nao precisou mudanca (Spring carrega bean real). Pattern reusable para futuras adicoes de service ao controller.
+- [02-06]: H2 NOW() retorna LOCAL como UTC (timezone-naive) — diff de 3h com Instant.now() real UTC quebrou primeira versao do test webhook_text_persiste com `.isAfter(antes)`. Fix Rule 1: validar apenas `.isNotNull()` aqui; validacao temporal precisa via `JdbcTemplate.queryForObject(Timestamp.class)` ja existe em `ClienteZapServiceTest.atualizar_em_nova_transacao_commit_imediato` (Plan 02-04). Em PostgreSQL real prod com TIMESTAMP WITH TIME ZONE, comparativo direto funcionaria.
 
 ### Pending Todos
 
@@ -116,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T16:10:00.000Z
-Stopped at: Completed 02-04-PLAN.md (Wave C — ClienteZapService.identificar + atualizarUltimaMensagemEm REQUIRES_NEW + NOW() do banco, 7 tests verdes incluindo concorrencia + commit imediato visivel via 2a conexao JdbcTemplate, 95 tests api-whatsapp aggregate verde, commit f347de4). PER-05/PER-06/PER-07 todos Complete. Wave D pode comecar (Plan 02-06 MensagemService orquestrador).
+Last session: 2026-05-05T16:33:44.000Z
+Stopped at: Completed 02-06-PLAN.md (Wave D — MensagemService orquestrador sincrono fechando D-06 + WebhookController.POST com ack-first defensivo PITFALLS C-05, 4 tests E2E verdes, 99 tests api-whatsapp aggregate verde, zero regressao em Phase 1, commit 24ac27c). WEB-05/06/07 + PER-06/07 Complete. Wave E final pode comecar (Plan 02-07 integration tests E2E + ROADMAP update fechando Phase 2 inteira).
 Resume file: None
