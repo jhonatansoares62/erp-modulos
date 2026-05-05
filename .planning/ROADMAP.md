@@ -67,7 +67,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   5. Dois webhooks identicos (mesmo wamid) disparados simultaneamente resultam em exatamente 1 callback ao ERP — row-count do `ON CONFLICT DO NOTHING` e o gate de dispatch
 **Plans**: 6 plans
   - [x] 03-01-PLAN.md — Setup Resilience4j + AsyncConfig + @EnableAsync + application.yml + metaApiBaseUrl
-  - [ ] 03-02-PLAN.md — MensagemPersistidaEvent + ComandoExtractor + ComandoCallbackDTO + MetaMediaResultado + MediaMetadataDTO
+  - [x] 03-02-PLAN.md — MensagemPersistidaEvent + ComandoExtractor + ComandoCallbackDTO + MetaMediaResultado + MediaMetadataDTO
   - [ ] 03-03-PLAN.md — MetaMediaClient (2-step Graph API + WireMock tests)
   - [ ] 03-04-PLAN.md — ErpCallbackClient com @CircuitBreaker + @Retry Resilience4j (counter assertions validam AOP)
   - [ ] 03-05-PLAN.md — MensagemAsyncListener + refactor MensagemService fast-path (@Transactional + publishEvent)
@@ -121,7 +121,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 |-------|----------------|--------|-----------|
 | 1. Fundacao HMAC + Webhook | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
 | 2. Persistencia + Idempotencia | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
-| 3. Roteamento + Boundary Async | 0/6 | Planning complete | - |
+| 3. Roteamento + Boundary Async | 2/6 | In progress | - |
 | 4. Outbound + Trava 24h + WhatsAppController | 0/TBD | Not started | - |
 | 5. lib-whatsapp-client | 0/TBD | Not started | - |
 | 6. Qualidade — Testes + OpenAPI + RUNBOOK | 0/TBD | Not started | - |

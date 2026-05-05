@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-01-PLAN.md (Wave 1 da Phase 3 — infra Resilience4j: parent pom.xml +1 dep gerenciada (resilience4j-spring-boot3 2.2.0), api-whatsapp/pom.xml +3 deps (spring-boot3 starter + spring-boot-starter-aop CRITICO + wiremock-standalone 3.10.0 test), AsyncConfig com @EnableAsync + ThreadPoolTaskExecutor (corePool=2/maxPool=10/queue=100/CallerRunsPolicy), WhatsAppProperties.metaApiBaseUrl novo (default v22.0 sem @NotBlank), application.yml blocos resilience4j.{circuitbreaker,retry}.instances.erp-callback (10/50%/60s + 3x/1s/2.0x backoff exp + retry-exceptions whitelist 3 transient) + spring.http.client (5s/10s) + metaApiBaseUrl env override, application-test.yml overrides timeouts curtos (200ms/500ms) + wait-duration 50ms + metaApiBaseUrl placeholder, AsyncConfigSmokeTest 1 test verde, reator BUILD SUCCESS 113 tests verdes (112 prev + 1 smoke), zero regressao). **ROU-03 + ROU-04 satisfeitos. Risk A6 (AOP no-op silencioso) mitigado por AOP starter explicito.** Pronto para Wave 2 (PLAN 03-02 — DTOs + ComandoExtractor + MensagemPersistidaEvent).
-last_updated: "2026-05-05T20:35:00.000Z"
-last_activity: 2026-05-05 -- 03-01-PLAN.md completo
+stopped_at: Completed 03-02-PLAN.md (Wave 2 da Phase 3 — tipos puros + logica pura: 5 artefatos novos (event/MensagemPersistidaEvent record 6 fields, dto/ComandoCallbackDTO record 7 fields Jackson auto, dto/MetaMediaResultado record 3 fields uso interno, dto/MediaMetadataDTO Jackson POJO @JsonIgnoreProperties + 3 @JsonProperty snake_case, service/ComandoExtractor @Service switch sobre TipoMensagem) + ComandoExtractorTest com 13 tests JUnit puros (sem Spring) cobrindo todos os branches (text simples/acentos/vazio/null/multiplos espacos, interactive_button/list com '|', uppercase->lowercase, sem '|', '|' no inicio, document/image/audio literal, conteudo null em media, desconhecido/null/inexistente, video sem constant). Reator `mvnw verify -pl api-whatsapp -am` BUILD SUCCESS, 126 tests verdes (113 prev + 13 novos), zero regressao. **ROU-02 satisfeito (ComandoCallbackDTO {telefone, comando, payload, idCliente} + 3 fields opcionais de media).** Pronto para Wave 3 (PLAN 03-03 — MetaMediaClient com WireMockExtension consumindo MediaMetadataDTO + MetaMediaResultado).
+last_updated: "2026-05-05T20:55:00.000Z"
+last_activity: 2026-05-05 -- 03-02-PLAN.md completo
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 20
-  completed_plans: 15
-  percent: 75
+  completed_plans: 16
+  percent: 80
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Current Position
 
 Phase: 03 (roteamento-boundary-async) — EXECUTING
-Plan: 2 of 6
-Status: Executing Phase 03 (Wave 1 complete)
-Last activity: 2026-05-05 -- 03-01-PLAN.md completo (infra Resilience4j + AOP + AsyncConfig)
+Plan: 3 of 6
+Status: Executing Phase 03 (Wave 2 complete)
+Last activity: 2026-05-05 -- 03-02-PLAN.md completo (tipos puros: 5 artefatos + ComandoExtractorTest 13 tests)
 
-Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 1/6; Phases 1+2 awaiting verifier sign-off)
+Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 2/6; Phases 1+2 awaiting verifier sign-off)
 
 ## Performance Metrics
 
@@ -46,7 +46,7 @@ Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Pha
 |-------|-------|-------|----------|
 | 01 | 7/7 | ~60 min | ~8 min |
 | 02 | 7/7 | ~70 min | ~10 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m + Wave D MensagemService 6m30s + Wave E integration tests 9m) |
-| 03 | 1/6 | ~12 min | ~12 min (Wave 1 infra: 3 deps Maven + AsyncConfig + 5 yaml mods + smoke test) |
+| 03 | 2/6 | ~20 min | ~10 min (Wave 1 infra ~12min + Wave 2 tipos puros ~8min) |
 
 **Recent Trend:**
 
@@ -67,6 +67,7 @@ Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Pha
 | Phase 02 P06 | 6min30s | 4 tasks | 4 files (1 service novo + 1 controller mod + 2 tests, 4 novos verdes, 99 reator) |
 | Phase 02 P07 | ~9min | 3 tasks | 2 files (1 integration test E2E novo + ROADMAP mod; 13 tests novos verdes, 112 api-whatsapp aggregate, reator 7 modulos BUILD SUCCESS) |
 | Phase 03 P01 | ~12min | 3 tasks | 7 files (2 created AsyncConfig + AsyncConfigSmokeTest; 5 mod: pom parent + api-whatsapp/pom + WhatsAppProperties + application.yml + application-test.yml; reator BUILD SUCCESS 113 tests verdes, zero regressao Phase 1+2) |
+| Phase 03 P02 | ~8min | 3 tasks | 6 files (6 created: MensagemPersistidaEvent record + ComandoCallbackDTO record + MetaMediaResultado record + MediaMetadataDTO Jackson POJO + ComandoExtractor service + ComandoExtractorTest 13 tests; reator BUILD SUCCESS 126 tests verdes, zero regressao Phase 1+2 + Wave 1) |
 
 ## Accumulated Context
 
@@ -123,6 +124,11 @@ Recent decisions affecting current work:
 - [03-01]: WhatsAppProperties.metaApiBaseUrl SEM @NotBlank — diferente dos 5 secrets CFG-01..04 que precisam fail-fast pois nao tem default seguro, metaApiBaseUrl tem default valido (https://graph.facebook.com/v22.0) que funciona em prod. Override por env var WHATSAPP_META_API_BASE_URL ou via @DynamicPropertySource em test (Wave 3 WireMock).
 - [03-01]: WireMock 3.10.0 (nao 4.x) — Jetty 12 standalone shadow evita conflito com Boot 3.5.9 (RESEARCH + flag de risco no STATE). Validacao empirica formal acontece em Wave 3 quando WireMockExtension for usado em integration test.
 - [03-01]: Aspect order Resilience4j Spring Boot starter — Retry POR FORA de CircuitBreaker. 1 dispatch falho = 3 calls counted no CB sliding-window (3 retries). 4 dispatches falhos consecutivos = 12 calls counted = circuit aberto. Importante para Wave 4 (ErpCallbackClient @CircuitBreaker(name="erp-callback") @Retry(name="erp-callback")).
+- [03-02]: ComandoExtractor switch case `TipoMensagem.VIDEO` REMOVIDO — TipoMensagem Phase 2 tem apenas 7 constants (TEXT, INTERACTIVE_BUTTON, INTERACTIVE_LIST, DOCUMENT, IMAGE, AUDIO, DESCONHECIDO), sem VIDEO. Payload literal "video" cai no default branch -> null (skip dispatch). Documentado em Javadoc + test defensivo `video_nao_existe_constant`.
+- [03-02]: MediaMetadataDTO Jackson POJO regular (NAO record) — alinhamento com convencao do monorepo (api-email/api-storage/Phase 2 envelope DTOs); `@JsonProperty` em mime_type/file_size/messaging_product mapeia snake_case para camelCase; `@JsonIgnoreProperties(ignoreUnknown=true)` deixa resiliente a campos novos do Meta.
+- [03-02]: ComandoCallbackDTO + MensagemPersistidaEvent + MetaMediaResultado como records — uso interno (sem deserializacao Jackson externa) ou serializacao OUTPUT-only (Jackson 2.18 + Boot 3 suportam record nativamente como wire OUTPUT, diferente do INPUT externo onde POJO e preferido).
+- [03-02]: ComandoExtractor logica pura sem I/O — testavel sem Spring context (instanciacao direta `new ComandoExtractor()`). 13 tests JUnit puros executam em 0.090s. Pattern reusable para Wave 3+ services que sejam sufficientemente puros.
+- [03-02]: ComandoExtractor branch `idDeInteractive` exige `sep > 0` (nao `>= 0`) — id vazio antes do '|' (ex: "|Aprovar") retorna null. Test `interactive_pipe_no_inicio` valida edge case. Parser Phase 2 sempre coloca id valido, mas defensivo aqui evita callback com comando vazio ao ERP.
 
 ### Pending Todos
 
@@ -135,6 +141,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T20:35:00.000Z
-Stopped at: Completed 03-01-PLAN.md (Wave 1 da Phase 3 — infra Resilience4j: parent pom +1 managed dep (resilience4j-spring-boot3 2.2.0), api-whatsapp/pom +3 deps (spring-boot3 starter compile + spring-boot-starter-aop CRITICO compile + wiremock-standalone 3.10.0 test), AsyncConfig com @EnableAsync + ThreadPoolTaskExecutor (corePool=2/maxPool=10/queue=100/whatsapp-async-/CallerRunsPolicy), WhatsAppProperties.metaApiBaseUrl (default v22.0 sem @NotBlank), application.yml blocos resilience4j.{circuitbreaker,retry}.instances.erp-callback (10/50%/60s + 3x/1s/2.0x exp + retry-exceptions 3 transient) + spring.http.client (5s/10s) + metaApiBaseUrl env override, application-test.yml overrides timeouts curtos + wait-duration 50ms + metaApiBaseUrl placeholder, AsyncConfigSmokeTest 1 test verde, reator BUILD SUCCESS 113 tests verdes (zero regressao Phase 1+2)). **ROU-03 + ROU-04 satisfeitos. Risk A6 (AOP no-op silencioso) mitigado por AOP starter explicito (aspectjweaver:1.9.25.1 confirmado em dependency:tree).** Pronto para Wave 2 (PLAN 03-02 — DTOs + ComandoExtractor + MensagemPersistidaEvent).
+Last session: 2026-05-05T20:55:00.000Z
+Stopped at: Completed 03-02-PLAN.md (Wave 2 da Phase 3 — tipos puros + logica pura: 5 artefatos novos (event/MensagemPersistidaEvent record 6 fields wamid/telefone/tipo/conteudo/mediaId/idClienteErp; dto/ComandoCallbackDTO record 7 fields telefone/comando/payload/idCliente/mediaBase64/mediaMimeType/mediaFilename; dto/MetaMediaResultado record 3 fields bytes/mimeType/filename uso interno; dto/MediaMetadataDTO Jackson POJO @JsonIgnoreProperties + 3 @JsonProperty mime_type/file_size/messaging_product; service/ComandoExtractor @Service switch sobre TipoMensagem com 6 cases — text/INTERACTIVE_BUTTON/INTERACTIVE_LIST/DOCUMENT/IMAGE/AUDIO + default null; SEM case VIDEO pois TipoMensagem Phase 2 nao tem essa constant) + ComandoExtractorTest com 13 tests JUnit puros (sem Spring): text primeira palavra/acentos/vazio-null/multiplos espacos, interactive_button/list separator/uppercase/sem '|'/no inicio, document-image-audio literal/conteudo null, desconhecido/null/inexistente, video defensivo. Reator `mvnw verify -pl api-whatsapp -am` BUILD SUCCESS 126 tests verdes (113 prev + 13 novos), zero regressao. **ROU-02 satisfeito.** Pronto para Wave 3 (PLAN 03-03 — MetaMediaClient WireMockExtension).
 Resume file: None
