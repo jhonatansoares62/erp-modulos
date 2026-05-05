@@ -87,6 +87,13 @@
             <version>3.10.0</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Awaitility para SC-1 timing test (Wave 6) — versao gerenciada pelo Spring Boot BOM -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

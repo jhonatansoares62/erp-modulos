@@ -1,17 +1,25 @@
 package br.com.erpkit.whatsapp.controller;
 
 import br.com.erpkit.whatsapp.WhatsAppApplication;
+import br.com.erpkit.whatsapp.config.AsyncTestConfig;
 import br.com.erpkit.whatsapp.config.WhatsAppProperties;
-import org.junit.jupiter.api.Disabled;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.StreamUtils;
 
@@ -29,26 +37,55 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Integration test E2E final da Phase 2 — phase gate empirico.
  *
+ * <p><b>Phase 3 Wave 6 reativacao:</b> os 13 tests originais da Phase 2 voltam
+ * a passar via duas mudancas no harness (sem alterar nenhum test individual):
+ * <ol>
+ *   <li>{@code @Import(AsyncTestConfig.class)} substitui o bean
+ *       {@code whatsappTaskExecutor} (pool dedicado da {@code AsyncConfig}) por
+ *       {@link org.springframework.core.task.SyncTaskExecutor} — listener
+ *       {@code MensagemAsyncListener.aoMensagemPersistida(@Async)} roda inline
+ *       na thread do MockMvc. Quando o {@code @TransactionalEventListener(AFTER_COMMIT)}
+ *       dispara, ja existe transacao ativa do {@code @Transactional} de
+ *       {@code MensagemService.processarWebhook}; commit -&gt; afterCommit() -&gt;
+ *       listener executa toda a sequencia (identificar, atualizar, callback ERP)
+ *       antes do POST retornar.</li>
+ *   <li>{@link WireMockServer} static com stub default 200 para
+ *       {@code POST /api/modulos/whatsapp/comando} + {@code @DynamicPropertySource}
+ *       sobrescrevendo {@code app.modulos.whatsapp.erp-callback-url} para o
+ *       baseUrl do WireMock — listener faz callback de verdade (vs fallback
+ *       Resilience4j do {@code http://localhost:0/test} dummy do
+ *       application-test.yml), elimina log poluido e prova o ack-first
+ *       end-to-end (smoke test Risk A1: {@code @Transactional} +
+ *       {@code AFTER_COMMIT} -&gt; ERP recebe callback).</li>
+ * </ol>
+ *
  * <p>Sobe o {@link WhatsAppApplication} completo via {@link SpringBootTest} com
  * {@code webEnvironment = MOCK} + {@link AutoConfigureMockMvc} para construir o
  * {@link MockMvc} respeitando TODOS os {@code FilterRegistrationBean} (em
  * particular o {@code HmacSignatureFilter} HIGHEST_PRECEDENCE), e exercita o
- * stack inteiro Phase 1 + Phase 2:
+ * stack inteiro Phase 1 + Phase 2 + Phase 3 fast-path async:
  *
  * <pre>
  *   MockMvc.post → HmacSignatureFilter (valida signature)
  *                → CachedBodyHttpServletRequest (eager body read)
  *                → WebhookController.receber (cast + delega)
- *                → MensagemService.processarWebhook (orquestrador sincrono)
+ *                → MensagemService.processarWebhook (@Transactional)
  *                → WebhookPayloadParser.extrair (Jackson)
  *                → IdempotencyService.tentarPersistir (UNIQUE wamid gate)
+ *                → eventPublisher.publishEvent(MensagemPersistidaEvent)
+ *                → COMMIT -> @TransactionalEventListener(AFTER_COMMIT) dispara
+ *                → MensagemAsyncListener.aoMensagemPersistida (SyncTaskExecutor inline)
+ *                → MetaMediaClient.baixar (apenas se mediaId != null)
  *                → ClienteZapService.identificar (auto-create)
  *                → ClienteZapService.atualizarUltimaMensagemEm (REQUIRES_NEW + NOW())
+ *                → ComandoExtractor.extrair
+ *                → ErpCallbackClient.despachar (-&gt; WireMock 200)
  * </pre>
  *
  * <p>Apos o {@code .andExpect(status().isOk())} de cada POST, queries via
  * {@link JdbcTemplate} verificam o estado do banco (committed via REQUIRES_NEW)
- * — gate empirico para os 5 ROADMAP success criteria de Phase 2.
+ * — gate empirico para os 5 ROADMAP success criteria de Phase 2 + smoke test
+ * Risk A1 da Phase 3.
  *
  * <p><b>Cobertura — 13 tests mapeando 5 SC + 2 bonus:</b>
  * <ol>
@@ -88,20 +125,41 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <ul>
  *   <li>{@code .planning/phases/02-persistencia-idempotencia/02-RESEARCH.md} §11</li>
  *   <li>{@code .planning/phases/02-persistencia-idempotencia/02-06-SUMMARY.md} concerns 1-7</li>
+ *   <li>{@code .planning/phases/03-roteamento-boundary-async/03-05-SUMMARY.md} Wave 6 Concerns</li>
  *   <li>{@code .planning/ROADMAP.md} Phase 2 — 5 success criteria</li>
  * </ul>
  */
 @SpringBootTest(classes = WhatsAppApplication.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Disabled("Phase 3 Wave 6 (PLAN 03-06) reativa com AsyncTestConfig (SyncTaskExecutor) + WireMock stub para ERP. "
-        + "Em Phase 3 Wave 5 (PLAN 03-05), MensagemService.processarWebhook foi refatorado para fast-path "
-        + "(parse + idempotency + publishEvent); ClienteZapService.identificar/atualizarUltimaMensagemEm "
-        + "agora rodam em MensagemAsyncListener via @Async @TransactionalEventListener(AFTER_COMMIT). "
-        + "Tests sc4/sc5 deste arquivo validam estado de clientes_zap apos o POST sem aguardar async — "
-        + "Wave 6 substitui o whatsappTaskExecutor por SyncTaskExecutor no test profile, deixando "
-        + "o flow inteiro sincrono novamente para assertions DB E2E.")
+@Import(AsyncTestConfig.class)
 class WebhookPersistenciaIntegrationTest {
+
+    private static WireMockServer wireMockErp;
+
+    @BeforeAll
+    static void startWireMock() {
+        wireMockErp = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+        wireMockErp.start();
+        // Stub default 200 para callback ERP — listener faz dispatch de verdade,
+        // sem fallback Resilience4j poluindo log. Smoke test E2E para Risk A1
+        // (validacao empirica que @Transactional + AFTER_COMMIT funcionam).
+        // Nota: WireMock.post fully qualified evita conflito com MockMvcRequestBuilders.post.
+        wireMockErp.stubFor(WireMock.post(WireMock.urlEqualTo("/api/modulos/whatsapp/comando"))
+                .willReturn(WireMock.aResponse().withStatus(200)));
+    }
+
+    @AfterAll
+    static void stopWireMock() {
+        if (wireMockErp != null) {
+            wireMockErp.stop();
+        }
+    }
+
+    @DynamicPropertySource
+    static void overrideErpUrl(DynamicPropertyRegistry registry) {
+        registry.add("app.modulos.whatsapp.erp-callback-url", () -> wireMockErp.baseUrl());
+    }
 
     @Autowired
     private MockMvc mockMvc;
