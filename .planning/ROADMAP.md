@@ -7,7 +7,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 ## Phases
 
 - [x] **Phase 1: Fundacao HMAC + Webhook** - Estrutura do modulo, configuracao fail-fast, HMAC-SHA256 com eager body read, endpoint GET hub.challenge (plain text), POST webhook stub retornando 200, migrations Flyway V1-V4
-- [ ] **Phase 2: Persistencia + Idempotencia** - Entidades JPA, repositorios, IdempotencyService com ON CONFLICT DO NOTHING, ClienteZapService com normalizacao de telefone BR, atualizacao REQUIRES_NEW de ultima_mensagem_em
+- [x] **Phase 2: Persistencia + Idempotencia** - Entidades JPA, repositorios, IdempotencyService com fallback save+catch DataIntegrityViolationException (gate empirico H2 v2 PG-mode), ClienteZapService com normalizacao de telefone BR, atualizacao REQUIRES_NEW de ultima_mensagem_em + WebhookPayloadParser + MensagemService orquestrador sincrono + integration tests E2E (5 SC verdes)
 - [ ] **Phase 3: Roteamento + Boundary Async** - ErpCallbackClient, MessageRouter, MensagemService.processarAsync() integrando Phases 1+2, ack 200 antes do async fan-out, download eager de media entrante
 - [ ] **Phase 4: Outbound + Trava 24h + WhatsAppController** - WhatsAppCloudClient (texto/doc/botoes/lista, sem enviarTemplate), MediaCacheService, WindowEnforcementService (hard 409), endpoints internos ERP, log de saida
 - [ ] **Phase 5: lib-whatsapp-client** - Starter Spring Boot espelhando lib-consultas-client: auto-config condicional, SPI WhatsAppCommandHandler + WhatsAppCommandRegistry, WhatsAppClient com Resilience4j, ObjectProvider graceful fallback, META-INF auto-config
@@ -52,7 +52,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   - [x] 02-PLAN-04-cliente-zap-service.md — ClienteZapService.identificar + atualizarUltimaMensagemEm REQUIRES_NEW + repository @Query custom
   - [x] 02-PLAN-05-webhook-payload-parser.md — Jackson parser do envelope Meta (text/button/list/document/desconhecido + statuses)
   - [x] 02-PLAN-06-mensagem-service-orquestrador.md — MensagemService.processarWebhook sincrono + WebhookController.POST integrado
-  - [ ] 02-PLAN-07-integration-tests-e2e.md — Integration tests E2E fechando os 5 ROADMAP success criteria
+  - [x] 02-PLAN-07-integration-tests-e2e.md — Integration tests E2E `WebhookPersistenciaIntegrationTest` (13 tests cobrindo 5 SC + 2 bonus, 112 tests api-whatsapp aggregate verde)
 **UI hint**: no
 
 ### Phase 3: Roteamento + Boundary Async
@@ -114,7 +114,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundacao HMAC + Webhook | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
-| 2. Persistencia + Idempotencia | 6/7 | In Progress|  |
+| 2. Persistencia + Idempotencia | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
 | 3. Roteamento + Boundary Async | 0/TBD | Not started | - |
 | 4. Outbound + Trava 24h + WhatsAppController | 0/TBD | Not started | - |
 | 5. lib-whatsapp-client | 0/TBD | Not started | - |
