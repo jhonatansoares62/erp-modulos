@@ -8,7 +8,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 
 - [x] **Phase 1: Fundacao HMAC + Webhook** - Estrutura do modulo, configuracao fail-fast, HMAC-SHA256 com eager body read, endpoint GET hub.challenge (plain text), POST webhook stub retornando 200, migrations Flyway V1-V4
 - [x] **Phase 2: Persistencia + Idempotencia** - Entidades JPA, repositorios, IdempotencyService com fallback save+catch DataIntegrityViolationException (gate empirico H2 v2 PG-mode), ClienteZapService com normalizacao de telefone BR, atualizacao REQUIRES_NEW de ultima_mensagem_em + WebhookPayloadParser + MensagemService orquestrador sincrono + integration tests E2E (5 SC verdes)
-- [ ] **Phase 3: Roteamento + Boundary Async** - ErpCallbackClient, MessageRouter, MensagemService.processarAsync() integrando Phases 1+2, ack 200 antes do async fan-out, download eager de media entrante
+- [x] **Phase 3: Roteamento + Boundary Async** - ErpCallbackClient, MessageRouter, MensagemService.processarAsync() integrando Phases 1+2, ack 200 antes do async fan-out, download eager de media entrante
 - [ ] **Phase 4: Outbound + Trava 24h + WhatsAppController** - WhatsAppCloudClient (texto/doc/botoes/lista, sem enviarTemplate), MediaCacheService, WindowEnforcementService (hard 409), endpoints internos ERP, log de saida
 - [ ] **Phase 5: lib-whatsapp-client** - Starter Spring Boot espelhando lib-consultas-client: auto-config condicional, SPI WhatsAppCommandHandler + WhatsAppCommandRegistry, WhatsAppClient com Resilience4j, ObjectProvider graceful fallback, META-INF auto-config
 - [ ] **Phase 6: Qualidade — Testes + OpenAPI + RUNBOOK** - Unit tests (HMAC/idempotencia/media-cache/janela-24h), integration tests WireMock (4 tipos de envio + webhook + 5xx + timeout), SpringDoc OpenAPI, README.md por modulo, RUNBOOK.md operacional
@@ -71,7 +71,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   - [x] 03-03-PLAN.md — MetaMediaClient (2-step Graph API + WireMock tests)
   - [x] 03-04-PLAN.md — ErpCallbackClient com @CircuitBreaker + @Retry Resilience4j (counter assertions validam AOP — Risk A6 RESOLVED empiricamente)
   - [x] 03-05-PLAN.md — MensagemAsyncListener + refactor MensagemService fast-path (@Transactional + publishEvent)
-  - [ ] 03-06-PLAN.md — Integration tests E2E (5 SC) + AsyncTestConfig + reabilitar Phase 2 + ROADMAP closeout
+  - [x] 03-06-PLAN.md — Integration tests E2E (5 SC) + AsyncTestConfig + reabilitar Phase 2 + ROADMAP closeout
 **UI hint**: no
 
 ### Phase 4: Outbound + Trava 24h + WhatsAppController
@@ -121,7 +121,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 |-------|----------------|--------|-----------|
 | 1. Fundacao HMAC + Webhook | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
 | 2. Persistencia + Idempotencia | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
-| 3. Roteamento + Boundary Async | 5/6 | In progress | - |
+| 3. Roteamento + Boundary Async | 6/6 | Complete (awaiting verifier) | 2026-05-05 |
 | 4. Outbound + Trava 24h + WhatsAppController | 0/TBD | Not started | - |
 | 5. lib-whatsapp-client | 0/TBD | Not started | - |
 | 6. Qualidade — Testes + OpenAPI + RUNBOOK | 0/TBD | Not started | - |
