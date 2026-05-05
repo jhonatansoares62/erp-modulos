@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-07-PLAN.md (Wave E final — WebhookPersistenciaIntegrationTest com 13 tests E2E SpringBootTest+MockMvc+JdbcTemplate cobrindo 5 SC ROADMAP + 2 bonus, 112 tests api-whatsapp aggregate verde, reator 7 modulos BUILD SUCCESS, ROADMAP Phase 2 [x] Complete + Plans TBD->7 com index, commit ab60b1b). **Phase 2 100% completa — 7/7 plans + 5/5 SC + 9/9 reqs satisfeitos.** Pronto para gsd-verify-phase de Phase 2 OU inicio de Phase 3 (ROU-01..05 async boundary; planning/research necessario antes de execute-phase).
-last_updated: "2026-05-05T19:18:54.757Z"
-last_activity: 2026-05-05 -- Phase 03 execution started
+stopped_at: Completed 03-01-PLAN.md (Wave 1 da Phase 3 — infra Resilience4j: parent pom.xml +1 dep gerenciada (resilience4j-spring-boot3 2.2.0), api-whatsapp/pom.xml +3 deps (spring-boot3 starter + spring-boot-starter-aop CRITICO + wiremock-standalone 3.10.0 test), AsyncConfig com @EnableAsync + ThreadPoolTaskExecutor (corePool=2/maxPool=10/queue=100/CallerRunsPolicy), WhatsAppProperties.metaApiBaseUrl novo (default v22.0 sem @NotBlank), application.yml blocos resilience4j.{circuitbreaker,retry}.instances.erp-callback (10/50%/60s + 3x/1s/2.0x backoff exp + retry-exceptions whitelist 3 transient) + spring.http.client (5s/10s) + metaApiBaseUrl env override, application-test.yml overrides timeouts curtos (200ms/500ms) + wait-duration 50ms + metaApiBaseUrl placeholder, AsyncConfigSmokeTest 1 test verde, reator BUILD SUCCESS 113 tests verdes (112 prev + 1 smoke), zero regressao). **ROU-03 + ROU-04 satisfeitos. Risk A6 (AOP no-op silencioso) mitigado por AOP starter explicito.** Pronto para Wave 2 (PLAN 03-02 — DTOs + ComandoExtractor + MensagemPersistidaEvent).
+last_updated: "2026-05-05T20:35:00.000Z"
+last_activity: 2026-05-05 -- 03-01-PLAN.md completo
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 20
-  completed_plans: 14
-  percent: 70
+  completed_plans: 15
+  percent: 75
 ---
 
 # Project State
@@ -26,19 +26,19 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Current Position
 
 Phase: 03 (roteamento-boundary-async) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 03
-Last activity: 2026-05-05 -- Phase 03 execution started
+Plan: 2 of 6
+Status: Executing Phase 03 (Wave 1 complete)
+Last activity: 2026-05-05 -- 03-01-PLAN.md completo (infra Resilience4j + AOP + AsyncConfig)
 
-Progress: [██████████] 100% (7/7 plans of Phase 02 + 7/7 Phase 01; Phases 1+2 awaiting verifier sign-off)
+Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 1/6; Phases 1+2 awaiting verifier sign-off)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: ~9 min
-- Total execution time: ~130 min
+- Total execution time: ~142 min
 
 **By Phase:**
 
@@ -46,6 +46,7 @@ Progress: [██████████] 100% (7/7 plans of Phase 02 + 7/7 Pha
 |-------|-------|-------|----------|
 | 01 | 7/7 | ~60 min | ~8 min |
 | 02 | 7/7 | ~70 min | ~10 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m + Wave D MensagemService 6m30s + Wave E integration tests 9m) |
+| 03 | 1/6 | ~12 min | ~12 min (Wave 1 infra: 3 deps Maven + AsyncConfig + 5 yaml mods + smoke test) |
 
 **Recent Trend:**
 
@@ -65,6 +66,7 @@ Progress: [██████████] 100% (7/7 plans of Phase 02 + 7/7 Pha
 | Phase 02 P04 | 24min | 3 tasks | 3 files (1 repo modificado + 1 service novo + 1 test novo, 7 tests verdes) |
 | Phase 02 P06 | 6min30s | 4 tasks | 4 files (1 service novo + 1 controller mod + 2 tests, 4 novos verdes, 99 reator) |
 | Phase 02 P07 | ~9min | 3 tasks | 2 files (1 integration test E2E novo + ROADMAP mod; 13 tests novos verdes, 112 api-whatsapp aggregate, reator 7 modulos BUILD SUCCESS) |
+| Phase 03 P01 | ~12min | 3 tasks | 7 files (2 created AsyncConfig + AsyncConfigSmokeTest; 5 mod: pom parent + api-whatsapp/pom + WhatsAppProperties + application.yml + application-test.yml; reator BUILD SUCCESS 113 tests verdes, zero regressao Phase 1+2) |
 
 ## Accumulated Context
 
@@ -114,6 +116,13 @@ Recent decisions affecting current work:
 - [02-07]: Comparacao temporal SC-5 via epoch seconds (long, nao Instant) — H2 NOW() timezone-naive quirk reproducido em Plan 02-06 SUMMARY. Solucao: extrair epoch seconds via `tsRaw.getTime() / 1000L` e comparar com `System.currentTimeMillis() / 1000L` — local-vs-local, neutraliza offset BRT/UTC. Em PostgreSQL real prod com TIMESTAMP WITH TIME ZONE comparativo direto Instant funcionaria.
 - [02-07]: Filter por wamid+telefone em assertions de COUNT (vs deleteAll @BeforeEach) — H2 in-memory compartilhado entre tests do mesmo SpringContext; wamid UNIQUE garante isolamento da assertion. Bug Rule 1 descoberto na primeira run: sc3a `COUNT WHERE telefone = "554784178525"` retornava 3 (sc1+sc2a+bonus_multiple usam mesmo telefone). Fix: `WHERE wamid = ? AND telefone = ?`.
 - [02-07]: Phase 2 100% completa — 7/7 plans + 5/5 ROADMAP SC + 9/9 reqs (WEB-05/06/07 + PER-02/03/04/05/06/07). Reator inteiro 7 modulos BUILD SUCCESS, ~183 tests verdes em ~30s, zero regressao em Phase 1. Pronto para gsd-verify-phase.
+- [03-01]: spring-boot-starter-aop adicionado como dep compile EXPLICITA (nao via transitive) — sem ele, anotacoes Resilience4j @CircuitBreaker/@Retry viram no-op silencioso (Risk A6 RESEARCH §Pitfall 2). Validacao via dependency:tree confirma aspectjweaver:1.9.25.1 no classpath. api-whatsapp tinha web/jpa/validation/openapi mas NENHUM destes inclui AOP transitively.
+- [03-01]: ThreadPoolTaskExecutor (corePool=2/maxPool=10/queue=100/CallerRunsPolicy) per D-02 do CONTEXT — pool dedicado degrada graciosamente em pico via CallerRunsPolicy (listener roda inline na thread chamadora) vs SimpleAsyncTaskExecutor (thread por task → OOM em pico). AbortPolicy rejeitado: descarta mensagem ja persistida → side effect perdido.
+- [03-01]: Resilience4j retry-exceptions whitelist explicita 3 transient (HttpServerErrorException + SocketTimeoutException + IOException) — Resilience4j default NAO retenta excecoes nao listadas, portanto HttpClientErrorException (4xx categoricos) automaticamente NAO retenta sem precisar configurar ignoreExceptions (D-08, ROU-03). 4xx duplicaria side effect (PITFALLS C-05).
+- [03-01]: spring.http.client integrado dentro do bloco 'spring:' aninhado existente em application.yml (apos flyway:) — em vez de dotted-keys ou multi-document YAML (---). Coexiste com spring.datasource/jpa/flyway sem conflito de chave duplicada. Mesma sintaxe em application-test.yml.
+- [03-01]: WhatsAppProperties.metaApiBaseUrl SEM @NotBlank — diferente dos 5 secrets CFG-01..04 que precisam fail-fast pois nao tem default seguro, metaApiBaseUrl tem default valido (https://graph.facebook.com/v22.0) que funciona em prod. Override por env var WHATSAPP_META_API_BASE_URL ou via @DynamicPropertySource em test (Wave 3 WireMock).
+- [03-01]: WireMock 3.10.0 (nao 4.x) — Jetty 12 standalone shadow evita conflito com Boot 3.5.9 (RESEARCH + flag de risco no STATE). Validacao empirica formal acontece em Wave 3 quando WireMockExtension for usado em integration test.
+- [03-01]: Aspect order Resilience4j Spring Boot starter — Retry POR FORA de CircuitBreaker. 1 dispatch falho = 3 calls counted no CB sliding-window (3 retries). 4 dispatches falhos consecutivos = 12 calls counted = circuit aberto. Importante para Wave 4 (ErpCallbackClient @CircuitBreaker(name="erp-callback") @Retry(name="erp-callback")).
 
 ### Pending Todos
 
@@ -122,10 +131,10 @@ None yet.
 ### Blockers/Concerns
 
 - Phase 4 (outbound + media): confirmar field names do multipart Meta `/media` upload endpoint (`messaging_product`, `type`, `file`) no momento da implementacao — Meta pode atualizar sem aviso (flag de research ARCHITECTURE.md)
-- WireMock 3.8.1 confirmado seguro; 4.2.1 tem potencial conflito Jetty com Boot 3.5.9 — usar 3.8.1 ate verificacao empirica
+- WireMock 3.10.0 (Jetty 12 standalone shadow) adicionado em 03-01 ao classpath test — validacao empirica formal acontece em Wave 3 (PLAN 03-03 MetaMediaClient com WireMockExtension). 4.x ainda evitada por potencial conflito Jetty com Boot 3.5.9.
 
 ## Session Continuity
 
-Last session: 2026-05-05T18:34:07.001Z
-Stopped at: Completed 02-07-PLAN.md (Wave E final — WebhookPersistenciaIntegrationTest com 13 tests E2E SpringBootTest+MockMvc+JdbcTemplate cobrindo 5 SC ROADMAP + 2 bonus, 112 tests api-whatsapp aggregate verde, reator 7 modulos BUILD SUCCESS, ROADMAP Phase 2 [x] Complete + Plans TBD->7 com index, commit ab60b1b). **Phase 2 100% completa — 7/7 plans + 5/5 SC + 9/9 reqs satisfeitos.** Pronto para gsd-verify-phase de Phase 2 OU inicio de Phase 3 (ROU-01..05 async boundary; planning/research necessario antes de execute-phase).
+Last session: 2026-05-05T20:35:00.000Z
+Stopped at: Completed 03-01-PLAN.md (Wave 1 da Phase 3 — infra Resilience4j: parent pom +1 managed dep (resilience4j-spring-boot3 2.2.0), api-whatsapp/pom +3 deps (spring-boot3 starter compile + spring-boot-starter-aop CRITICO compile + wiremock-standalone 3.10.0 test), AsyncConfig com @EnableAsync + ThreadPoolTaskExecutor (corePool=2/maxPool=10/queue=100/whatsapp-async-/CallerRunsPolicy), WhatsAppProperties.metaApiBaseUrl (default v22.0 sem @NotBlank), application.yml blocos resilience4j.{circuitbreaker,retry}.instances.erp-callback (10/50%/60s + 3x/1s/2.0x exp + retry-exceptions 3 transient) + spring.http.client (5s/10s) + metaApiBaseUrl env override, application-test.yml overrides timeouts curtos + wait-duration 50ms + metaApiBaseUrl placeholder, AsyncConfigSmokeTest 1 test verde, reator BUILD SUCCESS 113 tests verdes (zero regressao Phase 1+2)). **ROU-03 + ROU-04 satisfeitos. Risk A6 (AOP no-op silencioso) mitigado por AOP starter explicito (aspectjweaver:1.9.25.1 confirmado em dependency:tree).** Pronto para Wave 2 (PLAN 03-02 — DTOs + ComandoExtractor + MensagemPersistidaEvent).
 Resume file: None

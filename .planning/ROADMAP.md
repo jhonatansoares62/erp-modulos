@@ -66,7 +66,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   4. Media entrante (cliente enviou documento/imagem) tem URL Meta baixada e bytes guardados como **primeira** acao async apos o ack 200 — URL Meta expira em 5 minutos; miss de 404 e logado como WARN, mensagem e persistida sem bytes
   5. Dois webhooks identicos (mesmo wamid) disparados simultaneamente resultam em exatamente 1 callback ao ERP — row-count do `ON CONFLICT DO NOTHING` e o gate de dispatch
 **Plans**: 6 plans
-  - [ ] 03-01-PLAN.md — Setup Resilience4j + AsyncConfig + @EnableAsync + application.yml + metaApiBaseUrl
+  - [x] 03-01-PLAN.md — Setup Resilience4j + AsyncConfig + @EnableAsync + application.yml + metaApiBaseUrl
   - [ ] 03-02-PLAN.md — MensagemPersistidaEvent + ComandoExtractor + ComandoCallbackDTO + MetaMediaResultado + MediaMetadataDTO
   - [ ] 03-03-PLAN.md — MetaMediaClient (2-step Graph API + WireMock tests)
   - [ ] 03-04-PLAN.md — ErpCallbackClient com @CircuitBreaker + @Retry Resilience4j (counter assertions validam AOP)
