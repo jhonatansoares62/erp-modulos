@@ -69,7 +69,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   - [x] 03-01-PLAN.md — Setup Resilience4j + AsyncConfig + @EnableAsync + application.yml + metaApiBaseUrl
   - [x] 03-02-PLAN.md — MensagemPersistidaEvent + ComandoExtractor + ComandoCallbackDTO + MetaMediaResultado + MediaMetadataDTO
   - [x] 03-03-PLAN.md — MetaMediaClient (2-step Graph API + WireMock tests)
-  - [ ] 03-04-PLAN.md — ErpCallbackClient com @CircuitBreaker + @Retry Resilience4j (counter assertions validam AOP)
+  - [x] 03-04-PLAN.md — ErpCallbackClient com @CircuitBreaker + @Retry Resilience4j (counter assertions validam AOP — Risk A6 RESOLVED empiricamente)
   - [ ] 03-05-PLAN.md — MensagemAsyncListener + refactor MensagemService fast-path (@Transactional + publishEvent)
   - [ ] 03-06-PLAN.md — Integration tests E2E (5 SC) + AsyncTestConfig + reabilitar Phase 2 + ROADMAP closeout
 **UI hint**: no
@@ -121,7 +121,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 |-------|----------------|--------|-----------|
 | 1. Fundacao HMAC + Webhook | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
 | 2. Persistencia + Idempotencia | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
-| 3. Roteamento + Boundary Async | 3/6 | In progress | - |
+| 3. Roteamento + Boundary Async | 4/6 | In progress | - |
 | 4. Outbound + Trava 24h + WhatsAppController | 0/TBD | Not started | - |
 | 5. lib-whatsapp-client | 0/TBD | Not started | - |
 | 6. Qualidade — Testes + OpenAPI + RUNBOOK | 0/TBD | Not started | - |

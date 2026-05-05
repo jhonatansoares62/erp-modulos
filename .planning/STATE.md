@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-03-PLAN.md (Wave 3 da Phase 3 — MetaMediaClient cliente HTTP 2-step para download de media de entrada do Meta Graph API: service/MetaMediaClient.java @Service novo (RestClient construido em constructor via WhatsAppProperties.getMetaApiBaseUrl, baixar(String mediaId) -> Optional<MetaMediaResultado>, step 1 GET /{id} -> MediaMetadataDTO + step 2 GET URL absoluta -> byte[], Bearer SOMENTE em header Authorization PITFALLS C-14, 404 graceful em qualquer step retorna Optional.empty + log.warn PITFALLS C-08, sem Resilience4j por design D-04 — 5xx escapam para listener Wave 5 tratar) + MetaMediaClientTest com 6 tests @SpringBootTest + WireMock 3.10.0 standalone + WireMockServer.dynamicPort + @DynamicPropertySource sobrescrevendo metaApiBaseUrl (happy_path 2-step + 404 step 1 com verify(0,...) confirmando short-circuit + 404 step 2 + 5xx propaga sem retry verify(1,...) + bearer_nunca_em_query_param via getAllServeEvents.forEach + metadata_sem_url Rule 2 defesa em profundidade). Reator `mvnw verify -pl api-whatsapp -am` BUILD SUCCESS, 132 tests verdes (126 prev + 6 novos), zero regressao em Phase 1+2 ou Wave 1+2. **ROU-05 satisfeito (cliente isolado pronto para Wave 5 listener consumir como PRIMEIRA acao apos ack).** WireMock 3.10.0 + Boot 3.5.9 validado empiricamente — bloqueador documentado em 03-01-SUMMARY resolvido. Pattern WireMock + @DynamicPropertySource estabelecido para reuso em Wave 4 (ErpCallbackClient) e Wave 6 (E2E). Pronto para Wave 4 (PLAN 03-04 — ErpCallbackClient com Resilience4j @CircuitBreaker + @Retry).
-last_updated: "2026-05-05T21:09:00.000Z"
-last_activity: 2026-05-05 -- 03-03-PLAN.md completo
+stopped_at: Completed 03-04-PLAN.md (Wave 4 da Phase 3 — ErpCallbackClient cliente HTTP com Resilience4j @CircuitBreaker + @Retry: service/ErpCallbackClient.java @Service novo (RestClient construido em constructor via WhatsAppProperties.getErpCallbackUrl + SimpleClientHttpRequestFactory(callbackTimeout), method despachar(ComandoCallbackDTO) com @CircuitBreaker(name=erp-callback) + @Retry(name=erp-callback, fallbackMethod=fallbackDespachar), fallbackDespachar(payload, Throwable) log.error sem rethrow sem retry adicional D-08) + ErpCallbackClientTest com 6 tests @SpringBootTest + WireMock 3.10.0 standalone + dynamicPort + @DynamicPropertySource sobrescrevendo erpCallbackUrl + @BeforeEach reset CB Risk A3: (1) happy_path counter==1, (2) cinquecentos_recupera_counter_3 — Risk A6 RESOLVED via AOP empirico, (3) 5xx_persistente counter==3 fallback engole, (4) 4xx counter==1 sem retry whitelist, (5) timeout retry triggers, (6) circuit_open apos 4 dispatches falhos via CallNotPermittedException. Reator BUILD SUCCESS 138 tests verdes (132 prev + 6 novos), zero regressao em Phase 1+2 ou Wave 1-3. ROU-02 + ROU-03 + ROU-04 satisfeitos. Risk A6 RESOLVED empiricamente. 3 desvios Rule 1: (a) fallbackMethod migrado de @CircuitBreaker (inner) para @Retry (outer) — sem essa mudanca, fallback inner converte excecao em sucesso e Retry outer NAO retenta (counter==1 em vez de 3); (b) ResourceAccessException adicionada em retry-exceptions (prod + test) — RestClient empacota SocketTimeoutException nesse wrapper Spring; (c) WhatsAppPropertiesHappyPathTest assertion 5s -> 500ms para refletir test profile. Pronto para Wave 5 (PLAN 03-05 — MensagemAsyncListener integrando MetaMediaClient + ErpCallbackClient + @Async listener consumindo MensagemPersistidaEvent).
+last_updated: "2026-05-05T21:37:00.000Z"
+last_activity: 2026-05-05 -- 03-04-PLAN.md completo (ErpCallbackClient + Resilience4j AOP empiricamente validado)
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 20
-  completed_plans: 17
-  percent: 85
+  completed_plans: 18
+  percent: 90
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Current Position
 
 Phase: 03 (roteamento-boundary-async) — EXECUTING
-Plan: 4 of 6
-Status: Executing Phase 03 (Wave 3 complete)
-Last activity: 2026-05-05 -- 03-03-PLAN.md completo (MetaMediaClient + MetaMediaClientTest 6 tests WireMock)
+Plan: 5 of 6
+Status: Executing Phase 03 (Wave 4 complete)
+Last activity: 2026-05-05 -- 03-04-PLAN.md completo (ErpCallbackClient + ErpCallbackClientTest 6 tests WireMock + Risk A6 RESOLVED)
 
-Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 3/6; Phases 1+2 awaiting verifier sign-off)
+Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 4/6; Phases 1+2 awaiting verifier sign-off)
 
 ## Performance Metrics
 
@@ -46,7 +46,7 @@ Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Pha
 |-------|-------|-------|----------|
 | 01 | 7/7 | ~60 min | ~8 min |
 | 02 | 7/7 | ~70 min | ~10 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m + Wave D MensagemService 6m30s + Wave E integration tests 9m) |
-| 03 | 3/6 | ~29 min | ~9.7 min (Wave 1 infra ~12min + Wave 2 tipos puros ~8min + Wave 3 MetaMediaClient ~9min) |
+| 03 | 4/6 | ~46 min | ~11.5 min (Wave 1 infra ~12min + Wave 2 tipos puros ~8min + Wave 3 MetaMediaClient ~9min + Wave 4 ErpCallbackClient ~17min com 3 Rule 1 fixes empiricos) |
 
 **Recent Trend:**
 
@@ -69,6 +69,7 @@ Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Pha
 | Phase 03 P01 | ~12min | 3 tasks | 7 files (2 created AsyncConfig + AsyncConfigSmokeTest; 5 mod: pom parent + api-whatsapp/pom + WhatsAppProperties + application.yml + application-test.yml; reator BUILD SUCCESS 113 tests verdes, zero regressao Phase 1+2) |
 | Phase 03 P02 | ~8min | 3 tasks | 6 files (6 created: MensagemPersistidaEvent record + ComandoCallbackDTO record + MetaMediaResultado record + MediaMetadataDTO Jackson POJO + ComandoExtractor service + ComandoExtractorTest 13 tests; reator BUILD SUCCESS 126 tests verdes, zero regressao Phase 1+2 + Wave 1) |
 | Phase 03 P03 | ~9min | 3 tasks | 5 files (2 created: MetaMediaClient + MetaMediaClientTest 6 tests WireMock; 3 modified: STATE.md + ROADMAP.md + REQUIREMENTS.md; reator BUILD SUCCESS 132 tests verdes (126 prev + 6 novos), zero regressao Phase 1+2 + Wave 1+2) |
+| Phase 03 P04 | ~17min | 3 tasks | 5 files (2 created: ErpCallbackClient + ErpCallbackClientTest 6 tests WireMock; 3 modified: application-test.yml + application.yml + WhatsAppPropertiesHappyPathTest; reator BUILD SUCCESS 138 tests verdes (132 prev + 6 novos), zero regressao; Risk A6 RESOLVED empiricamente; 3 Rule 1 fixes documentados em SUMMARY) |
 
 ## Accumulated Context
 
@@ -137,6 +138,11 @@ Recent decisions affecting current work:
 - [03-03]: `@SpringBootTest(classes = WhatsAppApplication.class)` em vez de `@SpringBootTest` sem qualifier — WhatsAppApplication tem `scanBasePackages` + `@EnableConfigurationProperties`. Sem qualifier, Spring busca via heuristica e potentialmente aceita config diferente da producao. Pattern alinhado com WhatsAppPropertiesHappyPathTest (Phase 1) e WebhookPersistenciaIntegrationTest (Phase 2).
 - [03-03]: `verify(0, getRequestedFor)` para short-circuit assertions — count == 0 em URL nao chamada confirma controle de fluxo curto-circuitou. Em `quatrocentos_quatro_step_1`, garante que step 2 nao foi tentado. Mais explicito que checar log mensagens. Counter == 1 em 5xx test valida indiretamente A6 (sem retry).
 - [03-03]: `getAllServeEvents().forEach` para regression test C-14 — percorre TODAS requests recebidas pelo WireMock + assertion `.doesNotContain("access_token=")` em cada URL. Mais robusto que `verify(0, getRequestedFor(urlMatching(".*[?&]access_token=.*")))` que dependeria de matcher regex correto. forEach valida em LISTA, captura qualquer query param novo que vazasse.
+- [03-04]: **Risk A6 (Resilience4j AOP no-op silencioso) RESOLVED empiricamente** — test `cinquecentos_recupera_counter_3` (WireMock scenario state 500->500->200) confirmou counter == 3, provando que `@Retry` esta sendo interceptado por `RetryAspect` do Spring AOP. spring-boot-starter-aop:3.5.9 + aspectjweaver:1.9.25.1 + resilience4j-spring-boot3:2.2.0 funcionam juntos em api-whatsapp.
+- [03-04]: **fallbackMethod localizado em @Retry (outer aspect), NAO em @CircuitBreaker (inner)** — gotcha critico do Resilience4j Spring AOP. Quando ambas annotations coexistem na mesma method e fallback fica no INNER (CircuitBreaker, order LOWEST_PRECEDENCE-2), o fallback inner converte excecao em retorno void de sucesso ANTES da OUTER (Retry, order LOWEST_PRECEDENCE-3) ver o erro — Retry recebe "sucesso" e nao retenta. Solucao: por fallbackMethod no @Retry. CircuitBreaker inner continua contando attempts no sliding-window. Bug descoberto empiricamente: counter==1 em vez de 3 na primeira execucao. Rule 1 fix documentado em ErpCallbackClient.java Javadoc para futuros leitores.
+- [03-04]: **ResourceAccessException explicita em retry-exceptions (prod + test)** — Spring `RestClient.retrieve().toBodilessEntity()` empacota `SocketTimeoutException` em `ResourceAccessException("Could not retrieve response status code: ...")`. Sem este entry, timeouts NAO retentariam mesmo com SocketTimeoutException listado (Resilience4j compara via `instanceof`). Adicionado em ambos application.yml para paridade prod-correto. Empiricamente descoberto via test `timeout_retry_e_fallback`.
+- [03-04]: callbackTimeout 500ms no test profile (vs 5s default prod) — necessario para `timeout_retry_e_fallback` em <5s. WhatsAppPropertiesHappyPathTest assertion ajustada para refletir test profile (5s -> 500ms). Default-prod imutavel via field initializer `Duration.ofSeconds(5)` em WhatsAppProperties.java.
+- [03-04]: @BeforeEach `cbRegistry.find("erp-callback").ifPresent(CircuitBreaker::reset)` mitiga Risk A3 (CB shared state Singleton) — antes de cada test, CB volta a CLOSED + sliding-window zerado. Necessario porque circuit_open_apos_falhas_repetidas deixa CB em OPEN e proximos tests precisam comecar em CLOSED.
 
 ### Pending Todos
 
