@@ -45,7 +45,14 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   3. Telefone `+5547984178525` (DDD 47, Santa Catarina) e normalizado para `5547841 78525` no INSERT em `clientes_zap`; DDDs SP (11-19), RJ (21/22/24), ES (27/28) mantem o 9o digito
   4. `ClienteZapService.identificar(telefone)` cria registro com `id_cliente_erp=null` para telefones desconhecidos e segue o fluxo sem erro; numero mapeado retorna `idClienteErp` correto
   5. `ultima_mensagem_em` e atualizado com `NOW()` do banco em transacao `REQUIRES_NEW` separada — nao `Instant.now()` da JVM; garantia contra TOCTOU race com a trava 24h
-**Plans**: TBD
+**Plans**: 7 plans
+  - [x] 02-PLAN-01-entities-repos-skeleton-spike.md — STEP 0 spike OnConflictSpikeTest (gate Wave 1: H2 v2.3.232 NAO suporta ON CONFLICT — fallback save+catch acionado para Plan 03) + 3 entities JPA (ClienteZap, MensagemLog, MediaCache) + 3 repositories esqueleto + enum Direcao { in, out } lowercase + 7 TipoMensagem String constants
+  - [ ] 02-PLAN-02-telefone-br-utility.md — TelefoneBR.normalizar(String) utility puro (DDDs SP/RJ/ES mantem 9o digito, demais strip)
+  - [ ] 02-PLAN-03-idempotency-service.md — IdempotencyService com fallback save+catch DataIntegrityViolationException (RESEARCH §2.4 — Plan 01 spike validou que ON CONFLICT direto NAO funciona em H2)
+  - [ ] 02-PLAN-04-cliente-zap-service.md — ClienteZapService.identificar + atualizarUltimaMensagemEm REQUIRES_NEW + repository @Query custom
+  - [ ] 02-PLAN-05-webhook-payload-parser.md — Jackson parser do envelope Meta (text/button/list/document/desconhecido + statuses)
+  - [ ] 02-PLAN-06-mensagem-service-orquestrador.md — MensagemService.processarWebhook sincrono + WebhookController.POST integrado
+  - [ ] 02-PLAN-07-integration-tests-e2e.md — Integration tests E2E fechando os 5 ROADMAP success criteria
 **UI hint**: no
 
 ### Phase 3: Roteamento + Boundary Async

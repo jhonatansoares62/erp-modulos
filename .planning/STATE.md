@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-07-PLAN.md (Phase 1 complete — pronto para `/gsd-verify-phase 1`)
-last_updated: "2026-05-05T14:45:14.171Z"
-last_activity: 2026-05-05 -- Phase 02 execution started
+stopped_at: Completed 02-01-PLAN.md (entities + repos esqueleto + spike ON CONFLICT)
+last_updated: "2026-05-05T15:15:51.000Z"
+last_activity: 2026-05-05 -- Phase 02 Plan 01 complete (Wave 1 gate validado empiricamente)
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 14
-  completed_plans: 7
-  percent: 50
+  total_plans: 15
+  completed_plans: 8
+  percent: 53
 ---
 
 # Project State
@@ -26,25 +26,26 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Current Position
 
 Phase: 02 (persistencia-idempotencia) — EXECUTING
-Plan: 1 of 7
-Status: Executing Phase 02
-Last activity: 2026-05-05 -- Phase 02 execution started
+Plan: 2 of 7
+Status: Executing Phase 02 (Wave 1 complete; Wave 2 next — Plan 02 TelefoneBR utility ready to launch)
+Last activity: 2026-05-05 -- Phase 02 Plan 01 complete (entities + repos + spike ON CONFLICT empirically validated)
 
-Progress: [██████████] 100% (7/7 plans of Phase 01; 0/6 phases overall — Phase 1 awaiting verifier sign-off)
+Progress: [██████░░░░] 53% (1/7 plans of Phase 02; Phase 1 awaiting verifier sign-off)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 7
-- Average duration: ~8 min
-- Total execution time: ~60 min
+- Total plans completed: 8
+- Average duration: ~10 min
+- Total execution time: ~86 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 7/7 | ~60 min | ~8 min |
+| 02 | 1/7 | ~26 min | ~26 min (Wave 1 spike + 4 schema mismatch fixes Rule 3) |
 
 **Recent Trend:**
 
@@ -86,6 +87,9 @@ Recent decisions affecting current work:
 - [01-07]: @AutoConfigureMockMvc em vez de MockMvcBuilders.webAppContextSetup manual — descoberta empirica via Rule 1 (bug fix). webAppContextSetup NAO registra automaticamente FilterRegistrationBean em Spring 3.5.x; @AutoConfigureMockMvc respeita os filters. Padrao default para integration tests Phase 2+.
 - [01-07]: 10 cenarios em vez dos 7 do PLAN-07 — Rule 2 add coverage: sc4 toString masking smoke + d02 webhook publico de API key + /health bonus. Cada um cobre decisao arquitetural que poderia regredir silenciosamente sem teste explicito.
 - [01-07]: Phase 1 100% completa — 7/7 plans + 5/5 ROADMAP success criteria + 9/9 REQUIREMENTS satisfeitos. Reator inteiro 127 tests verdes em 27s, zero regressao em 6 modulos.
+- [02-01]: Spike OnConflictSpikeTest gate Wave 1 confirmou empiricamente que H2 v2.3.232 PG-mode NAO suporta `INSERT ... ON CONFLICT (col) DO NOTHING` (sintaxe Postgres-native). Plan 03 ira usar fallback save+catch DataIntegrityViolationException (RESEARCH §2.4) — UNIQUE constraint do banco e o gate atomico real. Spike fica como regression test permanente.
+- [02-01]: 4 desvios Rule 3 (blocking issues) em config Hibernate/H2: (1) `hibernate.default_schema=whatsapp` REMOVIDO — causava lookup whatsapp.information_schema.sequences; (2) JDBC URL test mudou DATABASE_TO_UPPER=false→DATABASE_TO_LOWER=TRUE — H2 system schema acessivel via lookup lowercase do Hibernate; (3) MediaCache.arquivoHash com columnDefinition="CHAR(64)"; (4) MensagemLog.conteudo com columnDefinition="TEXT" (sem @Lob — Hibernate inferia OID/CLOB). Reator 106 tests verdes, zero regressao.
+- [02-01]: TipoMensagem com 7 String constants (PLAN ditou) — STATUS, VIDEO ficaram fora; Plan 05 (parser) decide se precisa adicionar.
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T08:08:07.096Z
-Stopped at: Completed 01-07-PLAN.md (Phase 1 complete — pronto para `/gsd-verify-phase 1`)
-Resume file: None
+Last session: 2026-05-05T15:15:51.000Z
+Stopped at: Completed 02-01-PLAN.md (Wave 1 — entities + repos + spike ON CONFLICT). Pronto para Wave 2 (Plan 02 TelefoneBR utility) em paralelo com Wave 3 (Plan 03 IdempotencyService — usar fallback save+catch).
+Resume file: .planning/phases/02-persistencia-idempotencia/02-01-SUMMARY.md
