@@ -6,7 +6,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 
 ## Phases
 
-- [ ] **Phase 1: Fundacao HMAC + Webhook** - Estrutura do modulo, configuracao fail-fast, HMAC-SHA256 com eager body read, endpoint GET hub.challenge (plain text), POST webhook stub retornando 200, migrations Flyway V1-V4
+- [x] **Phase 1: Fundacao HMAC + Webhook** - Estrutura do modulo, configuracao fail-fast, HMAC-SHA256 com eager body read, endpoint GET hub.challenge (plain text), POST webhook stub retornando 200, migrations Flyway V1-V4
 - [ ] **Phase 2: Persistencia + Idempotencia** - Entidades JPA, repositorios, IdempotencyService com ON CONFLICT DO NOTHING, ClienteZapService com normalizacao de telefone BR, atualizacao REQUIRES_NEW de ultima_mensagem_em
 - [ ] **Phase 3: Roteamento + Boundary Async** - ErpCallbackClient, MessageRouter, MensagemService.processarAsync() integrando Phases 1+2, ack 200 antes do async fan-out, download eager de media entrante
 - [ ] **Phase 4: Outbound + Trava 24h + WhatsAppController** - WhatsAppCloudClient (texto/doc/botoes/lista, sem enviarTemplate), MediaCacheService, WindowEnforcementService (hard 409), endpoints internos ERP, log de saida
@@ -28,11 +28,11 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 **Plans**: 7 plans
   - [x] 01-PLAN-01-lib-shared-additional-public-paths.md — Estender ApiKeyFilter com construtor de 2 args (Set additionalPublicPaths) preservando backward-compat
   - [x] 01-PLAN-02-api-whatsapp-skeleton.md — Bootstrap esqueleto Maven do modulo api-whatsapp (pom + WhatsAppApplication + application.yml minimo)
-  - [ ] 01-PLAN-03-properties-fail-fast.md — WhatsAppProperties com 5 @NotBlank + Bean Validation fail-fast + toString mascarado + application-test.yml
+  - [x] 01-PLAN-03-properties-fail-fast.md — WhatsAppProperties com 5 @NotBlank + Bean Validation fail-fast + toString mascarado + application-test.yml
   - [x] 01-PLAN-04-flyway-migrations-v1-v4.md — Migrations Flyway V1-V4 (clientes_zap, mensagens_log, media_cache, estado_conversa) + datasource Postgres/H2
-  - [ ] 01-PLAN-05-hmac-validator-cached-body.md — HmacValidator pure function + CachedBodyHttpServletRequest com eager body read
-  - [ ] 01-PLAN-06-hmac-filter-security-config-webhook-controller.md — HmacSignatureFilter + SecurityConfig + WebhookController (GET handshake plain text, POST stub) + HealthController
-  - [ ] 01-PLAN-07-integration-tests.md — Integration tests MockMvc end-to-end fechando os 5 ROADMAP success criteria
+  - [x] 01-PLAN-05-hmac-validator-cached-body.md — HmacValidator pure function + CachedBodyHttpServletRequest com eager body read
+  - [x] 01-PLAN-06-hmac-filter-security-config-webhook-controller.md — HmacSignatureFilter + SecurityConfig + WebhookController (GET handshake plain text, POST stub) + HealthController
+  - [x] 01-PLAN-07-integration-tests.md — Integration tests MockMvc end-to-end fechando os 5 ROADMAP success criteria
 **UI hint**: no
 
 ### Phase 2: Persistencia + Idempotencia
@@ -106,7 +106,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundacao HMAC + Webhook | 6/7 | In Progress|  |
+| 1. Fundacao HMAC + Webhook | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
 | 2. Persistencia + Idempotencia | 0/TBD | Not started | - |
 | 3. Roteamento + Boundary Async | 0/TBD | Not started | - |
 | 4. Outbound + Trava 24h + WhatsAppController | 0/TBD | Not started | - |

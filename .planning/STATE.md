@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-06-PLAN.md
-last_updated: "2026-05-05T07:38:57.601Z"
+stopped_at: Completed 01-07-PLAN.md (Phase 1 complete)
+last_updated: "2026-05-05T07:50:00.000Z"
 last_activity: 2026-05-05
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 6
-  percent: 86
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -25,37 +25,38 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Current Position
 
-Phase: 01 (fundacao-hmac-webhook) — EXECUTING
-Plan: 7 of 7 (next)
-Status: Ready to execute
+Phase: 01 (fundacao-hmac-webhook) — COMPLETE
+Plan: 7 of 7 (DONE)
+Status: Phase 1 complete — pronto para `/gsd-verify-phase 1` e `/gsd-transition`
 Last activity: 2026-05-05
 
-Progress: [██████░░░░] 57% (4/7 plans of Phase 01; 0/6 phases overall)
+Progress: [██████████] 100% (7/7 plans of Phase 01; 0/6 phases overall — Phase 1 awaiting verifier sign-off)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 4
-- Average duration: ~7 min
-- Total execution time: ~28 min
+- Total plans completed: 7
+- Average duration: ~8 min
+- Total execution time: ~60 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01 | 4/7 | ~28 min | ~7 min |
+| 01 | 7/7 | ~60 min | ~8 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01 (3 min), 01-02 (4 min), 01-03 (9 min), 01-04 (12 min)
-- Trend: scope crescente — Wave 4 com spike empirico + 6 tests + 2 yml + 4 SQL ainda em <15min
+- Last 5 plans: 01-03 (9 min), 01-04 (12 min), 01-05 (10 min), 01-06 (7 min), 01-07 (8 min)
+- Trend: scope crescente nos primeiros (Wave 4 spike + migrations), depois estavel ~7-10min por wave
 
 *Updated after each plan completion*
 | Phase 01 P03 | 9min | 6 tasks | 5 files |
 | Phase 01 P04 | 12min | 8 tasks (1 spike + 7 dev) | 9 files (4 SQL + 1 test + 2 yml + 1 SUMMARY + 1 .gitkeep delete) |
-| Phase 01-fundacao-hmac-webhook P05 | 10min | 4 tasks | 5 files |
+| Phase 01 P05 | 10min | 4 tasks | 5 files |
 | Phase 01 P06 | 7min | 5 tasks | 8 files |
+| Phase 01 P07 | 8min | 3 tasks | 2 files (1 test + 1 SUMMARY) |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Recent decisions affecting current work:
 - [Phase ?]: PLAN-06: ApiKeyFilter ordem HIGHEST_PRECEDENCE+10 (vs ordem 1 do RESEARCH) — explicita relacao de ordem com HMAC
 - [Phase ?]: PLAN-06: @ActiveProfiles('test') em WebMvcTest necessario porque WhatsAppApplication ativa @EnableConfigurationProperties
 - [Phase ?]: PLAN-06: @RequestParam('hub.mode') com ponto literal funciona em Spring 3.5.9 (Assumption A4 RESEARCH resolvida)
+- [01-07]: @AutoConfigureMockMvc em vez de MockMvcBuilders.webAppContextSetup manual — descoberta empirica via Rule 1 (bug fix). webAppContextSetup NAO registra automaticamente FilterRegistrationBean em Spring 3.5.x; @AutoConfigureMockMvc respeita os filters. Padrao default para integration tests Phase 2+.
+- [01-07]: 10 cenarios em vez dos 7 do PLAN-07 — Rule 2 add coverage: sc4 toString masking smoke + d02 webhook publico de API key + /health bonus. Cada um cobre decisao arquitetural que poderia regredir silenciosamente sem teste explicito.
+- [01-07]: Phase 1 100% completa — 7/7 plans + 5/5 ROADMAP success criteria + 9/9 REQUIREMENTS satisfeitos. Reator inteiro 127 tests verdes em 27s, zero regressao em 6 modulos.
 
 ### Pending Todos
 
@@ -94,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T07:38:57.596Z
-Stopped at: Completed 01-06-PLAN.md
+Last session: 2026-05-05T07:50:00.000Z
+Stopped at: Completed 01-07-PLAN.md (Phase 1 complete — pronto para `/gsd-verify-phase 1`)
 Resume file: None
