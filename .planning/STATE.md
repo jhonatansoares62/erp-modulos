@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-02-PLAN.md (Wave B — TelefoneBR.normalizar pure utility + 19 JUnit tests, 74 tests api-whatsapp aggregate verde). Wave B em curso paralelo (Plans 03 IdempotencyService + 05 WebhookPayloadParser).
-last_updated: "2026-05-05T15:35:17.751Z"
+stopped_at: Completed 02-04-PLAN.md (Wave C — ClienteZapService.identificar + atualizarUltimaMensagemEm REQUIRES_NEW + NOW(), 7 tests verdes, 95 tests api-whatsapp aggregate verde, commit f347de4). PER-05/PER-06/PER-07 fechados. Pronto para Plan 02-06 (MensagemService orquestrador).
+last_updated: "2026-05-05T16:10:00.000Z"
 last_activity: 2026-05-05
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 14
-  completed_plans: 11
-  percent: 79
+  completed_plans: 12
+  percent: 86
 ---
 
 # Project State
@@ -26,26 +26,26 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Current Position
 
 Phase: 02 (persistencia-idempotencia) — EXECUTING
-Plan: 5 of 7
-Status: Ready to execute
+Plan: 6 of 7
+Status: Ready to execute (Plan 02-06 MensagemService orquestrador — Wave D)
 Last activity: 2026-05-05
 
-Progress: [██████░░░░] 60% (2/7 plans of Phase 02; Phase 1 awaiting verifier sign-off)
+Progress: [███████░░░] 71% (5/7 plans of Phase 02; Phase 1 awaiting verifier sign-off)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 9
+- Total plans completed: 12
 - Average duration: ~10 min
-- Total execution time: ~89 min
+- Total execution time: ~113 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 7/7 | ~60 min | ~8 min |
-| 02 | 2/7 | ~29 min | ~14 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m) |
+| 02 | 5/7 | ~53 min | ~11 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m) |
 
 **Recent Trend:**
 
@@ -62,6 +62,7 @@ Progress: [██████░░░░] 60% (2/7 plans of Phase 02; Phase 1 a
 | Phase 02 P02 | 3min | 3 tasks | 2 files (1 utility + 1 test, 19 tests verdes) |
 | Phase 02 P03 | 720 | 2 tasks | 2 files |
 | Phase 02-persistencia-idempotencia P05 | 510 | 6 tasks | 24 files |
+| Phase 02 P04 | 24min | 3 tasks | 3 files (1 repo modificado + 1 service novo + 1 test novo, 7 tests verdes) |
 
 ## Accumulated Context
 
@@ -98,6 +99,11 @@ Recent decisions affecting current work:
 - [02-02]: Politica deliberada — algoritmo NAO adiciona 9o digito quando vier sem em SP/RJ/ES (numero pode ser fixo); DDD inexistente (99) ainda passa pelo Set lookup (algoritmo baseado em Set, nao validacao real de DDD). Documentado em testes ddd_inexistente_99_strip_9 e em RESEARCH risks.
 - [Phase ?]: Plan 02-03: IdempotencyService usa fallback save+catch DataIntegrityViolationException (UNIQUE wamid e o gate atomico portavel H2/PostgreSQL — decisao empirica do spike Wave 1)
 - [Phase ?]: Plan 02-03: Test de concorrencia com ExecutorService(2) + CountDownLatch start gate validou empiricamente truthCount==1 e rows==1 (pattern replicavel para Plan 04 ClienteZapService race em telefone UNIQUE)
+- [02-04]: ClienteZapService com `@Transactional(REQUIRES_NEW)` + native `UPDATE ... SET ultima_mensagem_em = NOW()` defende a trava 24h (Phase 4) contra TOCTOU race (PITFALLS C-01) — commit imediato visivel via 2a conexao do pool, NOW() do banco elimina clock skew JVM-DB. Test 6 valida via JdbcTemplate.queryForObject Timestamp.
+- [02-04]: Race protection em `identificar(telefone)` reusa exatamente o pattern do `IdempotencyService` (UNIQUE constraint como gate atomico portavel H2/PostgreSQL): try `repository.save` / catch `DataIntegrityViolationException` / re-fetch via `findByTelefone`. Validado por test 5 (2 threads + CountDownLatch → COUNT=1).
+- [02-04]: Cross-bean call obrigatorio para REQUIRES_NEW ativar proxy AOP — documentado em Javadoc do service. MensagemService (Plan 06) sera o caller cross-bean; self-call dentro do proprio service viraria no-op de propagation.
+- [02-04]: 2 desvios Rule 1 em test data: input do test 3 precisava prefixo "55" (sem ele, normalizar trata como nao-BR e early return) e input do test 5 do RESEARCH original (`+5599888777666`) tinha local comecando com 8, nao com 9 — corrigido para `+5599988777666` para ativar strip-9. Codigo do service permanece 100% per RESEARCH §7.1.
+- [02-04]: Hibernate `AssertionFailure: Entry for instance ... has a null identifier` no log da thread perdedora do race do test 5 e benigno (esperado, nao falha o test) — entity manager fica inconsistente apos DataIntegrityViolation, mas re-fetch funciona porque devolve snapshot lido. Documentado em SUMMARY como know-issue. Considerar isolar criarNovo em REQUIRES_NEW se virar problema operacional.
 
 ### Pending Todos
 
@@ -110,6 +116,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T15:35:07.856Z
-Stopped at: Completed 02-02-PLAN.md (Wave B — TelefoneBR.normalizar pure utility + 19 JUnit tests, 74 tests api-whatsapp aggregate verde). Wave B em curso paralelo (Plans 03 IdempotencyService + 05 WebhookPayloadParser).
+Last session: 2026-05-05T16:10:00.000Z
+Stopped at: Completed 02-04-PLAN.md (Wave C — ClienteZapService.identificar + atualizarUltimaMensagemEm REQUIRES_NEW + NOW() do banco, 7 tests verdes incluindo concorrencia + commit imediato visivel via 2a conexao JdbcTemplate, 95 tests api-whatsapp aggregate verde, commit f347de4). PER-05/PER-06/PER-07 todos Complete. Wave D pode comecar (Plan 02-06 MensagemService orquestrador).
 Resume file: None
