@@ -10,18 +10,32 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 public class ApiKeyFilter extends OncePerRequestFilter {
 
     private static final String API_KEY_HEADER = "X-API-Key";
-    private static final Set<String> PUBLIC_PATHS = Set.of("/health", "/api/info", "/swagger-ui", "/v3/api-docs");
+    private static final Set<String> DEFAULT_PUBLIC_PATHS =
+            Set.of("/health", "/api/info", "/swagger-ui", "/v3/api-docs");
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final String apiKey;
+    private final Set<String> publicPaths;
 
+    /** Construtor original — preservado para backward-compat. */
     public ApiKeyFilter(String apiKey) {
+        this(apiKey, Set.of());
+    }
+
+    /** Novo construtor — permite paths publicos adicionais por modulo (ex: /webhook do api-whatsapp). */
+    public ApiKeyFilter(String apiKey, Set<String> additionalPublicPaths) {
         this.apiKey = apiKey;
+        Set<String> merged = new HashSet<>(DEFAULT_PUBLIC_PATHS);
+        if (additionalPublicPaths != null) {
+            merged.addAll(additionalPublicPaths);
+        }
+        this.publicPaths = Set.copyOf(merged); // imutavel
     }
 
     @Override
@@ -49,6 +63,6 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     }
 
     private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+        return this.publicPaths.stream().anyMatch(path::startsWith);
     }
 }

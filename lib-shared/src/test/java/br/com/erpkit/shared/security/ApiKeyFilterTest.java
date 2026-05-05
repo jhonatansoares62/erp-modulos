@@ -9,6 +9,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.IOException;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -144,5 +145,98 @@ class ApiKeyFilterTest {
         filter.doFilter(request, response, chain);
 
         assertEquals(200, response.getStatus(), "Deve permitir acesso quando API Key e null");
+    }
+
+    // ==========================================================================
+    // Tests novos — construtor de 2 args com additionalPublicPaths (PLAN 01-01)
+    // ==========================================================================
+
+    @Test
+    @DisplayName("Construtor de 1 arg continua funcionando — regression")
+    void construtor_1_arg_continua_funcionando() throws ServletException, IOException {
+        // Regressao: garante que o construtor de 1 arg (usado por api-email/api-storage/api-consultas)
+        // ainda rejeita paths nao-publicos sem header X-API-Key.
+        ApiKeyFilter filter = new ApiKeyFilter(API_KEY);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/qualquer-coisa");
+        request.setRequestURI("/api/qualquer-coisa");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        assertEquals(401, response.getStatus(),
+                "Construtor 1-arg deve continuar rejeitando paths nao-publicos sem API Key");
+    }
+
+    @Test
+    @DisplayName("Construtor de 2 args permite path adicional como publico")
+    void construtor_2_args_permite_path_adicional_como_publico() throws ServletException, IOException {
+        // Cenario que habilita PLAN-06: api-whatsapp registra /webhook como path publico
+        // (validacao via HMAC, nao via API Key). Filter nao deve bloquear.
+        ApiKeyFilter filter = new ApiKeyFilter(API_KEY, Set.of("/webhook"));
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/webhook/whatsapp");
+        request.setRequestURI("/webhook/whatsapp");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        assertEquals(200, response.getStatus(),
+                "Path adicional /webhook/whatsapp deve passar sem X-API-Key (validado externamente via HMAC)");
+    }
+
+    @Test
+    @DisplayName("Construtor de 2 args com Set vazio comporta-se como 1-arg")
+    void construtor_2_args_com_set_vazio_comporta_se_como_1_arg() throws ServletException, IOException {
+        ApiKeyFilter filter = new ApiKeyFilter(API_KEY, Set.of());
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/qualquer-coisa");
+        request.setRequestURI("/api/qualquer-coisa");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        assertEquals(401, response.getStatus(),
+                "Set vazio nao deve adicionar paths publicos — comportamento identico ao 1-arg");
+    }
+
+    @Test
+    @DisplayName("Construtor de 2 args com null nao quebra e preserva defaults")
+    void construtor_2_args_com_null_nao_quebra() throws ServletException, IOException {
+        // null em additionalPublicPaths deve ser tratado como Set vazio (sem NPE).
+        ApiKeyFilter filter = new ApiKeyFilter(API_KEY, null);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/health");
+        request.setRequestURI("/health");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        assertEquals(200, response.getStatus(),
+                "Default path /health deve continuar publico mesmo com additionalPublicPaths null");
+    }
+
+    @Test
+    @DisplayName("additionalPublicPaths somam-se aos defaults — uniao, nao substituicao")
+    void additional_paths_somam_se_aos_defaults() throws ServletException, IOException {
+        // Garante que o construtor de 2 args faz UNIAO (DEFAULT_PUBLIC_PATHS + additional),
+        // nao substituicao. /health (default) e /webhook (additional) ambos devem passar.
+        ApiKeyFilter filter = new ApiKeyFilter(API_KEY, Set.of("/webhook"));
+
+        // Default path ainda funciona
+        MockHttpServletRequest reqHealth = new MockHttpServletRequest("GET", "/health");
+        reqHealth.setRequestURI("/health");
+        MockHttpServletResponse respHealth = new MockHttpServletResponse();
+        filter.doFilter(reqHealth, respHealth, new MockFilterChain());
+        assertEquals(200, respHealth.getStatus(),
+                "Default path /health deve continuar publico apos adicionar /webhook");
+
+        // Additional path tambem funciona
+        MockHttpServletRequest reqWebhook = new MockHttpServletRequest("POST", "/webhook/x");
+        reqWebhook.setRequestURI("/webhook/x");
+        MockHttpServletResponse respWebhook = new MockHttpServletResponse();
+        filter.doFilter(reqWebhook, respWebhook, new MockFilterChain());
+        assertEquals(200, respWebhook.getStatus(),
+                "Additional path /webhook/x deve ser publico (uniao com defaults)");
     }
 }
