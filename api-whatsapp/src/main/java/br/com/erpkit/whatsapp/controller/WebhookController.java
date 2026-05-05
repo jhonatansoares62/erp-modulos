@@ -1,6 +1,9 @@
 package br.com.erpkit.whatsapp.controller;
 
 import br.com.erpkit.whatsapp.config.WhatsAppProperties;
+import br.com.erpkit.whatsapp.service.MensagemService;
+import br.com.erpkit.whatsapp.web.CachedBodyHttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
@@ -22,11 +26,15 @@ import java.security.MessageDigest;
  *   <li>GET {@code /webhook/whatsapp} — handshake do Meta. Ecoa {@code hub.challenge}
  *       como {@code text/plain} (PITFALLS C-10). {@code verifyToken} comparado
  *       via {@link MessageDigest#isEqual(byte[], byte[])} em UTF-8 (consistencia
- *       com HMAC, custo zero).</li>
- *   <li>POST {@code /webhook/whatsapp} — stub minimo (D-04 do CONTEXT.md). HMAC
- *       ja foi validado pelo {@link br.com.erpkit.whatsapp.web.HmacSignatureFilter}
- *       (HIGHEST_PRECEDENCE). Retorna 200 imediato, sem parsing, sem log de body
- *       (Phase 2 substitui por parser + idempotency + dispatch async).</li>
+ *       com HMAC, custo zero). INALTERADO da Phase 1.</li>
+ *   <li>POST {@code /webhook/whatsapp} — Phase 2: delega ao
+ *       {@link MensagemService} (parse + idempotency + persist + atualiza
+ *       ultima_mensagem_em). HMAC ja validado pelo
+ *       {@link br.com.erpkit.whatsapp.web.HmacSignatureFilter}
+ *       (HIGHEST_PRECEDENCE) e body cacheado em
+ *       {@link CachedBodyHttpServletRequest}. Erro de parse ou runtime e
+ *       capturado e respondido com 200 (ack-first defensivo — PITFALLS C-05;
+ *       evita Meta retry storm em payload malformado).</li>
  * </ul>
  */
 @RestController
@@ -36,9 +44,11 @@ public class WebhookController {
     private static final Logger log = LoggerFactory.getLogger(WebhookController.class);
 
     private final WhatsAppProperties properties;
+    private final MensagemService mensagemService;
 
-    public WebhookController(WhatsAppProperties properties) {
+    public WebhookController(WhatsAppProperties properties, MensagemService mensagemService) {
         this.properties = properties;
+        this.mensagemService = mensagemService;
     }
 
     /**
@@ -51,6 +61,8 @@ public class WebhookController {
      * {@code @RequestParam}. Spring MVC suporta — sem o nome explicito,
      * {@code @RequestParam String hubMode} tentaria casar com nome de variavel
      * Java e falharia.
+     *
+     * <p><b>INALTERADO da Phase 1.</b>
      */
     @GetMapping(value = "/whatsapp", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> verificar(
@@ -74,17 +86,48 @@ public class WebhookController {
     }
 
     /**
-     * POST do Meta. HMAC ja validado pelo {@link br.com.erpkit.whatsapp.web.HmacSignatureFilter}
-     * (ordem {@code HIGHEST_PRECEDENCE}). Phase 1 = stub minimo.
+     * POST do Meta. Phase 2 substitui o stub da Phase 1: agora delega ao
+     * {@link MensagemService} (parse + idempotency + persist + atualizar
+     * ultima_mensagem_em). Sincrono em Phase 2 — Phase 3 vira {@code @Async}.
      *
-     * <p>Phase 2 substitui por: parse → idempotency check (wamid) → return 200
-     * → {@code @Async} dispatch para callback do ERP.
+     * <p>HMAC ja validado pelo
+     * {@link br.com.erpkit.whatsapp.web.HmacSignatureFilter}. Body cacheado
+     * em {@link CachedBodyHttpServletRequest}.
      *
-     * <p>NUNCA logar body — phone numbers, message content, PII.
+     * <p><b>Erro handling (ack-first defensivo, RESEARCH §10.2):</b> capturar
+     * excecao de parse e logar como ERROR; retornar 200 mesmo assim. Alinhamento
+     * com Phase 3 async (que NAO podera propagar pro Meta apos ack) + defesa
+     * contra Meta retry storm (PITFALLS C-05) — JSON malformado nao deve causar
+     * reentrega ad eternum. Trade-off: mascara bugs em producao em troca de
+     * estabilidade. Mitigacao: log.error com stack trace + Phase 6 pode adicionar
+     * metric counter.
      */
     @PostMapping("/whatsapp")
-    public ResponseEntity<Void> receber() {
-        log.debug("Webhook POST recebido com HMAC valido (stub Phase 1)");
+    public ResponseEntity<Void> receber(HttpServletRequest request) {
+        byte[] rawBody;
+        if (request instanceof CachedBodyHttpServletRequest cached) {
+            rawBody = cached.getCachedBody();
+        } else {
+            // Fallback defensivo — em runtime, HmacSignatureFilter (HIGHEST_PRECEDENCE)
+            // sempre embrulha o request em CachedBodyHttpServletRequest. Mas se o filter
+            // for desabilitado por config ou tests usarem MockMvc sem filter chain,
+            // este branch garante que getInputStream ainda funciona (defesa T-02-29).
+            log.warn("Request nao e CachedBodyHttpServletRequest — fallback para getInputStream");
+            try {
+                rawBody = request.getInputStream().readAllBytes();
+            } catch (IOException e) {
+                log.error("Erro lendo body do webhook (fallback)", e);
+                return ResponseEntity.ok().build();
+            }
+        }
+
+        try {
+            mensagemService.processarWebhook(rawBody);
+        } catch (IOException e) {
+            log.error("Erro parseando webhook do Meta — payload sera descartado", e);
+        } catch (RuntimeException e) {
+            log.error("Erro processando webhook — descartando", e);
+        }
         return ResponseEntity.ok().build();
     }
 }

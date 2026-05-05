@@ -1,9 +1,11 @@
 package br.com.erpkit.whatsapp.controller;
 
+import br.com.erpkit.whatsapp.service.MensagemService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -29,6 +31,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Validation rejeita placeholders vazios. {@code @TestPropertySource} sobrescreve
  * apenas {@code verifyToken} para casar com o valor esperado pelos testes.
  *
+ * <p><b>Phase 2 update:</b> {@link WebhookController} ganhou dependencia de
+ * {@link MensagemService} (Plan 02-06 orquestrador). {@code @WebMvcTest} so
+ * carrega o controller — entao o service e fornecido via {@code @MockBean}.
+ * Como o stub mock retorna {@code null}/no-op, o teste do POST continua
+ * validando apenas o contrato HTTP (200, body vazio); cobertura E2E do orquestrador
+ * fica em {@link br.com.erpkit.whatsapp.service.MensagemServiceTest} +
+ * {@link WebhookControllerIntegrationTest}.
+ *
  * <p>Foco: GET handshake (challenge plain text + 403 em token errado / mode errado),
  * POST stub minimo (200 vazio).
  */
@@ -39,6 +49,10 @@ class WebhookControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    /** Phase 2: WebhookController.POST delega ao MensagemService — mock para no-op em WebMvcTest. */
+    @MockBean
+    private MensagemService mensagemService;
 
     @Test
     @DisplayName("GET com mode=subscribe + verifyToken correto retorna 200 plain text com challenge")
