@@ -19,7 +19,7 @@ Requirements pra primeira release dos 2 modulos novos (`api-whatsapp` + `lib-wha
 
 ### Persistencia (schema, migrations, cliente)
 
-- [ ] **PER-01**: Schema PostgreSQL `whatsapp` criado pelo instalador (fora do escopo) e usado pelo modulo via `spring.datasource.url=...?currentSchema=whatsapp` ou `flyway.schemas=whatsapp`
+- [x] **PER-01**: Schema PostgreSQL `whatsapp` criado pelo instalador (fora do escopo) e usado pelo modulo via `spring.datasource.url=...?currentSchema=whatsapp` ou `flyway.schemas=whatsapp`
 - [ ] **PER-02**: Migration `V1__clientes_zap.sql` cria tabela `clientes_zap` com colunas: `id BIGSERIAL PK`, `id_cliente_erp BIGINT` (FK logica, sem constraint cross-schema), `telefone VARCHAR(20) UNIQUE NOT NULL`, `ultima_mensagem_em TIMESTAMP`, `criado_em TIMESTAMP DEFAULT NOW()`
 - [ ] **PER-03**: Migration `V2__mensagens_log.sql` cria `mensagens_log` com: `id BIGSERIAL PK`, `wamid VARCHAR(255) UNIQUE NOT NULL`, `telefone VARCHAR(20) NOT NULL`, `direcao VARCHAR(3) CHECK (direcao IN ('in','out'))`, `tipo VARCHAR(50)`, `conteudo TEXT`, `media_id VARCHAR(255)`, `criado_em TIMESTAMP DEFAULT NOW()`, indices em `telefone` e `criado_em`
 - [ ] **PER-04**: Migration `V3__media_cache.sql` cria `media_cache` com: `arquivo_hash CHAR(64) PK` (sha256 hex), `media_id VARCHAR(255) NOT NULL`, `criado_em TIMESTAMP DEFAULT NOW()`, `expira_em TIMESTAMP NOT NULL`

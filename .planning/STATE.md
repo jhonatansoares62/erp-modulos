@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 01 Wave 2 (PLAN-02) completa — esqueleto Maven api-whatsapp registrado no reator (7 modulos verdes). Pronto para Wave 3 (PLAN-03 WhatsAppProperties + @EnableConfigurationProperties)
-last_updated: "2026-05-05T06:50:21.151Z"
+stopped_at: Phase 01 Wave 4 (PLAN-04) completa — Flyway V1-V4 aplicadas no schema whatsapp + datasource (PG prod / H2 PG-mode test) + 6 tests novos no FlywayMigrationTest (api-whatsapp 13 tests; reator 87 verdes). Pronto para Wave 5 (PLAN-05 HmacValidator + CachedBodyHttpServletRequest)
+last_updated: "2026-05-05T07:07:00.000Z"
 last_activity: 2026-05-05
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 3
-  percent: 43
+  completed_plans: 4
+  percent: 57
 ---
 
 # Project State
@@ -26,33 +26,34 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Current Position
 
 Phase: 01 (fundacao-hmac-webhook) — EXECUTING
-Plan: 4 of 7 (next)
+Plan: 5 of 7 (next)
 Status: Ready to execute
 Last activity: 2026-05-05
 
-Progress: [█░░░░░░░░░] 28% (2/7 plans of Phase 01; 0/6 phases overall)
+Progress: [██████░░░░] 57% (4/7 plans of Phase 01; 0/6 phases overall)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 2
-- Average duration: ~3.5 min
-- Total execution time: ~7 min
+- Total plans completed: 4
+- Average duration: ~7 min
+- Total execution time: ~28 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01 | 2/7 | ~7 min | ~3.5 min |
+| 01 | 4/7 | ~28 min | ~7 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01 (3 min), 01-02 (4 min)
-- Trend: stable, esqueleto + lib-shared mods rapidos como esperado
+- Last 5 plans: 01-01 (3 min), 01-02 (4 min), 01-03 (9 min), 01-04 (12 min)
+- Trend: scope crescente — Wave 4 com spike empirico + 6 tests + 2 yml + 4 SQL ainda em <15min
 
 *Updated after each plan completion*
 | Phase 01 P03 | 9min | 6 tasks | 5 files |
+| Phase 01 P04 | 12min | 8 tasks (1 spike + 7 dev) | 9 files (4 SQL + 1 test + 2 yml + 1 SUMMARY + 1 .gitkeep delete) |
 
 ## Accumulated Context
 
@@ -68,6 +69,10 @@ Recent decisions affecting current work:
 - [Phase ?]: WhatsAppProperties: 5 @NotBlank em PT-BR nomeando env var literal + toString mascarando 3 secrets [REDACTED] (CFG-01/CFG-03)
 - [Phase ?]: Test split: WhatsAppPropertiesValidationTest (ApplicationContextRunner para 5 fail-fast + 1 toString) + WhatsAppPropertiesHappyPathTest (@SpringBootTest com WhatsAppApplication.class)
 - [Phase ?]: Fail-fast tests usam hasStackTraceContaining (nao hasMessageContaining) — msg PT-BR esta na BindValidationException root cause
+- [01-04]: BIGINT GENERATED ALWAYS AS IDENTITY (SQL ANSI) em vez de BIGSERIAL/AUTO_INCREMENT — empiricamente confirmado em H2 2.3.232 modo PostgreSQL via spike STEP 0 antes de comprometer 4 migrations
+- [01-04]: Spike empirico STEP 0 (5 min) ANTES de migrations descobriu 5 detalhes (case sensitivity INFORMATION_SCHEMA, INDEX_COLUMNS path, A3 mitigada, UNIQUE/CHECK ambos disparam DataAccessException)
+- [01-04]: 6 cenarios no FlywayMigrationTest (vs 3 do plan) — Rule 2 add coverage critica que o spike provou viavel: CHECK direcao + UNIQUE telefone + flyway_schema_history (auditoria empirica)
+- [01-04]: H2 in-memory MODE=PostgreSQL com 5 params criticos — DATABASE_TO_UPPER=false + CASE_INSENSITIVE_IDENTIFIERS=true + DB_CLOSE_DELAY=-1 + INIT=CREATE SCHEMA — preserva case do schema 'whatsapp' lowercase; INFORMATION_SCHEMA queries usam UPPERCASE para system tables, lowercase para valores comparados
 
 ### Pending Todos
 
@@ -80,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T06:49:37.642Z
-Stopped at: Phase 01 Wave 2 (PLAN-02) completa — esqueleto Maven api-whatsapp registrado no reator (7 modulos verdes). Pronto para Wave 3 (PLAN-03 WhatsAppProperties + @EnableConfigurationProperties)
+Last session: 2026-05-05T07:07:00.000Z
+Stopped at: Phase 01 Wave 4 (PLAN-04) completa — Flyway V1-V4 aplicadas no schema whatsapp em prod (PG 15) e test (H2 PG-mode); datasource ativo; 6 tests novos no FlywayMigrationTest; reator 87 verdes (zero regressao); spike STEP 0 confirmou A1/A3/A6 do RESEARCH empiricamente. Pronto para Wave 5 (PLAN-05 HmacValidator + CachedBodyHttpServletRequest).
 Resume file: None
