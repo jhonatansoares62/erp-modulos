@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 01 Wave 4 (PLAN-04) completa — Flyway V1-V4 aplicadas no schema whatsapp em prod (PG 15) e test (H2 PG-mode); datasource ativo; 6 tests novos no FlywayMigrationTest; reator 87 verdes (zero regressao); spike STEP 0 confirmou A1/A3/A6 do RESEARCH empiricamente. Pronto para Wave 5 (PLAN-05 HmacValidator + CachedBodyHttpServletRequest).
-last_updated: "2026-05-05T07:23:44.283Z"
+stopped_at: Completed 01-06-PLAN.md
+last_updated: "2026-05-05T07:38:57.601Z"
 last_activity: 2026-05-05
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Current Position
 
 Phase: 01 (fundacao-hmac-webhook) — EXECUTING
-Plan: 6 of 7 (next)
+Plan: 7 of 7 (next)
 Status: Ready to execute
 Last activity: 2026-05-05
 
@@ -55,6 +55,7 @@ Progress: [██████░░░░] 57% (4/7 plans of Phase 01; 0/6 phase
 | Phase 01 P03 | 9min | 6 tasks | 5 files |
 | Phase 01 P04 | 12min | 8 tasks (1 spike + 7 dev) | 9 files (4 SQL + 1 test + 2 yml + 1 SUMMARY + 1 .gitkeep delete) |
 | Phase 01-fundacao-hmac-webhook P05 | 10min | 4 tasks | 5 files |
+| Phase 01 P06 | 7min | 5 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,10 @@ Recent decisions affecting current work:
 - [Phase ?]: PLAN-05: HmacValidator pure function + CachedBodyHttpServletRequest utility wrapper (split per CONTEXT D-01)
 - [Phase ?]: PLAN-05: MessageDigest.isEqual constant-time + UTF-8 hardcoded enderecam PITFALLS C-02/C-03/C-04 por design (gates de grep enforce)
 - [Phase ?]: PLAN-05: getCachedBody retorna .clone() defensivo (Rule 2) — beneficio de imutabilidade > custo de alocacao para webhook <10KB
+- [Phase ?]: PLAN-06: Pacote web/ consistente com Wave 5 — HmacSignatureFilter co-localizado com CachedBodyHttpServletRequest
+- [Phase ?]: PLAN-06: ApiKeyFilter ordem HIGHEST_PRECEDENCE+10 (vs ordem 1 do RESEARCH) — explicita relacao de ordem com HMAC
+- [Phase ?]: PLAN-06: @ActiveProfiles('test') em WebMvcTest necessario porque WhatsAppApplication ativa @EnableConfigurationProperties
+- [Phase ?]: PLAN-06: @RequestParam('hub.mode') com ponto literal funciona em Spring 3.5.9 (Assumption A4 RESEARCH resolvida)
 
 ### Pending Todos
 
@@ -89,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T07:22:56.387Z
-Stopped at: Phase 01 Wave 4 (PLAN-04) completa — Flyway V1-V4 aplicadas no schema whatsapp em prod (PG 15) e test (H2 PG-mode); datasource ativo; 6 tests novos no FlywayMigrationTest; reator 87 verdes (zero regressao); spike STEP 0 confirmou A1/A3/A6 do RESEARCH empiricamente. Pronto para Wave 5 (PLAN-05 HmacValidator + CachedBodyHttpServletRequest).
+Last session: 2026-05-05T07:38:57.596Z
+Stopped at: Completed 01-06-PLAN.md
 Resume file: None
