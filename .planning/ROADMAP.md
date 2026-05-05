@@ -65,7 +65,13 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   3. Timeout ou 5xx do ERP callback produz `log.error` estruturado e encerra o fluxo sem retentar nem enviar resposta ao cliente — ERP pode ter executado parcialmente
   4. Media entrante (cliente enviou documento/imagem) tem URL Meta baixada e bytes guardados como **primeira** acao async apos o ack 200 — URL Meta expira em 5 minutos; miss de 404 e logado como WARN, mensagem e persistida sem bytes
   5. Dois webhooks identicos (mesmo wamid) disparados simultaneamente resultam em exatamente 1 callback ao ERP — row-count do `ON CONFLICT DO NOTHING` e o gate de dispatch
-**Plans**: TBD
+**Plans**: 6 plans
+  - [ ] 03-01-PLAN.md — Setup Resilience4j + AsyncConfig + @EnableAsync + application.yml + metaApiBaseUrl
+  - [ ] 03-02-PLAN.md — MensagemPersistidaEvent + ComandoExtractor + ComandoCallbackDTO + MetaMediaResultado + MediaMetadataDTO
+  - [ ] 03-03-PLAN.md — MetaMediaClient (2-step Graph API + WireMock tests)
+  - [ ] 03-04-PLAN.md — ErpCallbackClient com @CircuitBreaker + @Retry Resilience4j (counter assertions validam AOP)
+  - [ ] 03-05-PLAN.md — MensagemAsyncListener + refactor MensagemService fast-path (@Transactional + publishEvent)
+  - [ ] 03-06-PLAN.md — Integration tests E2E (5 SC) + AsyncTestConfig + reabilitar Phase 2 + ROADMAP closeout
 **UI hint**: no
 
 ### Phase 4: Outbound + Trava 24h + WhatsAppController
@@ -115,7 +121,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 |-------|----------------|--------|-----------|
 | 1. Fundacao HMAC + Webhook | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
 | 2. Persistencia + Idempotencia | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
-| 3. Roteamento + Boundary Async | 0/TBD | Not started | - |
+| 3. Roteamento + Boundary Async | 0/6 | Planning complete | - |
 | 4. Outbound + Trava 24h + WhatsAppController | 0/TBD | Not started | - |
 | 5. lib-whatsapp-client | 0/TBD | Not started | - |
 | 6. Qualidade — Testes + OpenAPI + RUNBOOK | 0/TBD | Not started | - |
