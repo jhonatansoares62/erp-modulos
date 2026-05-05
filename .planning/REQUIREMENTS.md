@@ -119,65 +119,75 @@ Exclusoes explicitas — anti-features do FEATURES.md research e boundaries cros
 
 ## Traceability
 
-Mapeamento requirement → fase. Preenchido pelo gsd-roadmapper na proxima etapa.
+Mapeamento requirement → fase. Preenchido pelo gsd-roadmapper.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WEB-01 | TBD | Pending |
-| WEB-02 | TBD | Pending |
-| WEB-03 | TBD | Pending |
-| WEB-04 | TBD | Pending |
-| WEB-05 | TBD | Pending |
-| WEB-06 | TBD | Pending |
-| WEB-07 | TBD | Pending |
-| PER-01 | TBD | Pending |
-| PER-02 | TBD | Pending |
-| PER-03 | TBD | Pending |
-| PER-04 | TBD | Pending |
-| PER-05 | TBD | Pending |
-| PER-06 | TBD | Pending |
-| PER-07 | TBD | Pending |
-| OUT-01 | TBD | Pending |
-| OUT-02 | TBD | Pending |
-| OUT-03 | TBD | Pending |
-| OUT-04 | TBD | Pending |
-| OUT-05 | TBD | Pending |
-| OUT-06 | TBD | Pending |
-| OUT-07 | TBD | Pending |
-| OUT-08 | TBD | Pending |
-| OUT-09 | TBD | Pending |
-| OUT-10 | TBD | Pending |
-| OUT-11 | TBD | Pending |
-| ROU-01 | TBD | Pending |
-| ROU-02 | TBD | Pending |
-| ROU-03 | TBD | Pending |
-| ROU-04 | TBD | Pending |
-| ROU-05 | TBD | Pending |
-| LIB-01 | TBD | Pending |
-| LIB-02 | TBD | Pending |
-| LIB-03 | TBD | Pending |
-| LIB-04 | TBD | Pending |
-| LIB-05 | TBD | Pending |
-| LIB-06 | TBD | Pending |
-| LIB-07 | TBD | Pending |
-| LIB-08 | TBD | Pending |
-| CFG-01 | TBD | Pending |
-| CFG-02 | TBD | Pending |
-| CFG-03 | TBD | Pending |
-| CFG-04 | TBD | Pending |
-| QA-01 | TBD | Pending |
-| QA-02 | TBD | Pending |
-| QA-03 | TBD | Pending |
-| QA-04 | TBD | Pending |
-| QA-05 | TBD | Pending |
-| QA-06 | TBD | Pending |
-| QA-07 | TBD | Pending |
+| WEB-01 | Phase 1 | Pending |
+| WEB-02 | Phase 1 | Pending |
+| WEB-03 | Phase 1 | Pending |
+| WEB-04 | Phase 1 | Pending |
+| WEB-05 | Phase 2 | Pending |
+| WEB-06 | Phase 2 | Pending |
+| WEB-07 | Phase 2 | Pending |
+| PER-01 | Phase 1 | Pending |
+| PER-02 | Phase 2 | Pending |
+| PER-03 | Phase 2 | Pending |
+| PER-04 | Phase 2 | Pending |
+| PER-05 | Phase 2 | Pending |
+| PER-06 | Phase 2 | Pending |
+| PER-07 | Phase 2 | Pending |
+| OUT-01 | Phase 4 | Pending |
+| OUT-02 | Phase 4 | Pending |
+| OUT-03 | Phase 4 | Pending |
+| OUT-04 | Phase 4 | Pending |
+| OUT-05 | Phase 4 | Pending |
+| OUT-06 | Phase 4 | Pending |
+| OUT-07 | Phase 4 | Pending |
+| OUT-08 | Phase 4 | Pending |
+| OUT-09 | Phase 4 | Pending |
+| OUT-10 | Phase 4 | Pending |
+| OUT-11 | Phase 4 | Pending |
+| ROU-01 | Phase 3 | Pending |
+| ROU-02 | Phase 3 | Pending |
+| ROU-03 | Phase 3 | Pending |
+| ROU-04 | Phase 3 | Pending |
+| ROU-05 | Phase 3 | Pending |
+| LIB-01 | Phase 5 | Pending |
+| LIB-02 | Phase 5 | Pending |
+| LIB-03 | Phase 5 | Pending |
+| LIB-04 | Phase 5 | Pending |
+| LIB-05 | Phase 5 | Pending |
+| LIB-06 | Phase 5 | Pending |
+| LIB-07 | Phase 5 | Pending |
+| LIB-08 | Phase 5 | Pending |
+| CFG-01 | Phase 1 | Pending |
+| CFG-02 | Phase 1 | Pending |
+| CFG-03 | Phase 1 | Pending |
+| CFG-04 | Phase 1 | Pending |
+| QA-01 | Phase 6 | Pending |
+| QA-02 | Phase 6 | Pending |
+| QA-03 | Phase 6 | Pending |
+| QA-04 | Phase 6 | Pending |
+| QA-05 | Phase 6 | Pending |
+| QA-06 | Phase 6 | Pending |
+| QA-07 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 49 total
-- Mapped to phases: 0 (will be filled by gsd-roadmapper)
-- Unmapped: 49 ⚠️ (expected at this stage)
+- Mapped to phases: 49/49
+- Unmapped: 0
+
+| Phase | Requirements | Count |
+|-------|-------------|-------|
+| Phase 1 | WEB-01, WEB-02, WEB-03, WEB-04, PER-01, CFG-01, CFG-02, CFG-03, CFG-04 | 9 |
+| Phase 2 | WEB-05, WEB-06, WEB-07, PER-02, PER-03, PER-04, PER-05, PER-06, PER-07 | 9 |
+| Phase 3 | ROU-01, ROU-02, ROU-03, ROU-04, ROU-05 | 5 |
+| Phase 4 | OUT-01, OUT-02, OUT-03, OUT-04, OUT-05, OUT-06, OUT-07, OUT-08, OUT-09, OUT-10, OUT-11 | 11 |
+| Phase 5 | LIB-01, LIB-02, LIB-03, LIB-04, LIB-05, LIB-06, LIB-07, LIB-08 | 8 |
+| Phase 6 | QA-01, QA-02, QA-03, QA-04, QA-05, QA-06, QA-07 | 7 |
+| **Total** | | **49** |
 
 ---
 *Requirements defined: 2026-05-05*
-*Last updated: 2026-05-05 after research synthesis (5 docs / 1938 lines integrated)*
+*Last updated: 2026-05-05 — traceability preenchida pelo gsd-roadmapper (49/49 mapeados, 6 fases)*
