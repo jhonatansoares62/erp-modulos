@@ -24,6 +24,7 @@
         <module>api-email</module>
         <module>api-storage</module>
         <module>api-consultas</module>
+        <module>api-whatsapp</module>
     </modules>
 
     <properties>

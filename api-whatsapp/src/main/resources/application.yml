@@ -1,0 +1,45 @@
+# api-whatsapp/src/main/resources/application.yml
+#
+# PLAN-02 (Wave 2 da Phase 1): config minima para boot vazio.
+# PLAN-03 expande com app.modulos.whatsapp.{phoneNumberId, accessToken, appSecret, verifyToken, callbackUrl}.
+# PLAN-04 adiciona spring.datasource + spring.jpa + spring.flyway e application-test.yml com H2.
+#
+# IMPORTANTE: o bloco `spring.autoconfigure.exclude` abaixo e TEMPORARIO desta wave —
+# spring-boot-starter-data-jpa esta no classpath (per pom.xml) mas ainda nao ha datasource
+# configurado nem migrations. Sem essa exclusao, Spring Boot tenta auto-configurar
+# Hibernate/Flyway no boot e falha. PLAN-04 REMOVE essas 3 linhas quando datasource real entrar.
+server:
+  port: ${SERVER_PORT:9193}
+  tomcat:
+    accesslog:
+      # Defesa em profundidade (PITFALLS C-11): query string com hub.verify_token
+      # nao deve ser logada nos access logs.
+      enabled: false
+
+spring:
+  application:
+    name: api-whatsapp
+
+  # PLAN-02 only — removed in PLAN-04 when application-test.yml + H2 entram
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+
+# OpenAPI / Swagger UI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    br.com.erpkit.whatsapp: INFO
+    org.springframework.web: INFO
+
+# Modulo: configuracao base (5 secrets WhatsApp entram em PLAN-03)
+modulo:
+  versao: 1.0.0
+  api-key: ${API_KEY:}
