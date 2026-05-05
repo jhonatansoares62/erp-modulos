@@ -39,6 +39,9 @@ public class WhatsAppProperties {
     /** Timeout do callback ao ERP (Phase 3+). Default 5s. */
     private Duration callbackTimeout = Duration.ofSeconds(5);
 
+    /** Base URL da Graph API do Meta (override em tests). Default v22.0. */
+    private String metaApiBaseUrl = "https://graph.facebook.com/v22.0";
+
     public String getPhoneNumberId() {
         return phoneNumberId;
     }
@@ -87,6 +90,14 @@ public class WhatsAppProperties {
         this.callbackTimeout = callbackTimeout;
     }
 
+    public String getMetaApiBaseUrl() {
+        return metaApiBaseUrl;
+    }
+
+    public void setMetaApiBaseUrl(String metaApiBaseUrl) {
+        this.metaApiBaseUrl = metaApiBaseUrl;
+    }
+
     @Override
     public String toString() {
         return "WhatsAppProperties{phoneNumberId=" + phoneNumberId
@@ -94,6 +105,7 @@ public class WhatsAppProperties {
                 + ", appSecret=[REDACTED]"
                 + ", verifyToken=[REDACTED]"
                 + ", erpCallbackUrl=" + erpCallbackUrl
-                + ", callbackTimeout=" + callbackTimeout + "}";
+                + ", callbackTimeout=" + callbackTimeout
+                + ", metaApiBaseUrl=" + metaApiBaseUrl + "}";
     }
 }

@@ -72,6 +72,13 @@ spring:
     default-schema: whatsapp
     create-schemas: true
 
+  # Spring HTTP client global timeout — defesa em profundidade para MetaMediaClient
+  # (sem Resilience4j proprio). RestClient pode ainda override per-instance.
+  http:
+    client:
+      connect-timeout: 5s
+      read-timeout: 10s
+
 # Modulo: configuracao especifica do WhatsApp — fail-fast se faltar qualquer um dos 5 secrets.
 # Placeholders com colon vazio (${VAR:}) resolvem para string vazia se a env var nao
 # estiver setada — string vazia falha @NotBlank em WhatsAppProperties (CFG-01/CFG-02).
@@ -84,6 +91,7 @@ app:
       verifyToken: ${WHATSAPP_VERIFY_TOKEN:}
       erpCallbackUrl: ${WHATSAPP_ERP_CALLBACK_URL:}
       callbackTimeout: ${WHATSAPP_CALLBACK_TIMEOUT:5s}
+      metaApiBaseUrl: ${WHATSAPP_META_API_BASE_URL:https://graph.facebook.com/v22.0}
 
 # API key de endpoints internos do ERP (Phase 4) — webhook e publico, validado por HMAC
 modulo:
@@ -117,3 +125,35 @@ management:
         - accessToken
         - appSecret
         - verifyToken
+
+# Resilience4j: circuit breaker + retry para ErpCallbackClient (D-03 + ROU-03 + ROU-04).
+#
+# Aspect order (Resilience4j Spring Boot starter): Retry POR FORA de CircuitBreaker.
+# Significa: 1 dispatch falho = 3 retries (com backoff 1s/2s/4s) = 3 calls counted
+# pelo CB sliding-window. 4 dispatches falhos consecutivos = 12 calls = circuit aberto.
+#
+# retry-exceptions: APENAS transient errors. NAO 4xx categoricos (400/401/403/404 etc.)
+# — esses indicam bug de configuracao no ERP, nao falha temporaria; retry duplicaria
+# side effect (PITFALLS C-05 / ROU-03 D-08).
+resilience4j:
+  circuitbreaker:
+    instances:
+      erp-callback:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: false  # Phase 6 pode habilitar via actuator
+  retry:
+    instances:
+      erp-callback:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2.0
+        retry-exceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.net.SocketTimeoutException
+          - java.io.IOException
+        # 4xx categoricos NAO em retry-exceptions — Resilience4j por default NAO retenta
+        # excecoes nao listadas. HttpClientErrorException (4xx) NAO retenta.

@@ -59,6 +59,12 @@ spring:
     default-schema: whatsapp
     create-schemas: true
 
+  # Timeouts globais curtos para tests rapidos (defesa em profundidade para MetaMediaClient).
+  http:
+    client:
+      connect-timeout: 200ms
+      read-timeout: 500ms
+
 # Dummy values para Bean Validation passar sem env vars reais. Tests que precisem
 # de valores reais (ex: HmacValidatorTest com appSecret real em PLAN-05) podem
 # sobrescrever via @SpringBootTest(properties = {...}) ou @TestPropertySource.
@@ -71,7 +77,30 @@ app:
       verifyToken: test-verify-token
       erpCallbackUrl: http://localhost:0/test
       callbackTimeout: 5s
+      # Override para tests — placeholder substituido por WireMock URL via @DynamicPropertySource em Wave 3.
+      metaApiBaseUrl: http://localhost:0/test
 
 modulo:
   versao: 1.0.0-test
   api-key: test-key
+
+# Resilience4j com janelas curtas para tests (Wave 4 alguns tests podem precisar override per-class).
+resilience4j:
+  circuitbreaker:
+    instances:
+      erp-callback:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 1s
+        permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      erp-callback:
+        max-attempts: 3
+        wait-duration: 50ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2.0
+        retry-exceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - java.net.SocketTimeoutException
+          - java.io.IOException
