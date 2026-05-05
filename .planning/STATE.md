@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
+status: executing
 stopped_at: Completed 02-07-PLAN.md (Wave E final — WebhookPersistenciaIntegrationTest com 13 tests E2E SpringBootTest+MockMvc+JdbcTemplate cobrindo 5 SC ROADMAP + 2 bonus, 112 tests api-whatsapp aggregate verde, reator 7 modulos BUILD SUCCESS, ROADMAP Phase 2 [x] Complete + Plans TBD->7 com index, commit ab60b1b). **Phase 2 100% completa — 7/7 plans + 5/5 SC + 9/9 reqs satisfeitos.** Pronto para gsd-verify-phase de Phase 2 OU inicio de Phase 3 (ROU-01..05 async boundary; planning/research necessario antes de execute-phase).
-last_updated: "2026-05-05T18:34:07.006Z"
-last_activity: 2026-05-05
+last_updated: "2026-05-05T19:18:54.757Z"
+last_activity: 2026-05-05 -- Phase 03 execution started
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 14
+  total_plans: 20
   completed_plans: 14
-  percent: 100
+  percent: 70
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Modulos reaproveitaveis entre ERPs ERPKit, sem custo operacional recorrente com terceiros — Modulo WhatsApp: custo zero de Meta garantido por design, nao por disciplina
-**Current focus:** Phase 02 — persistencia-idempotencia
+**Current focus:** Phase 03 — roteamento-boundary-async
 
 ## Current Position
 
-Phase: 02 (persistencia-idempotencia) — COMPLETE (awaiting verifier)
-Plan: 7 of 7 (DONE)
-Status: Phase 2 fechada — 5/5 SC ROADMAP + 9/9 reqs WEB-05..07 + PER-02..07 satisfeitos. Pronto para gsd-verify-phase de Phase 2 OU inicio de Phase 3 (Roteamento + Boundary Async, ROU-01..05).
-Last activity: 2026-05-05
+Phase: 03 (roteamento-boundary-async) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 03
+Last activity: 2026-05-05 -- Phase 03 execution started
 
 Progress: [██████████] 100% (7/7 plans of Phase 02 + 7/7 Phase 01; Phases 1+2 awaiting verifier sign-off)
 
