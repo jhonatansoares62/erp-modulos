@@ -1,0 +1,24 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [{
+    "id": "WABA-ID",
+    "changes": [{
+      "value": {
+        "messaging_product": "whatsapp",
+        "messages": [{
+          "from": "5531987654321",
+          "id": "wamid.HBgN.doc.001",
+          "timestamp": "1735689603",
+          "type": "document",
+          "document": {
+            "id": "media-id-12345",
+            "mime_type": "application/pdf",
+            "filename": "comprovante.pdf",
+            "sha256": "abc123def456"
+          }
+        }]
+      },
+      "field": "messages"
+    }]
+  }]
+}

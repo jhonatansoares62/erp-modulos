@@ -1,0 +1,22 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [{
+    "id": "WABA-ID",
+    "changes": [{
+      "value": {
+        "messaging_product": "whatsapp",
+        "messages": [{
+          "from": "5521987654321",
+          "id": "wamid.HBgN.list.001",
+          "timestamp": "1735689602",
+          "type": "interactive",
+          "interactive": {
+            "type": "list_reply",
+            "list_reply": { "id": "boleto", "title": "Ver boleto" }
+          }
+        }]
+      },
+      "field": "messages"
+    }]
+  }]
+}
