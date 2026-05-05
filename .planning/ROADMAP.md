@@ -26,8 +26,8 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   4. Boot falha imediatamente com mensagem clara se qualquer propriedade obrigatoria (`phoneNumberId`, `accessToken`, `appSecret`, `verifyToken`, `erpCallbackUrl`) estiver ausente — `accessToken`/`appSecret`/`verifyToken` nunca aparecem em logs
   5. Flyway aplica migrations V1 (clientes_zap), V2 (mensagens_log), V3 (media_cache), V4 (estado_conversa) no schema `whatsapp` no boot; `mvnw verify -pl api-whatsapp` verde com H2
 **Plans**: 7 plans
-  - [ ] 01-PLAN-01-lib-shared-additional-public-paths.md — Estender ApiKeyFilter com construtor de 2 args (Set additionalPublicPaths) preservando backward-compat
-  - [ ] 01-PLAN-02-api-whatsapp-skeleton.md — Bootstrap esqueleto Maven do modulo api-whatsapp (pom + WhatsAppApplication + application.yml minimo)
+  - [x] 01-PLAN-01-lib-shared-additional-public-paths.md — Estender ApiKeyFilter com construtor de 2 args (Set additionalPublicPaths) preservando backward-compat
+  - [x] 01-PLAN-02-api-whatsapp-skeleton.md — Bootstrap esqueleto Maven do modulo api-whatsapp (pom + WhatsAppApplication + application.yml minimo)
   - [ ] 01-PLAN-03-properties-fail-fast.md — WhatsAppProperties com 5 @NotBlank + Bean Validation fail-fast + toString mascarado + application-test.yml
   - [ ] 01-PLAN-04-flyway-migrations-v1-v4.md — Migrations Flyway V1-V4 (clientes_zap, mensagens_log, media_cache, estado_conversa) + datasource Postgres/H2
   - [ ] 01-PLAN-05-hmac-validator-cached-body.md — HmacValidator pure function + CachedBodyHttpServletRequest com eager body read
