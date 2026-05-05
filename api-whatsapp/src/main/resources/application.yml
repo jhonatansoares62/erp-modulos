@@ -1,14 +1,21 @@
 # api-whatsapp/src/main/resources/application.yml
 #
-# PLAN-03 (Wave 3 da Phase 1): expandido com bloco app.modulos.whatsapp.* e
-# placeholders ${WHATSAPP_*:} (sem default — Bean Validation @NotBlank dispara
-# fail-fast no boot via WhatsAppProperties se qualquer env var faltar).
+# PLAN-04 (Wave 4 da Phase 1): expandido com bloco spring.datasource +
+# spring.jpa + spring.flyway, agora que as 4 migrations V1-V4 existem em
+# src/main/resources/db/migration/. O `spring.autoconfigure.exclude` que
+# vinha de PLAN-02 foi REMOVIDO — Spring Boot agora auto-configura
+# DataSource, Hibernate (validate) e Flyway, e o boot do api-whatsapp
+# aplica V1..V4 no schema 'whatsapp'.
 #
-# IMPORTANTE: o bloco `spring.autoconfigure.exclude` abaixo continua TEMPORARIO
-# (vindo de PLAN-02). spring-boot-starter-data-jpa esta no classpath mas
-# datasource/migrations so entram em PLAN-04. Sem essa exclusao, Spring Boot
-# tenta auto-configurar Hibernate/Flyway no boot e falha. PLAN-04 REMOVE
-# essas 3 linhas quando spring.datasource + spring.flyway forem adicionados.
+# Boot path em PRODUCAO:
+#   1. Connect ao PostgreSQL local 5433 (instalador WinSW garante o servico)
+#   2. Flyway aplica V1..V4 (criando schema 'whatsapp' se nao existir,
+#      depois clientes_zap/mensagens_log/media_cache/estado_conversa)
+#   3. Hibernate valida que entities (Phase 2+) batem com o schema
+#   4. WhatsAppProperties valida que os 5 secrets (PLAN-03) estao definidos
+#
+# Em TEST (application-test.yml): mesmo path, mas com H2 in-memory MODE=PostgreSQL.
+
 server:
   port: ${SERVER_PORT:9193}
   tomcat:
@@ -21,12 +28,41 @@ spring:
   application:
     name: api-whatsapp
 
-  # PLAN-02/03 only — REMOVE em PLAN-04 quando datasource + Flyway entrarem
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+  # Datasource: PostgreSQL 15 local (porta 5433, schema 'whatsapp').
+  # currentSchema=whatsapp no JDBC URL e defesa em profundidade — caso
+  # spring.jpa.properties.hibernate.default_schema nao se aplicar a
+  # alguma query nativa, o search_path do PostgreSQL resolve para 'whatsapp'.
+  # Defaults erp_mudas/erp_mudas_dev sao pra DEV LOCAL apenas — em producao
+  # o instalador WinSW define WHATSAPP_DB_USERNAME/WHATSAPP_DB_PASSWORD via env vars.
+  datasource:
+    url: ${WHATSAPP_DB_URL:jdbc:postgresql://localhost:5433/erp_mudas?currentSchema=whatsapp}
+    username: ${WHATSAPP_DB_USERNAME:erp_mudas}
+    password: ${WHATSAPP_DB_PASSWORD:erp_mudas_dev}
+
+  # JPA: ddl-auto: validate (NAO update/create) — schema vem 100% do Flyway.
+  # default_schema: whatsapp evita Hibernate buscar tabelas em 'public'.
+  # open-in-view: false — anti-pattern em producao (PITFALLS / convencao do monorepo).
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: whatsapp
+
+  # Flyway: aplica V1..V4 no schema 'whatsapp'.
+  # baseline-on-migrate: true permite aplicar contra DB ja existente
+  # (operador de cliente que ja tinha o DB do ERP — Flyway cria flyway_schema_history
+  # e parte do baseline em vez de falhar).
+  # create-schemas: true — Flyway cria o schema se nao existir (defesa em
+  # profundidade junto com 'CREATE SCHEMA IF NOT EXISTS whatsapp' na V1).
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: whatsapp
+    default-schema: whatsapp
+    create-schemas: true
 
 # Modulo: configuracao especifica do WhatsApp — fail-fast se faltar qualquer um dos 5 secrets.
 # Placeholders com colon vazio (${VAR:}) resolvem para string vazia se a env var nao

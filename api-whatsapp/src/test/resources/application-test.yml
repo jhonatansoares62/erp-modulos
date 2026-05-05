@@ -1,17 +1,50 @@
 # api-whatsapp/src/test/resources/application-test.yml
 #
-# PLAN-03 (Wave 3 da Phase 1): config minima para SpringBootTest carregar contexto
-# com Bean Validation @NotBlank satisfeito por dummy values.
+# PLAN-04 (Wave 4 da Phase 1): expandido com H2 in-memory em modo PostgreSQL.
+# O `spring.autoconfigure.exclude` que vinha de PLAN-03 foi REMOVIDO — agora
+# Spring Boot auto-configura DataSource (H2), Hibernate (validate sobre H2Dialect)
+# e Flyway, e o boot do test aplica V1..V4 no schema 'whatsapp' do H2.
 #
-# datasource + jpa + flyway com H2 PostgreSQL-mode entram em PLAN-04 (junto com
-# as migrations V1-V4 e remocao do `autoconfigure.exclude`). Em PLAN-03 nao
-# subimos contexto JPA — so validamos que WhatsAppProperties bind/valida.
+# Por que H2 modo PostgreSQL:
+#   * SQL portavel: as 4 migrations rodam IDENTICAS em H2 e em PostgreSQL real
+#     (BIGINT GENERATED ALWAYS AS IDENTITY, NOW(), CHECK (direcao IN (...)),
+#      CREATE SCHEMA IF NOT EXISTS whatsapp).
+#   * Sem Testcontainers em Phase 1 — H2 e suficiente; Phase 6 pode adicionar
+#     TC para PG-real coverage se descobrir gap.
+#   * Empiricamente validado em H2 2.3.232 (Spring Boot 3.5.9 BOM) no spike STEP 0.
+#
+# Params do JDBC URL (criticos):
+#   * MODE=PostgreSQL — H2 emula sintaxe PG (BIGINT GENERATED, NOW(), CHECK, etc).
+#   * DATABASE_TO_UPPER=false — preserve identifiers em lowercase (essencial para
+#     'clientes_zap' casar com a query do Hibernate; sem isso H2 default upper).
+#   * CASE_INSENSITIVE_IDENTIFIERS=true — match case-insensitivo entre query e schema.
+#   * DB_CLOSE_DELAY=-1 — DB vivo entre testes do mesmo SpringContext (cache de contexto
+#     do SpringBootTest reutiliza o mesmo H2 entre @Test methods).
+#   * INIT=CREATE SCHEMA IF NOT EXISTS whatsapp — schema criado ANTES de Flyway
+#     tentar abrir conexao. Defesa em profundidade junto com flyway.create-schemas.
+
 spring:
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+  datasource:
+    url: jdbc:h2:mem:testdb_whatsapp;MODE=PostgreSQL;DATABASE_TO_UPPER=false;CASE_INSENSITIVE_IDENTIFIERS=true;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS whatsapp
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        default_schema: whatsapp
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: whatsapp
+    default-schema: whatsapp
+    create-schemas: true
 
 # Dummy values para Bean Validation passar sem env vars reais. Tests que precisem
 # de valores reais (ex: HmacValidatorTest com appSecret real em PLAN-05) podem
