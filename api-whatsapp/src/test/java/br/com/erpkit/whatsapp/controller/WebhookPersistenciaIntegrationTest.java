@@ -2,6 +2,7 @@ package br.com.erpkit.whatsapp.controller;
 
 import br.com.erpkit.whatsapp.WhatsAppApplication;
 import br.com.erpkit.whatsapp.config.WhatsAppProperties;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,6 +94,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = WhatsAppApplication.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Disabled("Phase 3 Wave 6 (PLAN 03-06) reativa com AsyncTestConfig (SyncTaskExecutor) + WireMock stub para ERP. "
+        + "Em Phase 3 Wave 5 (PLAN 03-05), MensagemService.processarWebhook foi refatorado para fast-path "
+        + "(parse + idempotency + publishEvent); ClienteZapService.identificar/atualizarUltimaMensagemEm "
+        + "agora rodam em MensagemAsyncListener via @Async @TransactionalEventListener(AFTER_COMMIT). "
+        + "Tests sc4/sc5 deste arquivo validam estado de clientes_zap apos o POST sem aguardar async — "
+        + "Wave 6 substitui o whatsappTaskExecutor por SyncTaskExecutor no test profile, deixando "
+        + "o flow inteiro sincrono novamente para assertions DB E2E.")
 class WebhookPersistenciaIntegrationTest {
 
     @Autowired

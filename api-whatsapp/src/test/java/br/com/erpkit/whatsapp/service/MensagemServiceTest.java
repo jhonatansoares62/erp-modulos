@@ -1,118 +1,128 @@
 package br.com.erpkit.whatsapp.service;
 
-import br.com.erpkit.whatsapp.WhatsAppApplication;
-import br.com.erpkit.whatsapp.model.ClienteZap;
-import br.com.erpkit.whatsapp.model.MensagemLog;
-import br.com.erpkit.whatsapp.repository.ClienteZapRepository;
-import br.com.erpkit.whatsapp.repository.MensagemLogRepository;
+import br.com.erpkit.whatsapp.dto.MensagemEntranteDTO;
+import br.com.erpkit.whatsapp.dto.ParsedWebhook;
+import br.com.erpkit.whatsapp.dto.StatusEntranteDTO;
+import br.com.erpkit.whatsapp.event.MensagemPersistidaEvent;
+import br.com.erpkit.whatsapp.model.Direcao;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.util.StreamUtils;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 /**
- * Testes do orquestrador {@link MensagemService} via {@link SpringBootTest} —
- * exercicio E2E real do fluxo parser + idempotency + cliente, bootando o
- * Spring context inteiro e usando o H2 in-memory do profile {@code test}.
+ * Testes do orquestrador {@link MensagemService} via Mockito puro (Phase 3 Wave 5).
  *
- * <p>Por que {@link SpringBootTest} e nao Mockito puro:
+ * <p>Phase 2 usava {@link org.springframework.boot.test.context.SpringBootTest} com
+ * H2 real para validar o flow de cliente_zap + mensagens_log E2E. Em Phase 3, o
+ * fluxo de {@link br.com.erpkit.whatsapp.service.ClienteZapService} foi MOVIDO para
+ * {@link MensagemAsyncListener} (Wave 5); restante do {@link MensagemService} virou
+ * fast-path stateless: parse + idempotency + publishEvent.
+ *
+ * <p><b>Mockito puro</b> e suficiente agora porque o service nao tem mais cross-bean
+ * call que dependa de proxy AOP do Spring (REQUIRES_NEW de ClienteZapService roda no
+ * listener, em test isolado em {@link MensagemAsyncListenerTest}). Cobertura E2E DB
+ * fica em {@code WebhookPersistenciaIntegrationTest} (sera atualizado em Wave 6 com
+ * AsyncTestConfig + WireMock stub para ERP).
+ *
+ * <p>4 tests cobrem todos os branches do orquestrador:
  * <ul>
- *   <li>{@code @Transactional(REQUIRES_NEW)} de
- *       {@link ClienteZapService#atualizarUltimaMensagemEm} so ativa via proxy
- *       AOP do Spring, que exige bean real, nao mock (A3 RESEARCH).</li>
- *   <li>UNIQUE constraint do banco e o gate de idempotencia do
- *       {@link IdempotencyService} — testar com mock substitui logica de banco
- *       por logica de mock e nao garante que o pattern funciona em runtime.</li>
- *   <li>Cobertura E2E: validar que parser real (Jackson) + service real +
- *       repository real + H2 PG-mode interagem como esperado, sem stubs entre.</li>
+ *   <li>Mensagem nova: tentarPersistir true -&gt; publishEvent 1x com payload correto</li>
+ *   <li>Mensagem duplicada: tentarPersistir false -&gt; publishEvent 0x</li>
+ *   <li>Multiplas mensagens novas: publishEvent N vezes</li>
+ *   <li>Status callbacks (apenas) NAO disparam MensagemPersistidaEvent (Phase 3 D-06)</li>
  * </ul>
- *
- * <p>Os 4 testes usam fixtures JSON do Plan 02-05
- * ({@code src/test/resources/fixtures/webhook/}). Tests NAO sao
- * {@code @Transactional} — cada {@code processarWebhook} commita rows; tests
- * usam wamids distintos (.001, .002, .multi.001, .multi.002, .status.001) para
- * evitar contaminacao cross-test.
  */
-@SpringBootTest(classes = WhatsAppApplication.class)
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class MensagemServiceTest {
 
-    @Autowired MensagemService service;
-    @Autowired MensagemLogRepository logRepo;
-    @Autowired ClienteZapRepository clienteRepo;
+    @Mock WebhookPayloadParser parser;
+    @Mock IdempotencyService idempotency;
+    @Mock ApplicationEventPublisher eventPublisher;
 
-    private byte[] fixture(String nome) throws IOException {
-        try (InputStream in = new ClassPathResource("fixtures/webhook/" + nome).getInputStream()) {
-            return StreamUtils.copyToByteArray(in);
-        }
+    @InjectMocks MensagemService service;
+
+    @Test
+    @DisplayName("1 mensagem nova: tentarPersistir true -> publishEvent 1x com MensagemPersistidaEvent populado")
+    void mensagem_nova_publica_event() throws Exception {
+        MensagemEntranteDTO m = new MensagemEntranteDTO(
+            "wamid.001", "554784178525", "text", "orcamento 1234", null);
+        when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(m), List.of()));
+        when(idempotency.tentarPersistir(eq("wamid.001"), anyString(), eq(Direcao.in),
+                                          eq("text"), eq("orcamento 1234"), eq(null)))
+            .thenReturn(true);
+
+        service.processarWebhook(new byte[0]);
+
+        ArgumentCaptor<MensagemPersistidaEvent> captor = ArgumentCaptor.forClass(MensagemPersistidaEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        MensagemPersistidaEvent evt = captor.getValue();
+        assertThat(evt.wamid()).isEqualTo("wamid.001");
+        assertThat(evt.telefone()).isEqualTo("554784178525");
+        assertThat(evt.tipo()).isEqualTo("text");
+        assertThat(evt.conteudo()).isEqualTo("orcamento 1234");
+        assertThat(evt.mediaId()).isNull();
+        assertThat(evt.idClienteErp())
+            .as("idClienteErp sempre null no event — listener resolve via ClienteZapService.identificar")
+            .isNull();
+        verifyNoMoreInteractions(eventPublisher);
     }
 
     @Test
-    @DisplayName("Webhook text persiste 1 row em mensagens_log + cria cliente com ultima_mensagem_em populada")
-    void webhook_text_persiste() throws Exception {
-        service.processarWebhook(fixture("text-portugues.json"));
+    @DisplayName("Mensagem duplicada: tentarPersistir false -> publishEvent 0x (Meta reenviou)")
+    void mensagem_duplicada_nao_publica() throws Exception {
+        MensagemEntranteDTO m = new MensagemEntranteDTO(
+            "wamid.dup", "554784178525", "text", "orcamento", null);
+        when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(m), List.of()));
+        when(idempotency.tentarPersistir(any(), any(), any(), any(), any(), any())).thenReturn(false);
 
-        MensagemLog persistido = logRepo.findByWamid("wamid.HBgN.text.001").orElseThrow();
-        assertThat(persistido.getTelefone()).isEqualTo("554784178525");
-        assertThat(persistido.getTipo()).isEqualTo("text");
-        assertThat(persistido.getConteudo()).isEqualTo("Olá, gostaria de um orçamento");
+        service.processarWebhook(new byte[0]);
 
-        ClienteZap cliente = clienteRepo.findByTelefone("554784178525").orElseThrow();
-        assertThat(cliente.getIdClienteErp()).isNull();
-        // ultima_mensagem_em populado via REQUIRES_NEW commit imediato (D-04 + PITFALLS C-01).
-        // Validacao temporal precisa via JdbcTemplate ja existe em
-        // ClienteZapServiceTest.atualizar_em_nova_transacao_commit_imediato (Plan 02-04).
-        // Aqui validamos apenas que o campo foi preenchido — ClienteZapService.identificar
-        // cria com null e ClienteZapService.atualizarUltimaMensagemEm seta NOW(). Comparacao
-        // direta com Instant.now() falha por timezone-naive mapping H2 NOW() -> Instant
-        // (H2 retorna LOCAL como UTC; reproduzido em PG real teria offset correto).
-        assertThat(cliente.getUltimaMensagemEm())
-            .as("REQUIRES_NEW deve ter committed o UPDATE; campo nao deve mais ser null")
-            .isNotNull();
+        verify(eventPublisher, never()).publishEvent(any());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
-    @DisplayName("Webhook duplicado (mesmo wamid 2x) — apenas 1 row em mensagens_log (idempotency gate)")
-    void webhook_duplicado_apenas_1_row() throws Exception {
-        service.processarWebhook(fixture("text-portugues.json"));
-        service.processarWebhook(fixture("text-portugues.json"));
+    @DisplayName("Multiplas mensagens novas: publishEvent N vezes (loop do orquestrador)")
+    void multiplas_mensagens_publica_n() throws Exception {
+        MensagemEntranteDTO m1 = new MensagemEntranteDTO(
+            "wamid.001", "554784178525", "text", "a", null);
+        MensagemEntranteDTO m2 = new MensagemEntranteDTO(
+            "wamid.002", "554784178525", "text", "b", null);
+        when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(m1, m2), List.of()));
+        when(idempotency.tentarPersistir(any(), any(), any(), any(), any(), any())).thenReturn(true);
 
-        assertThat(logRepo.findByWamid("wamid.HBgN.text.001")).isPresent();
+        service.processarWebhook(new byte[0]);
 
-        // Filter por wamid para evitar contagem contaminada por outros tests
-        // (tests do mesmo SpringContext compartilham H2 in-memory).
-        long countWamid = logRepo.findAll().stream()
-            .filter(m -> "wamid.HBgN.text.001".equals(m.getWamid()))
-            .count();
-        assertThat(countWamid)
-            .as("UNIQUE constraint + DataIntegrityViolation catch garante exatamente 1 row")
-            .isEqualTo(1);
+        verify(eventPublisher, times(2)).publishEvent(any(MensagemPersistidaEvent.class));
     }
 
     @Test
-    @DisplayName("Webhook multiple messages persiste todas (loop do orquestrador)")
-    void webhook_multiple_persiste_todas() throws Exception {
-        service.processarWebhook(fixture("multiple-messages.json"));
+    @DisplayName("Apenas status callbacks: NAO publica MensagemPersistidaEvent (Phase 3 D-06)")
+    void status_nao_publica() throws Exception {
+        StatusEntranteDTO s = new StatusEntranteDTO("wamid.status.001", "delivered", "554784178525");
+        when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(), List.of(s)));
 
-        assertThat(logRepo.findByWamid("wamid.multi.001")).isPresent();
-        assertThat(logRepo.findByWamid("wamid.multi.002")).isPresent();
-    }
+        service.processarWebhook(new byte[0]);
 
-    @Test
-    @DisplayName("Webhook status delivered — log debug only, NAO persiste em mensagens_log (D-06)")
-    void webhook_status_nao_persiste() throws Exception {
-        service.processarWebhook(fixture("status-delivered.json"));
-
-        assertThat(logRepo.findByWamid("wamid.HBgN.status.001"))
-            .as("Statuses Meta sao parseados mas Phase 2 NAO persiste em mensagens_log — D-06")
-            .isEmpty();
+        verifyNoInteractions(eventPublisher);
+        verifyNoInteractions(idempotency);
     }
 }
