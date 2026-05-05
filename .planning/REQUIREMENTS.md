@@ -62,10 +62,10 @@ Requirements pra primeira release dos 2 modulos novos (`api-whatsapp` + `lib-wha
 
 ### Configuracao (properties + secrets)
 
-- [ ] **CFG-01**: `WhatsAppProperties` (no `api-whatsapp`) com `phoneNumberId`, `accessToken`, `appSecret`, `verifyToken`, `erpCallbackUrl`, `callbackTimeout` — todos `@NotBlank`/required, falha rapido no boot via Bean Validation se faltar
-- [ ] **CFG-02**: `application.yml` documentado com placeholders `${WHATSAPP_PHONE_NUMBER_ID}`, `${WHATSAPP_ACCESS_TOKEN}` etc — instalador injeta via env vars, nada hardcoded
-- [ ] **CFG-03**: Logs **nunca** imprimem `accessToken` ou `appSecret` — mascarar via `Logger` filter ou ofuscar nos `toString()` das classes Properties
-- [ ] **CFG-04**: Porta default `9193` (matching plano) configuravel via `server.port`
+- [x] **CFG-01**: `WhatsAppProperties` (no `api-whatsapp`) com `phoneNumberId`, `accessToken`, `appSecret`, `verifyToken`, `erpCallbackUrl`, `callbackTimeout` — todos `@NotBlank`/required, falha rapido no boot via Bean Validation se faltar
+- [x] **CFG-02**: `application.yml` documentado com placeholders `${WHATSAPP_PHONE_NUMBER_ID}`, `${WHATSAPP_ACCESS_TOKEN}` etc — instalador injeta via env vars, nada hardcoded
+- [x] **CFG-03**: Logs **nunca** imprimem `accessToken` ou `appSecret` — mascarar via `Logger` filter ou ofuscar nos `toString()` das classes Properties
+- [x] **CFG-04**: Porta default `9193` (matching plano) configuravel via `server.port`
 
 ### Qualidade (testes, docs, runbook)
 
@@ -161,10 +161,10 @@ Mapeamento requirement → fase. Preenchido pelo gsd-roadmapper.
 | LIB-06 | Phase 5 | Pending |
 | LIB-07 | Phase 5 | Pending |
 | LIB-08 | Phase 5 | Pending |
-| CFG-01 | Phase 1 | Pending |
-| CFG-02 | Phase 1 | Pending |
-| CFG-03 | Phase 1 | Pending |
-| CFG-04 | Phase 1 | Pending |
+| CFG-01 | Phase 1 | Complete |
+| CFG-02 | Phase 1 | Complete |
+| CFG-03 | Phase 1 | Complete |
+| CFG-04 | Phase 1 | Complete |
 | QA-01 | Phase 6 | Pending |
 | QA-02 | Phase 6 | Pending |
 | QA-03 | Phase 6 | Pending |

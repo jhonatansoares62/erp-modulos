@@ -106,7 +106,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundacao HMAC + Webhook | 0/7 | Not started | - |
+| 1. Fundacao HMAC + Webhook | 3/7 | In Progress|  |
 | 2. Persistencia + Idempotencia | 0/TBD | Not started | - |
 | 3. Roteamento + Boundary Async | 0/TBD | Not started | - |
 | 4. Outbound + Trava 24h + WhatsAppController | 0/TBD | Not started | - |
