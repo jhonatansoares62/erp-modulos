@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-02-PLAN.md (Wave 2 da Phase 3 — tipos puros + logica pura: 5 artefatos novos (event/MensagemPersistidaEvent record 6 fields, dto/ComandoCallbackDTO record 7 fields Jackson auto, dto/MetaMediaResultado record 3 fields uso interno, dto/MediaMetadataDTO Jackson POJO @JsonIgnoreProperties + 3 @JsonProperty snake_case, service/ComandoExtractor @Service switch sobre TipoMensagem) + ComandoExtractorTest com 13 tests JUnit puros (sem Spring) cobrindo todos os branches (text simples/acentos/vazio/null/multiplos espacos, interactive_button/list com '|', uppercase->lowercase, sem '|', '|' no inicio, document/image/audio literal, conteudo null em media, desconhecido/null/inexistente, video sem constant). Reator `mvnw verify -pl api-whatsapp -am` BUILD SUCCESS, 126 tests verdes (113 prev + 13 novos), zero regressao. **ROU-02 satisfeito (ComandoCallbackDTO {telefone, comando, payload, idCliente} + 3 fields opcionais de media).** Pronto para Wave 3 (PLAN 03-03 — MetaMediaClient com WireMockExtension consumindo MediaMetadataDTO + MetaMediaResultado).
-last_updated: "2026-05-05T20:55:00.000Z"
-last_activity: 2026-05-05 -- 03-02-PLAN.md completo
+stopped_at: Completed 03-03-PLAN.md (Wave 3 da Phase 3 — MetaMediaClient cliente HTTP 2-step para download de media de entrada do Meta Graph API: service/MetaMediaClient.java @Service novo (RestClient construido em constructor via WhatsAppProperties.getMetaApiBaseUrl, baixar(String mediaId) -> Optional<MetaMediaResultado>, step 1 GET /{id} -> MediaMetadataDTO + step 2 GET URL absoluta -> byte[], Bearer SOMENTE em header Authorization PITFALLS C-14, 404 graceful em qualquer step retorna Optional.empty + log.warn PITFALLS C-08, sem Resilience4j por design D-04 — 5xx escapam para listener Wave 5 tratar) + MetaMediaClientTest com 6 tests @SpringBootTest + WireMock 3.10.0 standalone + WireMockServer.dynamicPort + @DynamicPropertySource sobrescrevendo metaApiBaseUrl (happy_path 2-step + 404 step 1 com verify(0,...) confirmando short-circuit + 404 step 2 + 5xx propaga sem retry verify(1,...) + bearer_nunca_em_query_param via getAllServeEvents.forEach + metadata_sem_url Rule 2 defesa em profundidade). Reator `mvnw verify -pl api-whatsapp -am` BUILD SUCCESS, 132 tests verdes (126 prev + 6 novos), zero regressao em Phase 1+2 ou Wave 1+2. **ROU-05 satisfeito (cliente isolado pronto para Wave 5 listener consumir como PRIMEIRA acao apos ack).** WireMock 3.10.0 + Boot 3.5.9 validado empiricamente — bloqueador documentado em 03-01-SUMMARY resolvido. Pattern WireMock + @DynamicPropertySource estabelecido para reuso em Wave 4 (ErpCallbackClient) e Wave 6 (E2E). Pronto para Wave 4 (PLAN 03-04 — ErpCallbackClient com Resilience4j @CircuitBreaker + @Retry).
+last_updated: "2026-05-05T21:09:00.000Z"
+last_activity: 2026-05-05 -- 03-03-PLAN.md completo
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 20
-  completed_plans: 16
-  percent: 80
+  completed_plans: 17
+  percent: 85
 ---
 
 # Project State
@@ -26,19 +26,19 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Current Position
 
 Phase: 03 (roteamento-boundary-async) — EXECUTING
-Plan: 3 of 6
-Status: Executing Phase 03 (Wave 2 complete)
-Last activity: 2026-05-05 -- 03-02-PLAN.md completo (tipos puros: 5 artefatos + ComandoExtractorTest 13 tests)
+Plan: 4 of 6
+Status: Executing Phase 03 (Wave 3 complete)
+Last activity: 2026-05-05 -- 03-03-PLAN.md completo (MetaMediaClient + MetaMediaClientTest 6 tests WireMock)
 
-Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 2/6; Phases 1+2 awaiting verifier sign-off)
+Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 3/6; Phases 1+2 awaiting verifier sign-off)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: ~9 min
-- Total execution time: ~142 min
+- Total execution time: ~151 min
 
 **By Phase:**
 
@@ -46,7 +46,7 @@ Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Pha
 |-------|-------|-------|----------|
 | 01 | 7/7 | ~60 min | ~8 min |
 | 02 | 7/7 | ~70 min | ~10 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m + Wave D MensagemService 6m30s + Wave E integration tests 9m) |
-| 03 | 2/6 | ~20 min | ~10 min (Wave 1 infra ~12min + Wave 2 tipos puros ~8min) |
+| 03 | 3/6 | ~29 min | ~9.7 min (Wave 1 infra ~12min + Wave 2 tipos puros ~8min + Wave 3 MetaMediaClient ~9min) |
 
 **Recent Trend:**
 
@@ -68,6 +68,7 @@ Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Pha
 | Phase 02 P07 | ~9min | 3 tasks | 2 files (1 integration test E2E novo + ROADMAP mod; 13 tests novos verdes, 112 api-whatsapp aggregate, reator 7 modulos BUILD SUCCESS) |
 | Phase 03 P01 | ~12min | 3 tasks | 7 files (2 created AsyncConfig + AsyncConfigSmokeTest; 5 mod: pom parent + api-whatsapp/pom + WhatsAppProperties + application.yml + application-test.yml; reator BUILD SUCCESS 113 tests verdes, zero regressao Phase 1+2) |
 | Phase 03 P02 | ~8min | 3 tasks | 6 files (6 created: MensagemPersistidaEvent record + ComandoCallbackDTO record + MetaMediaResultado record + MediaMetadataDTO Jackson POJO + ComandoExtractor service + ComandoExtractorTest 13 tests; reator BUILD SUCCESS 126 tests verdes, zero regressao Phase 1+2 + Wave 1) |
+| Phase 03 P03 | ~9min | 3 tasks | 5 files (2 created: MetaMediaClient + MetaMediaClientTest 6 tests WireMock; 3 modified: STATE.md + ROADMAP.md + REQUIREMENTS.md; reator BUILD SUCCESS 132 tests verdes (126 prev + 6 novos), zero regressao Phase 1+2 + Wave 1+2) |
 
 ## Accumulated Context
 
@@ -129,6 +130,13 @@ Recent decisions affecting current work:
 - [03-02]: ComandoCallbackDTO + MensagemPersistidaEvent + MetaMediaResultado como records — uso interno (sem deserializacao Jackson externa) ou serializacao OUTPUT-only (Jackson 2.18 + Boot 3 suportam record nativamente como wire OUTPUT, diferente do INPUT externo onde POJO e preferido).
 - [03-02]: ComandoExtractor logica pura sem I/O — testavel sem Spring context (instanciacao direta `new ComandoExtractor()`). 13 tests JUnit puros executam em 0.090s. Pattern reusable para Wave 3+ services que sejam sufficientemente puros.
 - [03-02]: ComandoExtractor branch `idDeInteractive` exige `sep > 0` (nao `>= 0`) — id vazio antes do '|' (ex: "|Aprovar") retorna null. Test `interactive_pipe_no_inicio` valida edge case. Parser Phase 2 sempre coloca id valido, mas defensivo aqui evita callback com comando vazio ao ERP.
+- [03-03]: MetaMediaClient SEM Resilience4j (decisao consciente per CONTEXT D-04) — primeira acao apos ack precisa ser RAPIDA (URL Meta TTL 5min PITFALLS C-08); circuit breaker + retry adicionariam latencia que poderia quebrar a janela em pico. Falha de download = mensagem persistida sem bytes (callback ERP recebe payload sem mediaBase64); nao critico. ErpCallbackClient (Wave 4) sim tera Resilience4j (D-03) — semantica diferente.
+- [03-03]: Bearer header per-request explicito vs interceptor global no RestClient.builder() — cada `.header(HttpHeaders.AUTHORIZATION, "Bearer " + token)` em cada call. Mais verboso mas (a) mais facil de auditar visualmente que C-14 esta cumprido, (b) facilita override per-request, (c) zero risco de interceptor mal configurado escrever token em query param. Test `bearer_nunca_em_query_param` enforce regression via getAllServeEvents.forEach.
+- [03-03]: 6 tests vs 5 minimos do PLAN (Rule 2 defesa em profundidade) — adicionado `metadata_sem_url_retorna_empty` cobrindo branch `metadata.getUrl() == null` (linha 78). Branch existia desde a primeira versao mas sem test — risco silencioso de regressao se alguem reescrevesse a validacao. Custo: +1 stub WireMock; beneficio: regression test contra Meta mudar contrato.
+- [03-03]: WireMock 3.10.0 standalone + Boot 3.5.9 validado empiricamente — bloqueador documentado em 03-01-SUMMARY (Concerns Wave 3) RESOLVIDO. 6 tests passam em ~2.6s (run integrado) e ~7s (run isolado cold). Pattern @BeforeAll dynamicPort + @AfterAll stop + @DynamicPropertySource registry.add + @BeforeEach resetAll reusable identicamente em Wave 4 (ErpCallbackClient) e Wave 6 (E2E com Meta + ERP simultaneamente).
+- [03-03]: `@SpringBootTest(classes = WhatsAppApplication.class)` em vez de `@SpringBootTest` sem qualifier — WhatsAppApplication tem `scanBasePackages` + `@EnableConfigurationProperties`. Sem qualifier, Spring busca via heuristica e potentialmente aceita config diferente da producao. Pattern alinhado com WhatsAppPropertiesHappyPathTest (Phase 1) e WebhookPersistenciaIntegrationTest (Phase 2).
+- [03-03]: `verify(0, getRequestedFor)` para short-circuit assertions — count == 0 em URL nao chamada confirma controle de fluxo curto-circuitou. Em `quatrocentos_quatro_step_1`, garante que step 2 nao foi tentado. Mais explicito que checar log mensagens. Counter == 1 em 5xx test valida indiretamente A6 (sem retry).
+- [03-03]: `getAllServeEvents().forEach` para regression test C-14 — percorre TODAS requests recebidas pelo WireMock + assertion `.doesNotContain("access_token=")` em cada URL. Mais robusto que `verify(0, getRequestedFor(urlMatching(".*[?&]access_token=.*")))` que dependeria de matcher regex correto. forEach valida em LISTA, captura qualquer query param novo que vazasse.
 
 ### Pending Todos
 
@@ -137,10 +145,10 @@ None yet.
 ### Blockers/Concerns
 
 - Phase 4 (outbound + media): confirmar field names do multipart Meta `/media` upload endpoint (`messaging_product`, `type`, `file`) no momento da implementacao — Meta pode atualizar sem aviso (flag de research ARCHITECTURE.md)
-- WireMock 3.10.0 (Jetty 12 standalone shadow) adicionado em 03-01 ao classpath test — validacao empirica formal acontece em Wave 3 (PLAN 03-03 MetaMediaClient com WireMockExtension). 4.x ainda evitada por potencial conflito Jetty com Boot 3.5.9.
+- WireMock 3.10.0 (Jetty 12 standalone shadow) + Boot 3.5.9: **VALIDADO empiricamente em 03-03** — 6 tests passaram em ~2.6s no run integrado. Bloqueador resolvido. Pattern reusable em Wave 4 e Wave 6.
 
 ## Session Continuity
 
-Last session: 2026-05-05T20:55:00.000Z
-Stopped at: Completed 03-02-PLAN.md (Wave 2 da Phase 3 — tipos puros + logica pura: 5 artefatos novos (event/MensagemPersistidaEvent record 6 fields wamid/telefone/tipo/conteudo/mediaId/idClienteErp; dto/ComandoCallbackDTO record 7 fields telefone/comando/payload/idCliente/mediaBase64/mediaMimeType/mediaFilename; dto/MetaMediaResultado record 3 fields bytes/mimeType/filename uso interno; dto/MediaMetadataDTO Jackson POJO @JsonIgnoreProperties + 3 @JsonProperty mime_type/file_size/messaging_product; service/ComandoExtractor @Service switch sobre TipoMensagem com 6 cases — text/INTERACTIVE_BUTTON/INTERACTIVE_LIST/DOCUMENT/IMAGE/AUDIO + default null; SEM case VIDEO pois TipoMensagem Phase 2 nao tem essa constant) + ComandoExtractorTest com 13 tests JUnit puros (sem Spring): text primeira palavra/acentos/vazio-null/multiplos espacos, interactive_button/list separator/uppercase/sem '|'/no inicio, document-image-audio literal/conteudo null, desconhecido/null/inexistente, video defensivo. Reator `mvnw verify -pl api-whatsapp -am` BUILD SUCCESS 126 tests verdes (113 prev + 13 novos), zero regressao. **ROU-02 satisfeito.** Pronto para Wave 3 (PLAN 03-03 — MetaMediaClient WireMockExtension).
+Last session: 2026-05-05T21:09:00.000Z
+Stopped at: Completed 03-03-PLAN.md (Wave 3 da Phase 3 — MetaMediaClient @Service novo: cliente HTTP 2-step para download de media de entrada do Meta Graph API. Constructor recebe WhatsAppProperties + constroi RestClient.builder().baseUrl(properties.getMetaApiBaseUrl()).build(). baixar(String mediaId) -> Optional<MetaMediaResultado>: step 1 GET /{id} com Authorization Bearer header -> MediaMetadataDTO via JSON; defesa metadata == null || metadata.getUrl() == null -> Optional.empty; step 2 GET URL absoluta (lookaside.fbsbx.com — RestClient segue) com Bearer header -> byte[] via ByteArrayHttpMessageConverter; defesa bytes == null || empty -> Optional.empty; sucesso -> Optional.of(new MetaMediaResultado(bytes, metadata.getMimeType(), metadata.getFilename())). HttpClientErrorException.NotFound em CADA step capturada como Optional.empty + log.warn (PITFALLS C-08 URL TTL 5min). Bearer SOMENTE em header HttpHeaders.AUTHORIZATION (PITFALLS C-14, NUNCA query param). Sem Resilience4j por design D-04 — 5xx escapam como HttpServerErrorException para listener Wave 5 tratar via try/catch generico. + MetaMediaClientTest com 6 tests integracao @SpringBootTest(classes = WhatsAppApplication.class) @ActiveProfiles("test") + WireMock 3.10.0 standalone + WireMockServer.dynamicPort + @DynamicPropertySource sobrescrevendo app.modulos.whatsapp.metaApiBaseUrl com wireMock.baseUrl(): (1) happy_path_2_step happy path com ambas requests + bearer header verify; (2) quatrocentos_quatro_step_1 verify(0, /cdn/.*) confirma short-circuit; (3) quatrocentos_quatro_step_2 metadata 200 + bytes 404 -> Optional.empty; (4) cinco_centos_step_1 verify(1, ...) propaga HttpServerErrorException sem retry (valida A6 indiretamente); (5) bearer_nunca_em_query_param via getAllServeEvents.forEach assertThat.doesNotContain (regression PITFALLS C-14); (6) metadata_sem_url Rule 2 defesa em profundidade contra Meta mudar contrato. Reator `mvnw verify -pl api-whatsapp -am` BUILD SUCCESS 132 tests verdes (126 prev + 6 novos), zero regressao em Phase 1+2 ou Wave 1+2. ROU-05 satisfeito. WireMock 3.10.0 + Boot 3.5.9 empiricamente validado — bloqueador 03-01-SUMMARY resolvido. Pattern WireMock + @DynamicPropertySource reusable em Wave 4 (ErpCallbackClient) e Wave 6 (E2E). Pronto para Wave 4 (PLAN 03-04 — ErpCallbackClient com Resilience4j @CircuitBreaker + @Retry counter assertions == 3 espelhando lib-consultas-client).
 Resume file: None

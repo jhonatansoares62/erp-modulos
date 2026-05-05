@@ -47,7 +47,7 @@ Requirements pra primeira release dos 2 modulos novos (`api-whatsapp` + `lib-wha
 - [ ] **ROU-02**: `ErpCallbackClient` faz `POST {erpCallbackUrl}/api/modulos/whatsapp/comando` com payload `{telefone, comando, payload, idCliente}` — `erpCallbackUrl` configuravel (default `http://localhost:8090`)
 - [ ] **ROU-03**: ERP callback usa Resilience4j circuit breaker (mesma config de lib-consultas-client: 10-call window, 50% threshold, 60s open) + retry exponencial (3 tentativas, 1s/2s/4s)
 - [ ] **ROU-04**: ERP callback timeout default 5s (configuravel via `app.modulos.whatsapp.callback-timeout`); timeout/erro nao trava o webhook (ja respondeu 200), so loga e nao envia resposta de saida
-- [ ] **ROU-05**: **Download de media entrante** (cliente mandou imagem/PDF) e a **PRIMEIRA** acao async apos ack — URL Meta expira em 5min e a fila async pode atrasar. Bytes baixados sao guardados em memoria/temp pra entregar pro ERP no callback
+- [x] **ROU-05**: **Download de media entrante** (cliente mandou imagem/PDF) e a **PRIMEIRA** acao async apos ack — URL Meta expira em 5min e a fila async pode atrasar. Bytes baixados sao guardados em memoria/temp pra entregar pro ERP no callback
 
 ### Lib WhatsApp Client (starter Spring Boot)
 
@@ -152,7 +152,7 @@ Mapeamento requirement → fase. Preenchido pelo gsd-roadmapper.
 | ROU-02 | Phase 3 | Pending |
 | ROU-03 | Phase 3 | Pending |
 | ROU-04 | Phase 3 | Pending |
-| ROU-05 | Phase 3 | Pending |
+| ROU-05 | Phase 3 | Complete (03-03) |
 | LIB-01 | Phase 5 | Pending |
 | LIB-02 | Phase 5 | Pending |
 | LIB-03 | Phase 5 | Pending |
