@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md (entities + repos esqueleto + spike ON CONFLICT)
-last_updated: "2026-05-05T15:15:51.000Z"
-last_activity: 2026-05-05 -- Phase 02 Plan 01 complete (Wave 1 gate validado empiricamente)
+stopped_at: Completed 02-02-PLAN.md (Wave B — TelefoneBR.normalizar pure utility + 19 JUnit tests, 74 tests api-whatsapp aggregate verde). Wave B em curso paralelo (Plans 03 IdempotencyService + 05 WebhookPayloadParser).
+last_updated: "2026-05-05T15:32:39.450Z"
+last_activity: 2026-05-05
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 15
-  completed_plans: 8
-  percent: 53
+  total_plans: 14
+  completed_plans: 10
+  percent: 71
 ---
 
 # Project State
@@ -26,26 +26,26 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 ## Current Position
 
 Phase: 02 (persistencia-idempotencia) — EXECUTING
-Plan: 2 of 7
-Status: Executing Phase 02 (Wave 1 complete; Wave 2 next — Plan 02 TelefoneBR utility ready to launch)
-Last activity: 2026-05-05 -- Phase 02 Plan 01 complete (entities + repos + spike ON CONFLICT empirically validated)
+Plan: 4 of 7
+Status: Ready to execute
+Last activity: 2026-05-05
 
-Progress: [██████░░░░] 53% (1/7 plans of Phase 02; Phase 1 awaiting verifier sign-off)
+Progress: [██████░░░░] 60% (2/7 plans of Phase 02; Phase 1 awaiting verifier sign-off)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: ~10 min
-- Total execution time: ~86 min
+- Total execution time: ~89 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 7/7 | ~60 min | ~8 min |
-| 02 | 1/7 | ~26 min | ~26 min (Wave 1 spike + 4 schema mismatch fixes Rule 3) |
+| 02 | 2/7 | ~29 min | ~14 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m) |
 
 **Recent Trend:**
 
@@ -58,6 +58,9 @@ Progress: [██████░░░░] 53% (1/7 plans of Phase 02; Phase 1 a
 | Phase 01 P05 | 10min | 4 tasks | 5 files |
 | Phase 01 P06 | 7min | 5 tasks | 8 files |
 | Phase 01 P07 | 8min | 3 tasks | 2 files (1 test + 1 SUMMARY) |
+| Phase 02 P01 | 26min | 9 tasks | 11 files (9 src + 2 yml mod) |
+| Phase 02 P02 | 3min | 3 tasks | 2 files (1 utility + 1 test, 19 tests verdes) |
+| Phase 02 P03 | 720 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -90,6 +93,10 @@ Recent decisions affecting current work:
 - [02-01]: Spike OnConflictSpikeTest gate Wave 1 confirmou empiricamente que H2 v2.3.232 PG-mode NAO suporta `INSERT ... ON CONFLICT (col) DO NOTHING` (sintaxe Postgres-native). Plan 03 ira usar fallback save+catch DataIntegrityViolationException (RESEARCH §2.4) — UNIQUE constraint do banco e o gate atomico real. Spike fica como regression test permanente.
 - [02-01]: 4 desvios Rule 3 (blocking issues) em config Hibernate/H2: (1) `hibernate.default_schema=whatsapp` REMOVIDO — causava lookup whatsapp.information_schema.sequences; (2) JDBC URL test mudou DATABASE_TO_UPPER=false→DATABASE_TO_LOWER=TRUE — H2 system schema acessivel via lookup lowercase do Hibernate; (3) MediaCache.arquivoHash com columnDefinition="CHAR(64)"; (4) MensagemLog.conteudo com columnDefinition="TEXT" (sem @Lob — Hibernate inferia OID/CLOB). Reator 106 tests verdes, zero regressao.
 - [02-01]: TipoMensagem com 7 String constants (PLAN ditou) — STATUS, VIDEO ficaram fora; Plan 05 (parser) decide se precisa adicionar.
+- [02-02]: TelefoneBR.normalizar pure utility (final class + private constructor) — 14 DDDs no Set DDDS_COM_NONO_DIGITO (SP 11-19, RJ 21/22/24, ES 27/28); demais strip 9o digito quando numero local tem 9 digitos comecando com 9. Algoritmo branch-ordered: null → sanitize → non-BR early return → DDD set lookup → strip condicional. 19 tests JUnit puros (sem Spring) executam em 0.114s. Pacote `util/` (mesmo de TipoMensagem). Plans 04/05 importam para single source of truth normalizacao.
+- [02-02]: Politica deliberada — algoritmo NAO adiciona 9o digito quando vier sem em SP/RJ/ES (numero pode ser fixo); DDD inexistente (99) ainda passa pelo Set lookup (algoritmo baseado em Set, nao validacao real de DDD). Documentado em testes ddd_inexistente_99_strip_9 e em RESEARCH risks.
+- [Phase ?]: Plan 02-03: IdempotencyService usa fallback save+catch DataIntegrityViolationException (UNIQUE wamid e o gate atomico portavel H2/PostgreSQL — decisao empirica do spike Wave 1)
+- [Phase ?]: Plan 02-03: Test de concorrencia com ExecutorService(2) + CountDownLatch start gate validou empiricamente truthCount==1 e rows==1 (pattern replicavel para Plan 04 ClienteZapService race em telefone UNIQUE)
 
 ### Pending Todos
 
@@ -102,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T15:15:51.000Z
-Stopped at: Completed 02-01-PLAN.md (Wave 1 — entities + repos + spike ON CONFLICT). Pronto para Wave 2 (Plan 02 TelefoneBR utility) em paralelo com Wave 3 (Plan 03 IdempotencyService — usar fallback save+catch).
-Resume file: .planning/phases/02-persistencia-idempotencia/02-01-SUMMARY.md
+Last session: 2026-05-05T15:31:36.574Z
+Stopped at: Completed 02-02-PLAN.md (Wave B — TelefoneBR.normalizar pure utility + 19 JUnit tests, 74 tests api-whatsapp aggregate verde). Wave B em curso paralelo (Plans 03 IdempotencyService + 05 WebhookPayloadParser).
+Resume file: .planning/phases/02-persistencia-idempotencia/02-02-SUMMARY.md

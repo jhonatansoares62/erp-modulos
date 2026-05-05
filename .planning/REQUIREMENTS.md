@@ -13,8 +13,8 @@ Requirements pra primeira release dos 2 modulos novos (`api-whatsapp` + `lib-wha
 - [x] **WEB-02**: Endpoint `POST /webhook/whatsapp` valida assinatura HMAC-SHA256 do header `X-Hub-Signature-256` contra os bytes brutos do body usando `WhatsAppProperties.appSecret` — comparacao **timing-safe** (`MessageDigest.isEqual`) — caso contrario 401 sem persistir
 - [x] **WEB-03**: HMAC validation usa **custom `HttpServletRequestWrapper`** que le bytes do body **eagerly na construcao** (NAO `ContentCachingRequestWrapper` — esse nao cacheia eager e leva a bug de "skip se vazio" que abre forge)
 - [x] **WEB-04**: Webhook responde **200 OK pro Meta em <1s** (limite real Meta: 5s, mas margem de seguranca) executando apenas: HMAC validation + idempotency check fast-path. Persistencia/roteamento/outbound rodam em `@Async` apos o ack
-- [ ] **WEB-05**: Idempotencia fast-path por `wamid` em `IdempotencyService` — se ja visto recentemente, responde 200 sem reprocessar
-- [ ] **WEB-06**: Idempotencia hard-guard por `UNIQUE wamid` em `mensagens_log` — `DataIntegrityViolationException` em duplicate e silenciada (catch + log debug + return 200), nao propagada
+- [x] **WEB-05**: Idempotencia fast-path por `wamid` em `IdempotencyService` — se ja visto recentemente, responde 200 sem reprocessar
+- [x] **WEB-06**: Idempotencia hard-guard por `UNIQUE wamid` em `mensagens_log` — `DataIntegrityViolationException` em duplicate e silenciada (catch + log debug + return 200), nao propagada
 - [ ] **WEB-07**: Parser do payload Meta entende ao menos: `message.text`, `message.interactive.button_reply` (com `id` e `title`), `message.interactive.list_reply` (com `id` e `title`), `message.document` (com `id`/`mime_type`/`filename`), e callback de status (`statuses.status` = sent/delivered/read/failed) — para entradas desconhecidas, persiste em `mensagens_log` com `tipo=desconhecido` sem erro
 
 ### Persistencia (schema, migrations, cliente)
@@ -23,7 +23,7 @@ Requirements pra primeira release dos 2 modulos novos (`api-whatsapp` + `lib-wha
 - [x] **PER-02**: Migration `V1__clientes_zap.sql` cria tabela `clientes_zap` com colunas: `id BIGSERIAL PK`, `id_cliente_erp BIGINT` (FK logica, sem constraint cross-schema), `telefone VARCHAR(20) UNIQUE NOT NULL`, `ultima_mensagem_em TIMESTAMP`, `criado_em TIMESTAMP DEFAULT NOW()` — migration deployada em Phase 1 PLAN-04; **@Entity ClienteZap mapeada em Phase 2 Plan 01 com Hibernate validate aceitando schema (commit 1d2b4c6)**
 - [x] **PER-03**: Migration `V2__mensagens_log.sql` cria `mensagens_log` com: `id BIGSERIAL PK`, `wamid VARCHAR(255) UNIQUE NOT NULL`, `telefone VARCHAR(20) NOT NULL`, `direcao VARCHAR(3) CHECK (direcao IN ('in','out'))`, `tipo VARCHAR(50)`, `conteudo TEXT`, `media_id VARCHAR(255)`, `criado_em TIMESTAMP DEFAULT NOW()`, indices em `telefone` e `criado_em` — migration deployada em Phase 1 PLAN-04; **@Entity MensagemLog mapeada em Phase 2 Plan 01 com @Enumerated(STRING) Direcao + columnDefinition=TEXT em conteudo (commit 1d2b4c6)**
 - [x] **PER-04**: Migration `V3__media_cache.sql` cria `media_cache` com: `arquivo_hash CHAR(64) PK` (sha256 hex), `media_id VARCHAR(255) NOT NULL`, `criado_em TIMESTAMP DEFAULT NOW()`, `expira_em TIMESTAMP NOT NULL` — migration deployada em Phase 1 PLAN-04; **@Entity MediaCache mapeada em Phase 2 Plan 01 com columnDefinition=CHAR(64) em arquivoHash (commit 1d2b4c6)**
-- [ ] **PER-05**: **Normalizacao de telefone brasileiro** no INSERT em `clientes_zap` — DDDs fora SP (11)/RJ (21,22,24)/ES (27,28) sao registrados no WhatsApp **sem** o 9o digito (regra ANATEL 2010, mas WhatsApp manteve o formato antigo nesses DDDs). Funcao `normalizarTelefoneBrasil(String)` aplicada antes de gravar/buscar. Bug silencioso (error 131026) sem isso
+- [x] **PER-05**: **Normalizacao de telefone brasileiro** no INSERT em `clientes_zap` — DDDs fora SP (11)/RJ (21,22,24)/ES (27,28) sao registrados no WhatsApp **sem** o 9o digito (regra ANATEL 2010, mas WhatsApp manteve o formato antigo nesses DDDs). Funcao `normalizarTelefoneBrasil(String)` aplicada antes de gravar/buscar. Bug silencioso (error 131026) sem isso — **utility puro `TelefoneBR.normalizar(String)` implementado em Phase 2 Plan 02 (commit b0bba6f) com 19 test cases JUnit; aplicacao no INSERT/lookup acontece em Plan 04 (ClienteZapService)**
 - [ ] **PER-06**: Resolucao do `id_cliente_erp` por telefone — `ClienteZapService.identificar(telefone)` busca em `clientes_zap`; se nao existe, cria registro com `id_cliente_erp=null` (cliente nao mapeado ainda) e segue o fluxo
 - [ ] **PER-07**: Atualizacao de `ultima_mensagem_em` por telefone em **transacao separada** (`Propagation.REQUIRES_NEW`) para evitar TOCTOU race com a trava 24h — relogio do banco (`NOW()`) nao `Instant.now()` da JVM
 
@@ -127,14 +127,14 @@ Mapeamento requirement → fase. Preenchido pelo gsd-roadmapper.
 | WEB-02 | Phase 1 | Complete |
 | WEB-03 | Phase 1 | Complete |
 | WEB-04 | Phase 1 | Complete |
-| WEB-05 | Phase 2 | Pending |
-| WEB-06 | Phase 2 | Pending |
+| WEB-05 | Phase 2 | Complete |
+| WEB-06 | Phase 2 | Complete |
 | WEB-07 | Phase 2 | Pending |
 | PER-01 | Phase 1 | Complete |
 | PER-02 | Phase 2 | Pending |
 | PER-03 | Phase 2 | Pending |
 | PER-04 | Phase 2 | Pending |
-| PER-05 | Phase 2 | Pending |
+| PER-05 | Phase 2 | Partial (utility pronto Plan 02-02; aplicacao no INSERT/lookup em Plan 04) |
 | PER-06 | Phase 2 | Pending |
 | PER-07 | Phase 2 | Pending |
 | OUT-01 | Phase 4 | Pending |

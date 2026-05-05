@@ -47,7 +47,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   5. `ultima_mensagem_em` e atualizado com `NOW()` do banco em transacao `REQUIRES_NEW` separada — nao `Instant.now()` da JVM; garantia contra TOCTOU race com a trava 24h
 **Plans**: 7 plans
   - [x] 02-PLAN-01-entities-repos-skeleton-spike.md — STEP 0 spike OnConflictSpikeTest (gate Wave 1: H2 v2.3.232 NAO suporta ON CONFLICT — fallback save+catch acionado para Plan 03) + 3 entities JPA (ClienteZap, MensagemLog, MediaCache) + 3 repositories esqueleto + enum Direcao { in, out } lowercase + 7 TipoMensagem String constants
-  - [ ] 02-PLAN-02-telefone-br-utility.md — TelefoneBR.normalizar(String) utility puro (DDDs SP/RJ/ES mantem 9o digito, demais strip)
+  - [x] 02-PLAN-02-telefone-br-utility.md — TelefoneBR.normalizar(String) utility puro (DDDs SP/RJ/ES mantem 9o digito, demais strip) — 19 JUnit tests verdes, commit b0bba6f
   - [ ] 02-PLAN-03-idempotency-service.md — IdempotencyService com fallback save+catch DataIntegrityViolationException (RESEARCH §2.4 — Plan 01 spike validou que ON CONFLICT direto NAO funciona em H2)
   - [ ] 02-PLAN-04-cliente-zap-service.md — ClienteZapService.identificar + atualizarUltimaMensagemEm REQUIRES_NEW + repository @Query custom
   - [ ] 02-PLAN-05-webhook-payload-parser.md — Jackson parser do envelope Meta (text/button/list/document/desconhecido + statuses)
@@ -114,7 +114,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundacao HMAC + Webhook | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
-| 2. Persistencia + Idempotencia | 0/TBD | Not started | - |
+| 2. Persistencia + Idempotencia | 2/7 | In progress (Wave B paralela: P02 done; P03/P05 em curso) | - |
 | 3. Roteamento + Boundary Async | 0/TBD | Not started | - |
 | 4. Outbound + Trava 24h + WhatsAppController | 0/TBD | Not started | - |
 | 5. lib-whatsapp-client | 0/TBD | Not started | - |
