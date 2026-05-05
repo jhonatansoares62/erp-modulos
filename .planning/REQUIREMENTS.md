@@ -131,9 +131,9 @@ Mapeamento requirement → fase. Preenchido pelo gsd-roadmapper.
 | WEB-06 | Phase 2 | Complete |
 | WEB-07 | Phase 2 | Complete |
 | PER-01 | Phase 1 | Complete |
-| PER-02 | Phase 2 | Pending |
-| PER-03 | Phase 2 | Pending |
-| PER-04 | Phase 2 | Pending |
+| PER-02 | Phase 2 | Complete |
+| PER-03 | Phase 2 | Complete |
+| PER-04 | Phase 2 | Complete |
 | PER-05 | Phase 2 | Complete |
 | PER-06 | Phase 2 | Complete |
 | PER-07 | Phase 2 | Complete |

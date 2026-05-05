@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-06-PLAN.md (Wave D — MensagemService orquestrador sincrono + WebhookController.POST atualizado com ack-first defensivo, 4 tests E2E verdes, 99 tests api-whatsapp aggregate verde, zero regressao em Phase 1, commit 24ac27c). WEB-05/06/07 + PER-06/07 fechados. Pronto para Plan 02-07 (Wave E — integration tests E2E + ROADMAP update fechando Phase 2).
-last_updated: "2026-05-05T16:33:44.000Z"
+stopped_at: Completed 02-07-PLAN.md (Wave E final — WebhookPersistenciaIntegrationTest com 13 tests E2E SpringBootTest+MockMvc+JdbcTemplate cobrindo 5 SC ROADMAP + 2 bonus, 112 tests api-whatsapp aggregate verde, reator inteiro 7 modulos BUILD SUCCESS, ROADMAP Phase 2 marcada [x] Complete + Plans TBD->7 plans com index, commit ab60b1b). Phase 2 entregue empiricamente — 5/5 SC + 9/9 reqs (WEB-05/06/07 + PER-02/03/04/05/06/07) satisfeitos. Pronto para gsd-verify-phase de Phase 2 ou inicio de Phase 3 (ROU-01..05 async boundary).
+last_updated: "2026-05-05T16:50:51.000Z"
 last_activity: 2026-05-05
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 14
-  completed_plans: 13
-  percent: 93
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
@@ -25,27 +25,27 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Current Position
 
-Phase: 02 (persistencia-idempotencia) — EXECUTING
-Plan: 7 of 7
-Status: Ready to execute (Plan 02-07 integration tests E2E + ROADMAP update — Wave E final)
+Phase: 02 (persistencia-idempotencia) — COMPLETE (awaiting verifier)
+Plan: 7 of 7 (DONE)
+Status: Phase 2 fechada — 5/5 SC ROADMAP + 9/9 reqs WEB-05..07 + PER-02..07 satisfeitos. Pronto para gsd-verify-phase de Phase 2 OU inicio de Phase 3 (Roteamento + Boundary Async, ROU-01..05).
 Last activity: 2026-05-05
 
-Progress: [████████░░] 86% (6/7 plans of Phase 02; Phase 1 awaiting verifier sign-off)
+Progress: [██████████] 100% (7/7 plans of Phase 02 + 7/7 Phase 01; Phases 1+2 awaiting verifier sign-off)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: ~9 min
-- Total execution time: ~120 min
+- Total execution time: ~130 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 7/7 | ~60 min | ~8 min |
-| 02 | 6/7 | ~60 min | ~10 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m + Wave D MensagemService 6m30s) |
+| 02 | 7/7 | ~70 min | ~10 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m + Wave D MensagemService 6m30s + Wave E integration tests 9m) |
 
 **Recent Trend:**
 
@@ -64,6 +64,7 @@ Progress: [████████░░] 86% (6/7 plans of Phase 02; Phase 1 a
 | Phase 02-persistencia-idempotencia P05 | 510 | 6 tasks | 24 files |
 | Phase 02 P04 | 24min | 3 tasks | 3 files (1 repo modificado + 1 service novo + 1 test novo, 7 tests verdes) |
 | Phase 02 P06 | 6min30s | 4 tasks | 4 files (1 service novo + 1 controller mod + 2 tests, 4 novos verdes, 99 reator) |
+| Phase 02 P07 | ~9min | 3 tasks | 2 files (1 integration test E2E novo + ROADMAP mod; 13 tests novos verdes, 112 api-whatsapp aggregate, reator 7 modulos BUILD SUCCESS) |
 
 ## Accumulated Context
 
@@ -109,6 +110,10 @@ Recent decisions affecting current work:
 - [02-06]: Ack-first defensivo no WebhookController.POST — try/catch IOException + RuntimeException -> log.error + return 200 mesmo em erro; PITFALLS C-05 (Meta retry storm em payload quebrado) prioriza estabilidade sobre alarme. Trade-off: mascara bugs em prod. Mitigacao: log.error com stack trace + Phase 6 pode adicionar metric counter `whatsapp_webhook_errors_total`.
 - [02-06]: WebhookControllerTest precisou @MockBean MensagemService — `@WebMvcTest` so carrega controller; Phase 2 ganhou nova dependencia. WebhookControllerIntegrationTest (Phase 1) usa @SpringBootTest e nao precisou mudanca (Spring carrega bean real). Pattern reusable para futuras adicoes de service ao controller.
 - [02-06]: H2 NOW() retorna LOCAL como UTC (timezone-naive) — diff de 3h com Instant.now() real UTC quebrou primeira versao do test webhook_text_persiste com `.isAfter(antes)`. Fix Rule 1: validar apenas `.isNotNull()` aqui; validacao temporal precisa via `JdbcTemplate.queryForObject(Timestamp.class)` ja existe em `ClienteZapServiceTest.atualizar_em_nova_transacao_commit_imediato` (Plan 02-04). Em PostgreSQL real prod com TIMESTAMP WITH TIME ZONE, comparativo direto funcionaria.
+- [02-07]: WebhookPersistenciaIntegrationTest com 13 tests E2E `@SpringBootTest(MOCK)` + MockMvc + JdbcTemplate fecha Phase 2 empiricamente — todos os 5 ROADMAP SC verdes via tests separados (sc1, sc2a-sc2f, sc3a, sc3b, sc4, sc5) + 2 bonus (multiple + JSON malformado retorna 200). Helper `computeSignature` viva assina fixtures dinamicamente com appSecret do test profile (sem hex hardcoded); helper `postFixture` DRY (carrega + assina + POST + assert 200).
+- [02-07]: Comparacao temporal SC-5 via epoch seconds (long, nao Instant) — H2 NOW() timezone-naive quirk reproducido em Plan 02-06 SUMMARY. Solucao: extrair epoch seconds via `tsRaw.getTime() / 1000L` e comparar com `System.currentTimeMillis() / 1000L` — local-vs-local, neutraliza offset BRT/UTC. Em PostgreSQL real prod com TIMESTAMP WITH TIME ZONE comparativo direto Instant funcionaria.
+- [02-07]: Filter por wamid+telefone em assertions de COUNT (vs deleteAll @BeforeEach) — H2 in-memory compartilhado entre tests do mesmo SpringContext; wamid UNIQUE garante isolamento da assertion. Bug Rule 1 descoberto na primeira run: sc3a `COUNT WHERE telefone = "554784178525"` retornava 3 (sc1+sc2a+bonus_multiple usam mesmo telefone). Fix: `WHERE wamid = ? AND telefone = ?`.
+- [02-07]: Phase 2 100% completa — 7/7 plans + 5/5 ROADMAP SC + 9/9 reqs (WEB-05/06/07 + PER-02/03/04/05/06/07). Reator inteiro 7 modulos BUILD SUCCESS, ~183 tests verdes em ~30s, zero regressao em Phase 1. Pronto para gsd-verify-phase.
 
 ### Pending Todos
 
@@ -121,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-05T16:33:44.000Z
-Stopped at: Completed 02-06-PLAN.md (Wave D — MensagemService orquestrador sincrono fechando D-06 + WebhookController.POST com ack-first defensivo PITFALLS C-05, 4 tests E2E verdes, 99 tests api-whatsapp aggregate verde, zero regressao em Phase 1, commit 24ac27c). WEB-05/06/07 + PER-06/07 Complete. Wave E final pode comecar (Plan 02-07 integration tests E2E + ROADMAP update fechando Phase 2 inteira).
+Last session: 2026-05-05T16:50:51.000Z
+Stopped at: Completed 02-07-PLAN.md (Wave E final — WebhookPersistenciaIntegrationTest com 13 tests E2E SpringBootTest+MockMvc+JdbcTemplate cobrindo 5 SC ROADMAP + 2 bonus, 112 tests api-whatsapp aggregate verde, reator 7 modulos BUILD SUCCESS, ROADMAP Phase 2 [x] Complete + Plans TBD->7 com index, commit ab60b1b). **Phase 2 100% completa — 7/7 plans + 5/5 SC + 9/9 reqs satisfeitos.** Pronto para gsd-verify-phase de Phase 2 OU inicio de Phase 3 (ROU-01..05 async boundary; planning/research necessario antes de execute-phase).
 Resume file: None
