@@ -1,13 +1,14 @@
 # api-whatsapp/src/main/resources/application.yml
 #
-# PLAN-02 (Wave 2 da Phase 1): config minima para boot vazio.
-# PLAN-03 expande com app.modulos.whatsapp.{phoneNumberId, accessToken, appSecret, verifyToken, callbackUrl}.
-# PLAN-04 adiciona spring.datasource + spring.jpa + spring.flyway e application-test.yml com H2.
+# PLAN-03 (Wave 3 da Phase 1): expandido com bloco app.modulos.whatsapp.* e
+# placeholders ${WHATSAPP_*:} (sem default — Bean Validation @NotBlank dispara
+# fail-fast no boot via WhatsAppProperties se qualquer env var faltar).
 #
-# IMPORTANTE: o bloco `spring.autoconfigure.exclude` abaixo e TEMPORARIO desta wave —
-# spring-boot-starter-data-jpa esta no classpath (per pom.xml) mas ainda nao ha datasource
-# configurado nem migrations. Sem essa exclusao, Spring Boot tenta auto-configurar
-# Hibernate/Flyway no boot e falha. PLAN-04 REMOVE essas 3 linhas quando datasource real entrar.
+# IMPORTANTE: o bloco `spring.autoconfigure.exclude` abaixo continua TEMPORARIO
+# (vindo de PLAN-02). spring-boot-starter-data-jpa esta no classpath mas
+# datasource/migrations so entram em PLAN-04. Sem essa exclusao, Spring Boot
+# tenta auto-configurar Hibernate/Flyway no boot e falha. PLAN-04 REMOVE
+# essas 3 linhas quando spring.datasource + spring.flyway forem adicionados.
 server:
   port: ${SERVER_PORT:9193}
   tomcat:
@@ -20,12 +21,30 @@ spring:
   application:
     name: api-whatsapp
 
-  # PLAN-02 only — removed in PLAN-04 when application-test.yml + H2 entram
+  # PLAN-02/03 only — REMOVE em PLAN-04 quando datasource + Flyway entrarem
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
       - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+
+# Modulo: configuracao especifica do WhatsApp — fail-fast se faltar qualquer um dos 5 secrets.
+# Placeholders com colon vazio (${VAR:}) resolvem para string vazia se a env var nao
+# estiver setada — string vazia falha @NotBlank em WhatsAppProperties (CFG-01/CFG-02).
+app:
+  modulos:
+    whatsapp:
+      phoneNumberId: ${WHATSAPP_PHONE_NUMBER_ID:}
+      accessToken: ${WHATSAPP_ACCESS_TOKEN:}
+      appSecret: ${WHATSAPP_APP_SECRET:}
+      verifyToken: ${WHATSAPP_VERIFY_TOKEN:}
+      erpCallbackUrl: ${WHATSAPP_ERP_CALLBACK_URL:}
+      callbackTimeout: ${WHATSAPP_CALLBACK_TIMEOUT:5s}
+
+# API key de endpoints internos do ERP (Phase 4) — webhook e publico, validado por HMAC
+modulo:
+  versao: 1.0.0
+  api-key: ${API_KEY:}
 
 # OpenAPI / Swagger UI
 springdoc:
@@ -34,12 +53,23 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+# Logging — alinhado com PITFALLS C-09 / C-11 (sem token / sem query string em logs)
 logging:
   level:
     br.com.erpkit.whatsapp: INFO
+    # NAO subir org.springframework.web para DEBUG — vaza body, header, query string
     org.springframework.web: INFO
 
-# Modulo: configuracao base (5 secrets WhatsApp entram em PLAN-03)
-modulo:
-  versao: 1.0.0
-  api-key: ${API_KEY:}
+# Actuator (so tem efeito quando spring-boot-starter-actuator entrar no classpath
+# em Phase 4/6 com WHATS-17 health check). Defesa em profundidade hoje, ativa amanha.
+management:
+  endpoint:
+    env:
+      keys-to-sanitize:
+        - password
+        - secret
+        - key
+        - token
+        - accessToken
+        - appSecret
+        - verifyToken

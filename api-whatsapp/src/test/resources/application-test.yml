@@ -1,0 +1,31 @@
+# api-whatsapp/src/test/resources/application-test.yml
+#
+# PLAN-03 (Wave 3 da Phase 1): config minima para SpringBootTest carregar contexto
+# com Bean Validation @NotBlank satisfeito por dummy values.
+#
+# datasource + jpa + flyway com H2 PostgreSQL-mode entram em PLAN-04 (junto com
+# as migrations V1-V4 e remocao do `autoconfigure.exclude`). Em PLAN-03 nao
+# subimos contexto JPA — so validamos que WhatsAppProperties bind/valida.
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+
+# Dummy values para Bean Validation passar sem env vars reais. Tests que precisem
+# de valores reais (ex: HmacValidatorTest com appSecret real em PLAN-05) podem
+# sobrescrever via @SpringBootTest(properties = {...}) ou @TestPropertySource.
+app:
+  modulos:
+    whatsapp:
+      phoneNumberId: test-phone-id
+      accessToken: test-access-token
+      appSecret: test-app-secret
+      verifyToken: test-verify-token
+      erpCallbackUrl: http://localhost:0/test
+      callbackTimeout: 5s
+
+modulo:
+  versao: 1.0.0-test
+  api-key: test-key
