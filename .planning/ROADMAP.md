@@ -25,7 +25,14 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   3. HMAC e computado sobre os bytes brutos do body via `CachedBodyHttpServletRequest` (eager read na construcao) — payload com texto portugues (`"Ola, gostaria de um orcamento"`) valida corretamente, nunca via `ContentCachingRequestWrapper`
   4. Boot falha imediatamente com mensagem clara se qualquer propriedade obrigatoria (`phoneNumberId`, `accessToken`, `appSecret`, `verifyToken`, `erpCallbackUrl`) estiver ausente — `accessToken`/`appSecret`/`verifyToken` nunca aparecem em logs
   5. Flyway aplica migrations V1 (clientes_zap), V2 (mensagens_log), V3 (media_cache), V4 (estado_conversa) no schema `whatsapp` no boot; `mvnw verify -pl api-whatsapp` verde com H2
-**Plans**: TBD
+**Plans**: 7 plans
+  - [ ] 01-PLAN-01-lib-shared-additional-public-paths.md — Estender ApiKeyFilter com construtor de 2 args (Set additionalPublicPaths) preservando backward-compat
+  - [ ] 01-PLAN-02-api-whatsapp-skeleton.md — Bootstrap esqueleto Maven do modulo api-whatsapp (pom + WhatsAppApplication + application.yml minimo)
+  - [ ] 01-PLAN-03-properties-fail-fast.md — WhatsAppProperties com 5 @NotBlank + Bean Validation fail-fast + toString mascarado + application-test.yml
+  - [ ] 01-PLAN-04-flyway-migrations-v1-v4.md — Migrations Flyway V1-V4 (clientes_zap, mensagens_log, media_cache, estado_conversa) + datasource Postgres/H2
+  - [ ] 01-PLAN-05-hmac-validator-cached-body.md — HmacValidator pure function + CachedBodyHttpServletRequest com eager body read
+  - [ ] 01-PLAN-06-hmac-filter-security-config-webhook-controller.md — HmacSignatureFilter + SecurityConfig + WebhookController (GET handshake plain text, POST stub) + HealthController
+  - [ ] 01-PLAN-07-integration-tests.md — Integration tests MockMvc end-to-end fechando os 5 ROADMAP success criteria
 **UI hint**: no
 
 ### Phase 2: Persistencia + Idempotencia
@@ -99,7 +106,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundacao HMAC + Webhook | 0/TBD | Not started | - |
+| 1. Fundacao HMAC + Webhook | 0/7 | Not started | - |
 | 2. Persistencia + Idempotencia | 0/TBD | Not started | - |
 | 3. Roteamento + Boundary Async | 0/TBD | Not started | - |
 | 4. Outbound + Trava 24h + WhatsAppController | 0/TBD | Not started | - |
