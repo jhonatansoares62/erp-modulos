@@ -15,7 +15,7 @@ Requirements pra primeira release dos 2 modulos novos (`api-whatsapp` + `lib-wha
 - [x] **WEB-04**: Webhook responde **200 OK pro Meta em <1s** (limite real Meta: 5s, mas margem de seguranca) executando apenas: HMAC validation + idempotency check fast-path. Persistencia/roteamento/outbound rodam em `@Async` apos o ack
 - [x] **WEB-05**: Idempotencia fast-path por `wamid` em `IdempotencyService` — se ja visto recentemente, responde 200 sem reprocessar
 - [x] **WEB-06**: Idempotencia hard-guard por `UNIQUE wamid` em `mensagens_log` — `DataIntegrityViolationException` em duplicate e silenciada (catch + log debug + return 200), nao propagada
-- [ ] **WEB-07**: Parser do payload Meta entende ao menos: `message.text`, `message.interactive.button_reply` (com `id` e `title`), `message.interactive.list_reply` (com `id` e `title`), `message.document` (com `id`/`mime_type`/`filename`), e callback de status (`statuses.status` = sent/delivered/read/failed) — para entradas desconhecidas, persiste em `mensagens_log` com `tipo=desconhecido` sem erro
+- [x] **WEB-07**: Parser do payload Meta entende ao menos: `message.text`, `message.interactive.button_reply` (com `id` e `title`), `message.interactive.list_reply` (com `id` e `title`), `message.document` (com `id`/`mime_type`/`filename`), e callback de status (`statuses.status` = sent/delivered/read/failed) — para entradas desconhecidas, persiste em `mensagens_log` com `tipo=desconhecido` sem erro
 
 ### Persistencia (schema, migrations, cliente)
 
@@ -129,7 +129,7 @@ Mapeamento requirement → fase. Preenchido pelo gsd-roadmapper.
 | WEB-04 | Phase 1 | Complete |
 | WEB-05 | Phase 2 | Complete |
 | WEB-06 | Phase 2 | Complete |
-| WEB-07 | Phase 2 | Pending |
+| WEB-07 | Phase 2 | Complete |
 | PER-01 | Phase 1 | Complete |
 | PER-02 | Phase 2 | Pending |
 | PER-03 | Phase 2 | Pending |
