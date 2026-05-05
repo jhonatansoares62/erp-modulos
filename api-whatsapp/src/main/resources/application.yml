@@ -40,8 +40,17 @@ spring:
     password: ${WHATSAPP_DB_PASSWORD:erp_mudas_dev}
 
   # JPA: ddl-auto: validate (NAO update/create) — schema vem 100% do Flyway.
-  # default_schema: whatsapp evita Hibernate buscar tabelas em 'public'.
   # open-in-view: false — anti-pattern em producao (PITFALLS / convencao do monorepo).
+  #
+  # NOTA (Phase 2 Plan 01): hibernate.default_schema REMOVIDO. Quando ddl-auto:
+  # validate roda contra @Entity classes (Phase 2+ adiciona ClienteZap/MensagemLog/
+  # MediaCache), Hibernate executa "SELECT * FROM information_schema.sequences"
+  # internamente; com default_schema setado, o prefixo gera
+  # "whatsapp.information_schema.sequences" que nao existe em H2 nem em PG. As
+  # 3 entities ja declaram @Table(schema = "whatsapp", name = "...") explicitamente,
+  # portanto cada query JPA prefixa corretamente. O currentSchema=whatsapp no
+  # JDBC URL acima fica como defesa em profundidade para queries nativas que
+  # nao tenham prefixo (busca search_path do PostgreSQL).
   jpa:
     hibernate:
       ddl-auto: validate
@@ -49,7 +58,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        default_schema: whatsapp
 
   # Flyway: aplica V1..V4 no schema 'whatsapp'.
   # baseline-on-migrate: true permite aplicar contra DB ja existente

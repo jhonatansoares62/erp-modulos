@@ -25,7 +25,7 @@
 
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb_whatsapp;MODE=PostgreSQL;DATABASE_TO_UPPER=false;CASE_INSENSITIVE_IDENTIFIERS=true;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS whatsapp
+    url: jdbc:h2:mem:testdb_whatsapp;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS whatsapp
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -35,9 +35,22 @@ spring:
       ddl-auto: validate
     open-in-view: false
     database-platform: org.hibernate.dialect.H2Dialect
+    # NOTA (Phase 2 Plan 01): hibernate.default_schema REMOVIDO de proposito.
+    # Quando ddl-auto: validate roda contra @Entity classes, Hibernate executa
+    # "SELECT * FROM information_schema.sequences" internamente. Em H2 com
+    # DATABASE_TO_UPPER=false, esse lookup falha com "Schema information_schema
+    # not found" pois H2 system schema e UPPERCASE. As 3 entities (ClienteZap,
+    # MensagemLog, MediaCache) ja declaram @Table(schema = "whatsapp", name = "...")
+    # explicitamente, portanto cada query JPA prefixa corretamente sem precisar
+    # de default_schema.
+    #
+    # boot.allow_jdbc_metadata_access: false desabilita o pre-fetch de metadata
+    # via JDBC (incluindo o problematico information_schema.sequences). Hibernate
+    # 6.4+ honra essa flag — schema validation usa apenas o mapping declarativo
+    # das @Entity classes, ja que o schema vem 100% do Flyway (validate, nao
+    # update). Sequences nao sao usadas (entities usam @GeneratedValue IDENTITY).
     properties:
-      hibernate:
-        default_schema: whatsapp
+      "[hibernate.boot.allow_jdbc_metadata_access]": "false"
 
   flyway:
     enabled: true
