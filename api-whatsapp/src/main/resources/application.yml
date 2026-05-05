@@ -153,7 +153,14 @@ resilience4j:
         exponential-backoff-multiplier: 2.0
         retry-exceptions:
           - org.springframework.web.client.HttpServerErrorException
+          - org.springframework.web.client.ResourceAccessException
           - java.net.SocketTimeoutException
           - java.io.IOException
         # 4xx categoricos NAO em retry-exceptions — Resilience4j por default NAO retenta
         # excecoes nao listadas. HttpClientErrorException (4xx) NAO retenta.
+        #
+        # ResourceAccessException: wrapper do Spring RestClient sobre I/O errors
+        # (incluindo SocketTimeoutException) — empiricamente, RestClient.toBodilessEntity()
+        # converte SocketTimeoutException em ResourceAccessException("Could not retrieve
+        # response status code: ..."). Sem este entry, timeouts NAO retentariam
+        # (descoberto via test ErpCallbackClientTest.timeout_retry_e_fallback — Rule 1 fix).

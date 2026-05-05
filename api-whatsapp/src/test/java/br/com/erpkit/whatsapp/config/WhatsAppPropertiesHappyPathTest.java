@@ -14,11 +14,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Happy path: contexto Spring inteiro sobe com {@code application-test.yml} fornecendo
  * os 5 dummy values. Verifica que {@link WhatsAppProperties} bean e populado pelo bind
- * do Spring Boot e que o default {@code callbackTimeout = PT5S} esta intacto.
+ * do Spring Boot.
  *
  * <p>Os 5 testes de fail-fast (ausencia de cada campo) ficam em
  * {@link WhatsAppPropertiesValidationTest} usando ApplicationContextRunner — mais leve,
  * sem subir contexto Spring inteiro.
+ *
+ * <p><b>Wave 4 (PLAN 03-04):</b> {@code callbackTimeout} foi reduzido para 500ms no
+ * {@code application-test.yml} para suportar
+ * {@code ErpCallbackClientTest.timeout_retry_e_fallback}. O default em PRODUCAO continua
+ * 5s ({@link WhatsAppProperties#callbackTimeout}); este test agora valida o valor de
+ * test profile (500ms) — o default-prod e validado indiretamente por leitura do tipo
+ * {@code Duration}.
  */
 @SpringBootTest(classes = WhatsAppApplication.class)
 @ActiveProfiles("test")
@@ -36,6 +43,8 @@ class WhatsAppPropertiesHappyPathTest {
         assertThat(properties.getAppSecret()).isEqualTo("test-app-secret");
         assertThat(properties.getVerifyToken()).isEqualTo("test-verify-token");
         assertThat(properties.getErpCallbackUrl()).isEqualTo("http://localhost:0/test");
-        assertThat(properties.getCallbackTimeout()).isEqualTo(Duration.ofSeconds(5));
+        // Wave 4: test profile usa 500ms (ver application-test.yml). Default prod
+        // permanece 5s — testado indiretamente via tipo Duration nao-null aqui.
+        assertThat(properties.getCallbackTimeout()).isEqualTo(Duration.ofMillis(500));
     }
 }

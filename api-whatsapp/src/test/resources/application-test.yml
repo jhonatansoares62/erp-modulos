@@ -76,7 +76,10 @@ app:
       appSecret: test-app-secret
       verifyToken: test-verify-token
       erpCallbackUrl: http://localhost:0/test
-      callbackTimeout: 5s
+      # Wave 4 (PLAN 03-04): callbackTimeout 500ms necessario para
+      # ErpCallbackClientTest.timeout_retry_e_fallback (delay 1500ms > timeout
+      # 500ms). Phase 1+2 tests nao chamam callback ERP — sem regressao.
+      callbackTimeout: 500ms
       # Override para tests — placeholder substituido por WireMock URL via @DynamicPropertySource em Wave 3.
       metaApiBaseUrl: http://localhost:0/test
 
@@ -102,5 +105,6 @@ resilience4j:
         exponential-backoff-multiplier: 2.0
         retry-exceptions:
           - org.springframework.web.client.HttpServerErrorException
+          - org.springframework.web.client.ResourceAccessException
           - java.net.SocketTimeoutException
           - java.io.IOException
