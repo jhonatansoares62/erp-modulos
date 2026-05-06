@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 04 closeout — 6/6 plans + 5/5 ROADMAP SC + 11/11 OUT reqs verdes; trava custo zero arquitetural validada via grep+reflection gates
-stopped_at: Phase 04 closeout — pronto para gsd-verify-phase
-last_updated: "2026-05-06T05:45:00.000Z"
-last_activity: 2026-05-06 -- Phase 04 closeout completo (6/6 plans, reator BUILD SUCCESS 266 tests, 11 OUT reqs Complete)
+status: verifying
+stopped_at: Phase 04 closeout — 6/6 plans + 5/5 ROADMAP SC + 11/11 OUT reqs verdes; reator BUILD SUCCESS 266 tests; pronto para gsd-verify-phase 4-outbound-trava-24h-whatsappcontroller
+last_updated: "2026-05-06T12:50:29.585Z"
+last_activity: 2026-05-06
 progress:
   total_phases: 6
   completed_phases: 4
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Current Position
 
-Phase: 04 (outbound-trava-24h-whatsappcontroller) — COMPLETE (awaiting verifier)
-Plan: 6 of 6 COMPLETE
+Phase: 5
+Plan: Not started
 Status: Phase 04 closeout entregue — pronto para gsd-verify-phase 4-outbound-trava-24h-whatsappcontroller
-Last activity: 2026-05-06 -- Phase 04 closeout completo (reator BUILD SUCCESS 266 tests, 5/5 SC + 11/11 OUT reqs verdes)
+Last activity: 2026-05-06
 
 Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 6/6 + Phase 4 6/6; Phases 1+2+3+4 awaiting verifier sign-off)
 
@@ -36,7 +36,7 @@ Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Pha
 
 **Velocity:**
 
-- Total plans completed: 26 (Phase 1 7 + Phase 2 7 + Phase 3 6 + Phase 4 6)
+- Total plans completed: 32 (Phase 1 7 + Phase 2 7 + Phase 3 6 + Phase 4 6)
 - Average duration: ~13 min
 - Total execution time: ~325 min
 
@@ -47,7 +47,7 @@ Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Pha
 | 01 | 7/7 | ~60 min | ~8 min |
 | 02 | 7/7 | ~70 min | ~10 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m + Wave D MensagemService 6m30s + Wave E integration tests 9m) |
 | 03 | 6/6 | ~109 min | ~18 min (Wave 1 infra ~12min + Wave 2 tipos puros ~8min + Wave 3 MetaMediaClient ~9min + Wave 4 ErpCallbackClient ~17min + Wave 5 MensagemAsyncListener ~28min + Wave 6 closeout ~35min) |
-| 04 | 6/6 | ~122 min | ~20 min (Wave 1 04-01 ~25min lib-shared+spike + Wave 2 04-02 ~30min aspect+window + Wave 2 04-03 ~15min media-cache + Wave 3 04-04 ~25min cloud-client + Wave 4 04-05 ~12min controller + Wave 5 04-06 ~15min closeout) |
+| 04 | 6 | - | - |
 
 **Recent Trend:**
 
