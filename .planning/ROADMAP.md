@@ -84,7 +84,13 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   3. `enviarDocumento` com o mesmo PDF enviado duas vezes realiza upload apenas na primeira vez — `MediaCacheService` retorna `media_id` cacheado por sha256 na segunda chamada; entrada expirada (`expira_em < now()`) dispara reupload e atualiza `expira_em`
   4. Erro 4xx da Cloud API (400/401/403) nao e retentado, e logado com `meta_error_code`; erro 5xx e timeout acionam Resilience4j retry exponencial (3 tentativas, 1s/2s/4s); `Authorization: Bearer` nunca aparece nos logs
   5. Mensagem de saida bem-sucedida e persistida em `mensagens_log` com `direcao=out` e `wamid` retornado pelo Meta; envio com janela aberta via `/api/whatsapp/enviar-*` retorna 200 com o wamid
-**Plans**: TBD
+**Plans**: 6 plans
+  - [ ] 04-01-PLAN.md — lib-shared ErrorResponse + CodigoCarrier + bloco resilience4j whatsapp-cloud + spike multipart Wave 0
+  - [ ] 04-02-PLAN.md — JanelaEnforcementAspect (HIGHEST_PRECEDENCE) + WindowEnforcementService + JanelaConversaFechadaException + JanelaProtegida annotation
+  - [ ] 04-03-PLAN.md — MediaCacheService (TTL estrito 30d, race save+catch)
+  - [ ] 04-04-PLAN.md — WhatsAppCloudClient (4 envios + uploadMedia + classificar) + MetaApiException + WhatsAppCloudClientTest WireMock
+  - [ ] 04-05-PLAN.md — WhatsAppController + 5 DTOs request + StatusResponse + WhatsAppControllerTest @WebMvcTest
+  - [ ] 04-06-PLAN.md — Reator E2E smoke + grep gates SC-1/SC-4c + ROADMAP/REQUIREMENTS/STATE closeout
 **UI hint**: no
 
 ### Phase 5: lib-whatsapp-client
@@ -122,6 +128,6 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 | 1. Fundacao HMAC + Webhook | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
 | 2. Persistencia + Idempotencia | 7/7 | Complete (awaiting verifier) | 2026-05-05 |
 | 3. Roteamento + Boundary Async | 6/6 | Complete (awaiting verifier) | 2026-05-05 |
-| 4. Outbound + Trava 24h + WhatsAppController | 0/TBD | Not started | - |
+| 4. Outbound + Trava 24h + WhatsAppController | 0/6 | Planning complete | - |
 | 5. lib-whatsapp-client | 0/TBD | Not started | - |
 | 6. Qualidade — Testes + OpenAPI + RUNBOOK | 0/TBD | Not started | - |
