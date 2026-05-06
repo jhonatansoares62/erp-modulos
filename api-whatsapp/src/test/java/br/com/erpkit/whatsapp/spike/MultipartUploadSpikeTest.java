@@ -12,11 +12,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
+import java.net.http.HttpClient;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aMultipart;
@@ -94,8 +96,14 @@ class MultipartUploadSpikeTest {
         parts.add("type", "application/pdf");
         parts.add("file", fileResource);
 
+        // Force HTTP/1.1 on the JDK HttpClient. Java 21 defaults to HTTP/2 with ALPN,
+        // but WireMock's plain HTTP server cannot speak HTTP/2 plaintext, leading to
+        // RST_STREAM / EOF errors during multipart upload. Production talks to Meta over
+        // HTTP/2/TLS; this override only constrains the test client.
+        HttpClient http11 = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
         RestClient restClient = RestClient.builder()
                 .baseUrl(wireMock.baseUrl())
+                .requestFactory(new JdkClientHttpRequestFactory(http11))
                 .build();
 
         @SuppressWarnings("rawtypes")
