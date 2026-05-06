@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 4 contexto capturado - 4 decisoes implementacao locked, pronto para gsd-plan-phase
-last_updated: "2026-05-06T01:13:44.589Z"
-last_activity: 2026-05-06 -- Phase 04 execution started
+status: Phase 04 closeout — 6/6 plans + 5/5 ROADMAP SC + 11/11 OUT reqs verdes; trava custo zero arquitetural validada via grep+reflection gates
+stopped_at: Phase 04 closeout — pronto para gsd-verify-phase
+last_updated: "2026-05-06T05:45:00.000Z"
+last_activity: 2026-05-06 -- Phase 04 closeout completo (6/6 plans, reator BUILD SUCCESS 266 tests, 11 OUT reqs Complete)
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 26
-  completed_plans: 20
-  percent: 77
+  completed_plans: 26
+  percent: 100
 ---
 
 # Project State
@@ -25,20 +25,20 @@ See: .planning/PROJECT.md (updated 2026-05-05)
 
 ## Current Position
 
-Phase: 04 (outbound-trava-24h-whatsappcontroller) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 04
-Last activity: 2026-05-06 -- Phase 04 execution started
+Phase: 04 (outbound-trava-24h-whatsappcontroller) — COMPLETE (awaiting verifier)
+Plan: 6 of 6 COMPLETE
+Status: Phase 04 closeout entregue — pronto para gsd-verify-phase 4-outbound-trava-24h-whatsappcontroller
+Last activity: 2026-05-06 -- Phase 04 closeout completo (reator BUILD SUCCESS 266 tests, 5/5 SC + 11/11 OUT reqs verdes)
 
-Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 5/6; Phases 1+2 awaiting verifier sign-off)
+Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 6/6 + Phase 4 6/6; Phases 1+2+3+4 awaiting verifier sign-off)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 16
-- Average duration: ~9 min
-- Total execution time: ~151 min
+- Total plans completed: 26 (Phase 1 7 + Phase 2 7 + Phase 3 6 + Phase 4 6)
+- Average duration: ~13 min
+- Total execution time: ~325 min
 
 **By Phase:**
 
@@ -46,12 +46,13 @@ Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Pha
 |-------|-------|-------|----------|
 | 01 | 7/7 | ~60 min | ~8 min |
 | 02 | 7/7 | ~70 min | ~10 min (Wave 1 spike 26m + Wave 2 TelefoneBR 3m + Wave B parallel + Wave C ClienteZap 24m + Wave D MensagemService 6m30s + Wave E integration tests 9m) |
-| 03 | 5/6 | ~74 min | ~14.8 min (Wave 1 infra ~12min + Wave 2 tipos puros ~8min + Wave 3 MetaMediaClient ~9min + Wave 4 ErpCallbackClient ~17min + Wave 5 MensagemAsyncListener ~28min com refactor MensagemService + Mockito migration + 8 tests bonus) |
+| 03 | 6/6 | ~109 min | ~18 min (Wave 1 infra ~12min + Wave 2 tipos puros ~8min + Wave 3 MetaMediaClient ~9min + Wave 4 ErpCallbackClient ~17min + Wave 5 MensagemAsyncListener ~28min + Wave 6 closeout ~35min) |
+| 04 | 6/6 | ~122 min | ~20 min (Wave 1 04-01 ~25min lib-shared+spike + Wave 2 04-02 ~30min aspect+window + Wave 2 04-03 ~15min media-cache + Wave 3 04-04 ~25min cloud-client + Wave 4 04-05 ~12min controller + Wave 5 04-06 ~15min closeout) |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-03 (9 min), 01-04 (12 min), 01-05 (10 min), 01-06 (7 min), 01-07 (8 min)
-- Trend: scope crescente nos primeiros (Wave 4 spike + migrations), depois estavel ~7-10min por wave
+- Last 6 plans (Phase 4): 04-01 (~25min), 04-02 (~30min), 04-03 (~15min), 04-04 (~25min), 04-05 (~12min), 04-06 (~15min)
+- Trend: Phase 4 estavel 15-30min por plan; closeout (04-06) eficiente 15min com reator empirico verde + 3 file updates + SUMMARY rico
 
 *Updated after each plan completion*
 | Phase 01 P03 | 9min | 6 tasks | 5 files |
@@ -72,6 +73,12 @@ Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Pha
 | Phase 03 P04 | ~17min | 3 tasks | 5 files (2 created: ErpCallbackClient + ErpCallbackClientTest 6 tests WireMock; 3 modified: application-test.yml + application.yml + WhatsAppPropertiesHappyPathTest; reator BUILD SUCCESS 138 tests verdes (132 prev + 6 novos), zero regressao; Risk A6 RESOLVED empiricamente; 3 Rule 1 fixes documentados em SUMMARY) |
 | Phase 03 P05 | ~28min | 4 tasks | 5 files (2 created: MensagemAsyncListener + MensagemAsyncListenerTest 8 tests Mockito; 3 modified: MensagemService refactor fast-path + @Transactional + ApplicationEventPublisher + MensagemServiceTest migrado para Mockito puro 4 tests + WebhookPersistenciaIntegrationTest @Disabled toda a classe Wave 6 reativa; reator BUILD SUCCESS 146 tests run, 0 failures, 13 skipped, zero regressao em outros modulos; Risk A1 RESOLVED por design via @Transactional) |
 | Phase 03 P06 | ~35min | 3 tasks | 8 files (3 created: AsyncTestConfig + WebhookAsyncIntegrationTest 5 tests + WebhookAsyncTimingIntegrationTest 1 test; 5 modified: pom.xml awaitility + AsyncConfig @ConditionalOnMissingBean + MensagemAsyncListener @Transactional(NOT_SUPPORTED) + WebhookPersistenciaIntegrationTest reabilitado + ROADMAP.md Phase 3 [x] 6/6; reator BUILD SUCCESS 152 tests verdes vs 146+13skipped Wave 5; reator completo 7 modulos verde zero regressao; 5/5 ROADMAP SC + 5/5 ROU reqs verdes; Risk A1 + A6 ambos RESOLVED empiricamente; 4 Rule 1/3 bug fixes documentados; Phase 3 100% closeout pronta para gsd-verify-phase) |
+| Phase 04 P01 | ~25min | 3 tasks | 7 files (3 created: CodigoCarrier + GlobalExceptionHandlerCodigoCarrierTest + MultipartUploadSpikeTest; 4 modified: ErrorResponse @JsonInclude NON_NULL + GlobalExceptionHandler instanceof CodigoCarrier + application.yml + application-test.yml com bloco whatsapp-cloud Resilience4j; 4 tests novos verdes — habilita D-02 + valida C-15 multipart 3 fields empiricamente para 04-04) |
+| Phase 04 P02 | ~30min | 3 tasks | 7 files (6 created: JanelaConversaFechadaException + WindowEnforcementService + JanelaProtegida annotation + JanelaEnforcementAspect + WindowEnforcementServiceTest + JanelaEnforcementAspectTest; 1 modified: ClienteZapRepository +buscarUltimaMensagemEm native @Query; 6 tests novos verdes — D-03 trava 24h aspect HIGHEST_PRECEDENCE empiricamente PROVADO via counter==1 em 3 retries Resilience4j) |
+| Phase 04 P03 | ~15min | 1 task TDD | 2 files (2 created: MediaCacheService + MediaCacheServiceTest; 4 tests novos verdes — D-04 TTL estrito 30d sem sliding + race save+catch DataIntegrityViolation 3a aplicacao consecutiva) |
+| Phase 04 P04 | ~25min | 3 tasks | 7 files (7 created: MetaApiException enum Tipo + EnvioResponse + BotaoDto + ItemDto + SecaoDto + WhatsAppCloudClient com 4 metodos publicos + uploadMedia + classificar + WhatsAppCloudClientTest 13 tests; OUT-01..05 + OUT-08..10; gate dual OUT-05 reflection + grep test impossivel de regredir; gotcha 03-04 reaproveitado fallbackMethod no @Retry counter==3 valida; 1 fix post-merge Rule 1 classifier-direct test) |
+| Phase 04 P05 | ~12min | 3 tasks | 7 files (7 created: 5 DTOs request/response + WhatsAppController 5 endpoints + WhatsAppControllerTest 13 tests @WebMvcTest; OUT-11 + D-01 base64 JSON regular + D-04 status minimal + Bean Validation cross-secao @AssertTrue isTotalItensValido) |
+| Phase 04 P06 | ~15min | 2 tasks + checkpoint | 4 files (1 created: 04-06-SUMMARY.md consolidando Phase 4; 3 modified: ROADMAP.md Phase 4 [x] 6/6 + REQUIREMENTS.md 11 OUT Complete + STATE.md frontmatter+Decisions+Performance Metrics+Session Continuity; reator BUILD SUCCESS empirico 266 tests verdes 7 modulos; 4 grep gates passando; 5/5 ROADMAP SC + 11/11 OUT reqs com test correspondente; Phase 4 100% closeout pronta para gsd-verify-phase) |
 
 ## Accumulated Context
 
@@ -151,6 +158,24 @@ Recent decisions affecting current work:
 - [03-05]: WebhookPersistenciaIntegrationTest @Disabled em toda a classe (13 tests skipped) — tests sc4/sc5 dependiam do flow sincrono Phase 2 onde MensagemService chamava ClienteZapService.identificar/atualizarUltimaMensagemEm. Em Phase 3 essas chamadas foram movidas para o listener @Async; thread do MockMvc retorna antes do listener completar. Wave 6 substitui whatsappTaskExecutor por SyncTaskExecutor via @TestConfiguration + adiciona WireMock stub para ERP — flow inteiro sincrono novamente em test. Alternativa preferida sobre exclude individual via -Dtest=...: build verde com comando unico mvnw verify, Wave 6 remove anotacao em UMA linha.
 - [03-05]: 8 tests no MensagemAsyncListenerTest (5 minimos do plan + 3 bonus Rule 2 add coverage): media_baixar_lanca_continua_sem_base64 (branch onde metaMediaClient.baixar lanca RuntimeException vs Optional.empty — listener log.warn + prossegue, NAO return early), atualizar_lanca_return_early (branch onde atualizar lanca apos identificar OK — return sem chamar comando/callback), despachar_lanca_NAO_propaga (catch generico defensivo step 5 — Resilience4j fallback ja deveria ter engolido mas codigo tem catch defesa em profundidade). Todos os 5 try/catch do listener tem regressao test.
 - [03-05]: @Component em vez de @Service no listener — convencao do CONTEXT/RESEARCH para listeners (vs services). Funcionalmente identicos em Spring (ambos sao stereotype @Component), mas semantica explicita: listener e event consumer, nao caso de uso de negocio. Pattern para Phase 4+ caso outros listeners apareçam.
+- [04-01]: ErrorResponse @JsonInclude(NON_NULL) garante backward compat empirica com api-email/api-storage/api-consultas — campos null `codigo` + `metaErrorCode` sao OMITIDOS do JSON, modulos Phase 1-3 que NUNCA setam continuam com wire identico. Reator inteiro verde apos modificacao confirma.
+- [04-01]: CodigoCarrier interface vive em lib-shared (NAO em api-whatsapp) — preserva direcao de dependencia: GlobalExceptionHandler usa `instanceof CodigoCarrier` sem importar pacotes de api-*. Excecoes Phase 1-3 nao implementam, branch ignorado silenciosamente.
+- [04-01]: Resilience4j whatsapp-cloud instance espelha erp-callback EXATAMENTE — Wave 4 Phase 3 ja provou empiricamente que essa config funciona; semantica Phase 4 outbound e identica (3 retries com backoff exp, 50% threshold, 60s wait open). ResourceAccessException CRUCIAL em retry-exceptions (gotcha 03-04 reaproveitado: Spring RestClient empacota SocketTimeoutException nele).
+- [04-02]: @Order(Ordered.HIGHEST_PRECEDENCE) validado empiricamente via counter==1 em 3 retries (Pitfall 1 RESEARCH RESOLVED) — JanelaEnforcementAspect roda outermost no chain Spring AOP; sem isso, em 3 retries verificarJanela seria chamado 3x (waste + race em boundary 24h durante backoff 1s/2s/4s).
+- [04-02]: Annotation marker @JanelaProtegida sem atributos (vs pointcut por nome) — forca declaracao explicita por metodo: qualquer novo `enviar*` em Phase 5+ tem que decidir conscientemente entrar/burlar enforcement. Convencao posicional args[0] = String telefone documentada em Javadoc + IllegalStateException fail-fast em runtime.
+- [04-02]: Native @Query SELECT (vs derived findByTelefone) em buscarUltimaMensagemEm — pula JPA L1 cache (PITFALLS C-01); webhook Phase 2 PER-07 grava REQUIRES_NEW + NOW() do banco; trava 24h le DEPOIS, potencialmente de outra transacao. WindowEnforcementService SEM @Transactional (leitura pura, native query contorna cache).
+- [04-03]: TTL estrito 30d sem sliding (D-04 reafirmado) — hit NAO estende `expira_em`. Meta documenta media_id valido por ate 30 dias; sliding TTL mascararia expiracao real do Meta levando a 4xx surpresa. Turnover natural via reupload, tabela bounded.
+- [04-03]: sha256 hex via HexFormat.of().formatHex (JDK 17+ built-in) — substitui patterns legacy (BigInteger.toString(16) com leading zero bug, Apache Commons Codec dependency externa). Pattern reusable.
+- [04-04]: Reflection test metodos_publicos_nao_inclui_template + grep gate dual mitigation OUT-05 — gate impossivel de regredir sem refactor consciente do test ou source. WhatsAppCloudClient EXATAMENTE 4 metodos publicos (texto/documento/botoes/lista) + 1 helper privado (uploadMedia sem @JanelaProtegida pois chamado de dentro de enviarDocumento ja protegido).
+- [04-04]: Multipart spike Wave 0 (04-01) provou boundary auto + 3 fields ANTES de 04-04 implementar — ByteArrayResource override getFilename() + MultiValueMap pattern empiricamente validado contra WireMock antes do bean WhatsAppCloudClient existir. Risco PITFALLS C-15 quase-zero apos spike.
+- [04-04]: fallbackMethod no @Retry (NAO no @CircuitBreaker) — gotcha 03-04 reaproveitado. Counter==3 em 5xx test valida empiricamente: se fallback estivesse no @CircuitBreaker (inner, order LOWEST_PRECEDENCE-2), CB inner converteria excecao em retorno void de sucesso ANTES da OUTER (Retry, order LOWEST_PRECEDENCE-3) ver o erro. Bug silencioso evitado.
+- [04-04]: Fallback throws (NAO suprime como Phase 3 ErpCallbackClient) — outbound do controller (04-05) PRECISA propagar erro ao ERP. Divergencia consciente: ErpCallbackClient e fire-and-forget (ack-first defensivo); WhatsAppCloudClient e chamado pelo controller que retorna ao ERP.
+- [04-04]: Bearer per-request explicito em CADA RestClient call (postMessages helper + uploadMedia) — NUNCA defaultHeader global. Defesa em profundidade C-09 + C-14 alinhada com Phase 3 D-04 (auditavel visualmente, facilita override per-request, zero risco de interceptor mal configurado escrever token em query param). Gate empirico getAllServeEvents.forEach + gate estatico grep.
+- [04-05]: @AssertTrue isTotalItensValido cross-secao em record + @JsonIgnore impede field aparecer em JSON — validacao single-section @Size(max=10) NAO captura {2 secoes x 6 itens = 12}; @AssertTrue executando sum stream e a unica forma de bloquear early antes da Cloud API rejeitar. @JsonIgnore deixa apenas os 3 components reais no wire.
+- [04-05]: D-01 base64 String (NAO byte[]) em EnviarDocumentoRequest — JSON regular entre ERP e api-whatsapp (multipart MultipartFile complica integracao do ERP). Controller decodifica via Base64.getDecoder().decode + try/catch IllegalArgumentException -> 400. @Size(max=18MB) protege contra DoS via payload absurdo; ~13MB binario apos decode (1.33 inflation) cobre PDFs tipicos de orcamento.
+- [04-05]: StatusResponse minimal record(status, circuitBreakerState, phoneNumberId) per D-04 — subscribed_apps validation via Graph API ficou para Phase 6 (PITFALLS C-12 — exige token Meta + chamada externa que pode degradar /status). v1 cobre o que operador precisa.
+- [04-06]: Reator inteiro mvnw verify (vs apenas api-whatsapp -pl) — garante zero regressao em api-email/api-storage/api-consultas que consomem ErrorResponse via lib-shared (modificado em 04-01). 266 tests verdes em 41s confirma backward compat empirica do @JsonInclude(NON_NULL).
+- [04-06]: Phase 4 100% completa — 6/6 plans + 5/5 ROADMAP SC + 11/11 OUT reqs (OUT-01..11) com test correspondente. Custo zero arquitetural (nao por disciplina) garantido por gate dual em OUT-05 (reflection + grep) + hard 409 antes de Cloud API em todos os 4 metodos publicos via @JanelaProtegida + HIGHEST_PRECEDENCE aspect. Pronto para gsd-verify-phase.
 
 ### Pending Todos
 
@@ -158,11 +183,13 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 4 (outbound + media): confirmar field names do multipart Meta `/media` upload endpoint (`messaging_product`, `type`, `file`) no momento da implementacao — Meta pode atualizar sem aviso (flag de research ARCHITECTURE.md)
-- WireMock 3.10.0 (Jetty 12 standalone shadow) + Boot 3.5.9: **VALIDADO empiricamente em 03-03** — 6 tests passaram em ~2.6s no run integrado. Bloqueador resolvido. Pattern reusable em Wave 4 e Wave 6.
+- Phase 4 multipart field names (`messaging_product`, `type`, `file`): **RESOLVED via spike Wave 0 04-01 + regression test 04-04** (`upload_media_envia_3_fields_obrigatorios` em WhatsAppCloudClientTest com `withRequestBodyPart aMultipart`). Mudanca futura do Meta seria detectada empiricamente pelo test no proximo run.
+- WireMock 3.10.0 (Jetty 12 standalone shadow) + Boot 3.5.9: **VALIDADO empiricamente em Phase 3 03-03** — pattern reusable confirmado em 04-04 (WhatsAppCloudClientTest 13 tests verdes em 2.1s).
+- Phase 5 (lib-whatsapp-client): contratos REST do controller (5 DTOs request + StatusResponse + EnvioResponse) sao records imutaveis estaveis — Phase 5 NAO deve quebrar contrato ao espelhar via lib-whatsapp-client.dto.* records.
+- Phase 6 dependency: SpringDoc OpenAPI (QA-05) + subscribed_apps validation no /status (PITFALLS C-12) + Spring servlet multipart >10MB override (RUNBOOK) — todos os 3 esperados em Phase 6, nao bloqueiam Phase 4 closeout.
 
 ## Session Continuity
 
-Last session: 2026-05-05T23:19:52.452Z
-Stopped at: Phase 4 contexto capturado - 4 decisoes implementacao locked, pronto para gsd-plan-phase
-Resume file: .planning/phases/04-outbound-trava-24h-whatsappcontroller/04-CONTEXT.md
+Last session: 2026-05-06T05:45:00.000Z
+Stopped at: Phase 04 closeout — 6/6 plans + 5/5 ROADMAP SC + 11/11 OUT reqs verdes; reator BUILD SUCCESS 266 tests; pronto para gsd-verify-phase 4-outbound-trava-24h-whatsappcontroller
+Resume file: .planning/phases/04-outbound-trava-24h-whatsappcontroller/04-06-SUMMARY.md

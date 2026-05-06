@@ -29,17 +29,17 @@ Requirements pra primeira release dos 2 modulos novos (`api-whatsapp` + `lib-wha
 
 ### Outbound (Cloud API + travas custo zero)
 
-- [ ] **OUT-01**: `WhatsAppCloudClient.enviarTexto(telefone, texto)` chama `POST graph.facebook.com/v22.0/{phoneNumberId}/messages` com payload `messaging_product=whatsapp, type=text` via Spring `RestClient` (NAO `RestTemplate`)
-- [ ] **OUT-02**: `WhatsAppCloudClient.enviarDocumento(telefone, bytes, filename, mimeType, caption)` faz upload via `POST /{phoneNumberId}/media` (multipart) entao envia `type=document` referenciando `media_id` retornado
-- [ ] **OUT-03**: `WhatsAppCloudClient.enviarBotoes(telefone, texto, botoes)` envia `type=interactive` com `interactive.type=button` (ate **3 botoes** reply, cada um `{type:'reply', reply:{id, title}}`); falha early se >3 botoes
-- [ ] **OUT-04**: `WhatsAppCloudClient.enviarLista(telefone, texto, secoes)` envia `type=interactive` com `interactive.type=list` (ate **10 itens totais** distribuidos em 1+ secoes, cada item `{id, title, description?}`); falha early se >10 itens
-- [ ] **OUT-05**: **NAO existir** `WhatsAppCloudClient.enviarTemplate(...)` — metodo simplesmente nao faz parte da API publica. Trava custo zero #1 garantida por ausencia de codigo, nao por flag
-- [ ] **OUT-06**: `WindowEnforcementService.verificarJanela(telefone)` consulta `ultima_mensagem_em` via query direta (pula cache JPA) **fora** da transacao do webhook — se diff > 24h, lanca `JanelaConversaFechadaException` que vira HTTP 409 com codigo `JANELA_24H_FECHADA`. Trava custo zero #2
-- [ ] **OUT-07**: Antes de cada chamada Cloud API em `WhatsAppCloudClient`, hook `@Aspect` ou `@Before` invoca `WindowEnforcementService.verificarJanela(telefone)` — bloqueio inviolavel via interceptor, nao dependendo de cada metodo lembrar
-- [ ] **OUT-08**: Media cache `MediaCacheService` — antes de upload, calcula `sha256(bytes)`, busca em `media_cache.arquivo_hash`. Hit (e nao expirado) → reusa `media_id`. Miss → upload + grava com `expira_em = now() + 30 dias`
-- [ ] **OUT-09**: Persiste mensagem de saida em `mensagens_log` com `direcao=out` + `wamid` retornado pelo Meta apos sucesso da chamada
-- [ ] **OUT-10**: Tratamento de erros Cloud API: 4xx categoricos (400/401/403) **nao retentar**, logar erro estruturado com `meta_error_code`. 5xx + timeout: Resilience4j retry exponencial (3 tentativas, backoff 1s/2s/4s)
-- [ ] **OUT-11**: Endpoints internos chamaveis pelo ERP: `POST /api/whatsapp/enviar-texto`, `POST /api/whatsapp/enviar-documento`, `POST /api/whatsapp/enviar-botoes`, `POST /api/whatsapp/enviar-lista`, `GET /api/whatsapp/status` — todos delegam pro `WhatsAppCloudClient` (com trava 24h ja aplicada)
+- [x] **OUT-01**: `WhatsAppCloudClient.enviarTexto(telefone, texto)` chama `POST graph.facebook.com/v22.0/{phoneNumberId}/messages` com payload `messaging_product=whatsapp, type=text` via Spring `RestClient` (NAO `RestTemplate`)
+- [x] **OUT-02**: `WhatsAppCloudClient.enviarDocumento(telefone, bytes, filename, mimeType, caption)` faz upload via `POST /{phoneNumberId}/media` (multipart) entao envia `type=document` referenciando `media_id` retornado
+- [x] **OUT-03**: `WhatsAppCloudClient.enviarBotoes(telefone, texto, botoes)` envia `type=interactive` com `interactive.type=button` (ate **3 botoes** reply, cada um `{type:'reply', reply:{id, title}}`); falha early se >3 botoes
+- [x] **OUT-04**: `WhatsAppCloudClient.enviarLista(telefone, texto, secoes)` envia `type=interactive` com `interactive.type=list` (ate **10 itens totais** distribuidos em 1+ secoes, cada item `{id, title, description?}`); falha early se >10 itens
+- [x] **OUT-05**: **NAO existir** `WhatsAppCloudClient.enviarTemplate(...)` — metodo simplesmente nao faz parte da API publica. Trava custo zero #1 garantida por ausencia de codigo, nao por flag
+- [x] **OUT-06**: `WindowEnforcementService.verificarJanela(telefone)` consulta `ultima_mensagem_em` via query direta (pula cache JPA) **fora** da transacao do webhook — se diff > 24h, lanca `JanelaConversaFechadaException` que vira HTTP 409 com codigo `JANELA_24H_FECHADA`. Trava custo zero #2
+- [x] **OUT-07**: Antes de cada chamada Cloud API em `WhatsAppCloudClient`, hook `@Aspect` ou `@Before` invoca `WindowEnforcementService.verificarJanela(telefone)` — bloqueio inviolavel via interceptor, nao dependendo de cada metodo lembrar
+- [x] **OUT-08**: Media cache `MediaCacheService` — antes de upload, calcula `sha256(bytes)`, busca em `media_cache.arquivo_hash`. Hit (e nao expirado) → reusa `media_id`. Miss → upload + grava com `expira_em = now() + 30 dias`
+- [x] **OUT-09**: Persiste mensagem de saida em `mensagens_log` com `direcao=out` + `wamid` retornado pelo Meta apos sucesso da chamada
+- [x] **OUT-10**: Tratamento de erros Cloud API: 4xx categoricos (400/401/403) **nao retentar**, logar erro estruturado com `meta_error_code`. 5xx + timeout: Resilience4j retry exponencial (3 tentativas, backoff 1s/2s/4s)
+- [x] **OUT-11**: Endpoints internos chamaveis pelo ERP: `POST /api/whatsapp/enviar-texto`, `POST /api/whatsapp/enviar-documento`, `POST /api/whatsapp/enviar-botoes`, `POST /api/whatsapp/enviar-lista`, `GET /api/whatsapp/status` — todos delegam pro `WhatsAppCloudClient` (com trava 24h ja aplicada)
 
 ### Roteamento (callback ERP, async boundary)
 
@@ -137,17 +137,17 @@ Mapeamento requirement → fase. Preenchido pelo gsd-roadmapper.
 | PER-05 | Phase 2 | Complete |
 | PER-06 | Phase 2 | Complete |
 | PER-07 | Phase 2 | Complete |
-| OUT-01 | Phase 4 | Pending |
-| OUT-02 | Phase 4 | Pending |
-| OUT-03 | Phase 4 | Pending |
-| OUT-04 | Phase 4 | Pending |
-| OUT-05 | Phase 4 | Pending |
-| OUT-06 | Phase 4 | Pending |
-| OUT-07 | Phase 4 | Pending |
-| OUT-08 | Phase 4 | Pending |
-| OUT-09 | Phase 4 | Pending |
-| OUT-10 | Phase 4 | Pending |
-| OUT-11 | Phase 4 | Pending |
+| OUT-01 | Phase 4 | Complete |
+| OUT-02 | Phase 4 | Complete |
+| OUT-03 | Phase 4 | Complete |
+| OUT-04 | Phase 4 | Complete |
+| OUT-05 | Phase 4 | Complete |
+| OUT-06 | Phase 4 | Complete |
+| OUT-07 | Phase 4 | Complete |
+| OUT-08 | Phase 4 | Complete |
+| OUT-09 | Phase 4 | Complete |
+| OUT-10 | Phase 4 | Complete |
+| OUT-11 | Phase 4 | Complete |
 | ROU-01 | Phase 3 | Pending |
 | ROU-02 | Phase 3 | Pending |
 | ROU-03 | Phase 3 | Pending |
