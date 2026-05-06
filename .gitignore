@@ -33,3 +33,7 @@ Thumbs.db
 
 ### Uploads (dados de usuário) ###
 api-storage/uploads/
+
+### Secrets locais (Meta Cloud API tokens, etc) ###
+.secrets/*.env
+!.secrets/*.env.example
