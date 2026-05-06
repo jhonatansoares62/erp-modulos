@@ -88,7 +88,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   - [x] 04-01-PLAN.md — lib-shared ErrorResponse + CodigoCarrier + bloco resilience4j whatsapp-cloud + spike multipart Wave 0
   - [x] 04-02-PLAN.md — JanelaEnforcementAspect (HIGHEST_PRECEDENCE) + WindowEnforcementService + JanelaConversaFechadaException + JanelaProtegida annotation
   - [x] 04-03-PLAN.md — MediaCacheService (TTL estrito 30d, race save+catch)
-  - [ ] 04-04-PLAN.md — WhatsAppCloudClient (4 envios + uploadMedia + classificar) + MetaApiException + WhatsAppCloudClientTest WireMock
+  - [x] 04-04-PLAN.md — WhatsAppCloudClient (4 envios + uploadMedia + classificar) + MetaApiException + WhatsAppCloudClientTest WireMock
   - [ ] 04-05-PLAN.md — WhatsAppController + 5 DTOs request + StatusResponse + WhatsAppControllerTest @WebMvcTest
   - [ ] 04-06-PLAN.md — Reator E2E smoke + grep gates SC-1/SC-4c + ROADMAP/REQUIREMENTS/STATE closeout
 **UI hint**: no
