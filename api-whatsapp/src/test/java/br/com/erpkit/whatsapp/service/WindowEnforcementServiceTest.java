@@ -3,6 +3,7 @@ package br.com.erpkit.whatsapp.service;
 import br.com.erpkit.whatsapp.WhatsAppApplication;
 import br.com.erpkit.whatsapp.exception.JanelaConversaFechadaException;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,10 +45,13 @@ class WindowEnforcementServiceTest {
     @Autowired WindowEnforcementService service;
     @Autowired JdbcTemplate jdbc;
 
+    @BeforeEach
     @AfterEach
     void cleanup() {
-        // Limpa fixtures usados nos 3 tests (telefones BR-DDD-47 normalizado +
-        // DDD-99 normalizado para cliente_inexistente). Evita pollution.
+        // Limpa fixtures antes E depois de cada test. ClienteZapServiceTest
+        // (Phase 2) tambem usa "554784178525" e nao limpa rows — sem o
+        // @BeforeEach o INSERT abaixo viola UNIQUE quando WindowEnforcementServiceTest
+        // roda depois daquele.
         jdbc.update("DELETE FROM whatsapp.clientes_zap "
             + "WHERE telefone LIKE '5547%' OR telefone LIKE '5599%' OR telefone LIKE '999%'");
     }
