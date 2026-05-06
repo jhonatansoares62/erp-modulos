@@ -1035,27 +1035,31 @@ resilience4j:
 
 **Mitigacao geral:** Phase 4 Plan 04-04 (WhatsAppCloudClient + tests) deve incluir Wave 0 spike de 5-10min: 1 test isolado de upload media com WireMock + 1 test isolado de envio texto, validando empiricamente A1, A3, A4 antes de continuar com os demais metodos.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Tem alguma trava server-side em `wamid` UNIQUE compartilhado entre direcao=in (Phase 2) e direcao=out (Phase 4)?**
    - What we know: Phase 2 escreve `direcao=in` com wamid prefixado por Meta para mensagens entrantes. Phase 4 escreve `direcao=out` com wamid prefixado para mensagens saidas. Meta documenta wamids distintos para in/out (prefixos diferentes na semantica).
    - What's unclear: Se um wamid out duplicado (improvavel mas possivel se Meta API responder duas vezes) lanca DataIntegrityViolation hoje, qual o comportamento? Phase 4 nao tem idempotency-pattern equivalente em outbound.
    - Recommendation: Plan inclui try/catch defensivo em `mensagensLogRepository.save(direcao=out)` — se duplicate, logar warn + ainda retornar response com wamid (idempotente do ponto de vista do ERP). Reuso do pattern Phase 2 IdempotencyService.
+   - **RESOLVED:** try/catch defensivo em `mensagensLogRepository.save` no Plan 04-04 task de outbound persistence cobre OUT-09 / SC-5 — duplicate wamid out (improvavel) loga warn + retorna wamid; reuso do pattern Phase 2 IdempotencyService.
 
 2. **`/api/whatsapp/status` deve incluir validacao de subscribed_apps (PITFALLS C-12) na Phase 4 ou Phase 6?**
    - What we know: D-04 lockou `StatusResponse` minimal (status + circuitBreakerState + phoneNumberId) — sem `subscribed_apps`. PITFALLS C-12 sugere checagem em Phase 6.
    - What's unclear: Phase 4 status endpoint pode ser fonte de bug "shadow delivery" se nao tiver subscribe check.
    - Recommendation: Confirmar D-04 escopo. Phase 6 expande. Phase 4 nao trava o operador piloto MUDAS porque RUNBOOK manual da Phase 6 cobre setup correto.
+   - **RESOLVED:** D-04 lockou StatusResponse minimal v1 (status + circuitBreakerState + phoneNumberId); subscribed_apps adiado para Phase 6 (PITFALLS C-12 territory) — RUNBOOK manual cobre setup correto no piloto MUDAS.
 
 3. **`MetaApiException` carrega `tipo` enum publico?**
    - What we know: D-02 lockou que excepcao carrega `metaErrorCode` Integer e `tipo` enum {CATEGORIA_4XX, INDISPONIVEL_5XX, TIMEOUT, CIRCUIT_OPEN}. ErrorResponse precisa expor `codigo` String.
    - What's unclear: `tipo` enum e expostado no JSON response ou apenas usado internamente? Recomendado: enum interno; `codigo` no JSON e String literal (`"META_ERROR"`, `"META_INDISPONIVEL"`, `"META_TIMEOUT"`, `"CIRCUIT_OPEN"`) derivado do `tipo`.
    - Recommendation: Plan documenta mapping table tipo → codigo no JSON. ErrorResponse expoe `codigo` String + opcionalmente `metaErrorCode` Integer (apenas quando relevante — nao em CIRCUIT_OPEN).
+   - **RESOLVED:** D-02 expoe somente `codigo` String publicamente; `tipo` interno usado apenas para mapping HTTP status. Plan 04-04 implementa MetaApiException com `tipo` como enum interno (package-private getter) e CodigoCarrier expondo apenas `codigo` + `metaErrorCode` no JSON serializado.
 
 4. **`ErrorResponse` em lib-shared aceita campo opcional `codigo` sem quebrar api-email/api-storage/api-consultas?**
    - What we know: Atualmente `ErrorResponse` tem `status, erro, mensagem, timestamp, campos` — sem `codigo`. `[VERIFIED: lib-shared/ErrorResponse.java]`
    - What's unclear: Adicionar `private String codigo` (nullable) e `setCodigo`/`getCodigo` deveria ser compativel — Jackson serialize null como null ou omitir; outros modulos nao referenciam o campo.
    - Recommendation: Plan inclui modificacao no `lib-shared/ErrorResponse.java` (mudanca compativel, validar build dos 3 outros modulos verde). Adicionar tambem `metaErrorCode` Integer nullable, OU manter so `codigo` e colocar metaErrorCode em `campos` map.
+   - **RESOLVED:** Plan 04-01 task 1 adiciona `codigo` String + `metaErrorCode` Integer como campos opcionais (nullable) em `lib-shared/ErrorResponse.java`. Mudanca backward-compativel: Jackson ignora campos extras nos modulos consumidores; build verde dos 3 outros api-* validado em Plan 04-06 task 1 (`./mvnw verify` reator inteiro).
 
 ## Environment Availability
 
