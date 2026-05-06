@@ -86,7 +86,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   5. Mensagem de saida bem-sucedida e persistida em `mensagens_log` com `direcao=out` e `wamid` retornado pelo Meta; envio com janela aberta via `/api/whatsapp/enviar-*` retorna 200 com o wamid
 **Plans**: 6 plans
   - [x] 04-01-PLAN.md — lib-shared ErrorResponse + CodigoCarrier + bloco resilience4j whatsapp-cloud + spike multipart Wave 0
-  - [ ] 04-02-PLAN.md — JanelaEnforcementAspect (HIGHEST_PRECEDENCE) + WindowEnforcementService + JanelaConversaFechadaException + JanelaProtegida annotation
+  - [x] 04-02-PLAN.md — JanelaEnforcementAspect (HIGHEST_PRECEDENCE) + WindowEnforcementService + JanelaConversaFechadaException + JanelaProtegida annotation
   - [x] 04-03-PLAN.md — MediaCacheService (TTL estrito 30d, race save+catch)
   - [ ] 04-04-PLAN.md — WhatsAppCloudClient (4 envios + uploadMedia + classificar) + MetaApiException + WhatsAppCloudClientTest WireMock
   - [ ] 04-05-PLAN.md — WhatsAppController + 5 DTOs request + StatusResponse + WhatsAppControllerTest @WebMvcTest
