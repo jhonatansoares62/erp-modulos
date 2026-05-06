@@ -85,9 +85,9 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   4. Erro 4xx da Cloud API (400/401/403) nao e retentado, e logado com `meta_error_code`; erro 5xx e timeout acionam Resilience4j retry exponencial (3 tentativas, 1s/2s/4s); `Authorization: Bearer` nunca aparece nos logs
   5. Mensagem de saida bem-sucedida e persistida em `mensagens_log` com `direcao=out` e `wamid` retornado pelo Meta; envio com janela aberta via `/api/whatsapp/enviar-*` retorna 200 com o wamid
 **Plans**: 6 plans
-  - [ ] 04-01-PLAN.md — lib-shared ErrorResponse + CodigoCarrier + bloco resilience4j whatsapp-cloud + spike multipart Wave 0
+  - [x] 04-01-PLAN.md — lib-shared ErrorResponse + CodigoCarrier + bloco resilience4j whatsapp-cloud + spike multipart Wave 0
   - [ ] 04-02-PLAN.md — JanelaEnforcementAspect (HIGHEST_PRECEDENCE) + WindowEnforcementService + JanelaConversaFechadaException + JanelaProtegida annotation
-  - [ ] 04-03-PLAN.md — MediaCacheService (TTL estrito 30d, race save+catch)
+  - [x] 04-03-PLAN.md — MediaCacheService (TTL estrito 30d, race save+catch)
   - [ ] 04-04-PLAN.md — WhatsAppCloudClient (4 envios + uploadMedia + classificar) + MetaApiException + WhatsAppCloudClientTest WireMock
   - [ ] 04-05-PLAN.md — WhatsAppController + 5 DTOs request + StatusResponse + WhatsAppControllerTest @WebMvcTest
   - [ ] 04-06-PLAN.md — Reator E2E smoke + grep gates SC-1/SC-4c + ROADMAP/REQUIREMENTS/STATE closeout
