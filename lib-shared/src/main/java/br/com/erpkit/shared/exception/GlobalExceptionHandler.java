@@ -20,6 +20,14 @@ public class GlobalExceptionHandler {
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage()
         );
+        // Phase 4: propaga codigo + metaErrorCode estruturados quando a excecao implementa
+        // CodigoCarrier (interface em lib-shared, sem importar pacotes de api-whatsapp).
+        // Excecoes Phase 1-3 (api-email/api-storage/api-consultas) NAO implementam — branch
+        // ignorado, ErrorResponse fica com codigo=null que e omitido pelo @JsonInclude(NON_NULL).
+        if (ex instanceof CodigoCarrier carrier) {
+            error.setCodigo(carrier.getCodigo());
+            error.setMetaErrorCode(carrier.getMetaErrorCode());
+        }
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 

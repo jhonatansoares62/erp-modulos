@@ -144,6 +144,17 @@ resilience4j:
         wait-duration-in-open-state: 60s
         permitted-number-of-calls-in-half-open-state: 3
         register-health-indicator: false  # Phase 6 pode habilitar via actuator
+      # NOVO Phase 4 (D-02 + RESEARCH §Pattern 1): instance dedicada para WhatsAppCloudClient
+      # (outbound texto/documento/botoes/lista). Mesma config de erp-callback — semantica
+      # Phase 4 e identica: 50% de falhas em janela de 10 calls abre o circuit por 60s,
+      # 3 calls de teste no half-open. WhatsAppCloudClient (04-04) anota com
+      # @CircuitBreaker(name="whatsapp-cloud") + @Retry(name="whatsapp-cloud").
+      whatsapp-cloud:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: false
   retry:
     instances:
       erp-callback:
@@ -164,3 +175,19 @@ resilience4j:
         # converte SocketTimeoutException em ResourceAccessException("Could not retrieve
         # response status code: ..."). Sem este entry, timeouts NAO retentariam
         # (descoberto via test ErpCallbackClientTest.timeout_retry_e_fallback — Rule 1 fix).
+      # NOVO Phase 4 (RESEARCH §Pitfall 3 — gotcha 03-04 reaproveitado): mesma config
+      # que erp-callback. retry-exceptions inclui ResourceAccessException CRUCIAL pois
+      # Spring RestClient empacota SocketTimeoutException nele (sem este entry, timeouts
+      # NAO retentariam). 4xx categoricos (HttpClientErrorException) ausentes da lista,
+      # portanto Resilience4j por default NAO retenta — protege contra duplicar mensagem
+      # WhatsApp em 4xx (PITFALLS C-05 + custo Meta).
+      whatsapp-cloud:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2.0
+        retry-exceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - org.springframework.web.client.ResourceAccessException
+          - java.net.SocketTimeoutException
+          - java.io.IOException

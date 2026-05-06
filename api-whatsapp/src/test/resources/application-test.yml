@@ -96,9 +96,28 @@ resilience4j:
         failure-rate-threshold: 50
         wait-duration-in-open-state: 1s
         permitted-number-of-calls-in-half-open-state: 3
+      # NOVO Phase 4: espelho de erp-callback para WhatsAppCloudClient (04-04). Mesma
+      # config de tests rapidos (wait-duration-in-open-state: 1s vs 60s prod).
+      whatsapp-cloud:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 1s
+        permitted-number-of-calls-in-half-open-state: 3
   retry:
     instances:
       erp-callback:
+        max-attempts: 3
+        wait-duration: 50ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2.0
+        retry-exceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - org.springframework.web.client.ResourceAccessException
+          - java.net.SocketTimeoutException
+          - java.io.IOException
+      # NOVO Phase 4: espelho de erp-callback. wait-duration: 50ms (vs 1s prod) para
+      # tests rapidos — total max retry < 200ms (50 + 100 + 200ms exponencial).
+      whatsapp-cloud:
         max-attempts: 3
         wait-duration: 50ms
         enable-exponential-backoff: true
