@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 5 context captured (auto-mode); ready for plan-phase
-last_updated: "2026-05-19T17:12:02.529Z"
-last_activity: 2026-05-06
+status: planning
+stopped_at: Phase 5 CONTEXT.md committed (auto-mode); pronto para /gsd-plan-phase 5 em nova sessao
+last_updated: "2026-05-19T17:30:00.000Z"
+last_activity: 2026-05-19
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 26
   completed_plans: 26
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -21,16 +21,49 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Modulos reaproveitaveis entre ERPs ERPKit, sem custo operacional recorrente com terceiros — Modulo WhatsApp: custo zero de Meta garantido por design, nao por disciplina
-**Current focus:** Phase 04 — outbound-trava-24h-whatsappcontroller
+**Current focus:** Phase 05 — lib-whatsapp-client (CONTEXT.md pronto, plan-phase pendente)
 
 ## Current Position
 
 Phase: 5
-Plan: Not started
-Status: Phase 04 closeout entregue — pronto para gsd-verify-phase 4-outbound-trava-24h-whatsappcontroller
-Last activity: 2026-05-06
+Plan: Not started (CONTEXT.md committed em 2026-05-19, plan-phase pending)
+Status: Phase 4 verificada (04-VERIFICATION.md passed 11/11) + Phase 5 CONTEXT.md committed via /gsd-autonomous auto-mode — proximo: /gsd-plan-phase 5
+Last activity: 2026-05-19
 
-Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 6/6 + Phase 4 6/6; Phases 1+2+3+4 awaiting verifier sign-off)
+Progress: [████████░░] 67% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 6/6 + Phase 4 6/6 + Phase 5 CONTEXT 1/7; Phases 1+2+3+4 verified, Phase 5 planning)
+
+## Sessao 2026-05-19 (handoff)
+
+**Entregue:**
+- gsd-sdk shim patchado em `C:/Program Files/nodejs/{gsd-sdk,gsd-tools,get-shit-done-cc}` — apontava pro Node v14.21.3 (nvm-controlled, quebrava em `??=`), agora usa `node` do PATH (v24.15.0). Backup em `C:/tmp/gsd-sdk.backup`.
+- Phase 5 CONTEXT.md committed (`1fd73fc`): 8 gray areas auto-decididas (D-01..D-08), 11 canonical refs listados.
+- Phase 5 DISCUSSION-LOG.md committed (mesmo commit).
+- STATE.md atualizado via gsd-sdk state.record-session (`9ec1447`).
+
+**Decisoes-chave Phase 5 (CONTEXT.md):**
+- D-01: Mirror literal `lib-consultas-client` (estrutura/naming/Resilience4j config)
+- D-02: SPI `WhatsAppCommandHandler` interface com default `matches()`
+- D-03: Registry 2-tier (exact O(1) Map + fallback iter), primeiro-registrado-vence
+- D-04: `WhatsAppRespostaDto` discriminator-record com enum `Tipo` + factory methods
+- D-05: 4 envio metodos tipados + 1 helper `despachar(WhatsAppRespostaDto)`
+- D-06: Tests so auto-config + registry (WireMock vai pra Phase 6 QA-02)
+- D-07: WhatsAppProperties `enabled=false`, `url=http://localhost:9193`, `apiKey` opcional, `timeout=PT5S`
+- D-08: pom.xml herda version do parent, groupId `br.com.erpkit`, artifactId `lib-whatsapp-client`
+
+**Por que parou:**
+- plan-phase workflow tem 1721 linhas + spawna 4 subagents (researcher, pattern-mapper, planner, plan-checker) — excederia budget de contexto remanescente na sessao corrente
+- Phase 5 execute-phase teria ~6-7 plans com commits/code-review nested = horas
+- Phase 6 ciclo identico
+- Estimativa: 6-8h totais de execucao nested para fechar milestone
+
+**Continuar (proxima sessao, `/clear` antes):**
+1. `cd /c/projetos/erp-modulos`
+2. `/gsd-plan-phase 5` — spawna researcher + pattern-mapper + planner + checker → 6-7 PLANs em `05-PLAN-XX-*.md`
+3. `/gsd-execute-phase 5` — roda os plans em waves
+4. `/gsd-verify-phase 5`
+5. `/gsd-autonomous --from 6` — cobre Phase 6 (Qualidade) + milestone lifecycle (audit/complete/cleanup)
+
+Ou simplesmente re-invoque `/gsd-autonomous` — workflow detecta `has_context: true` e pula pro plan-phase automatico.
 
 ## Performance Metrics
 
