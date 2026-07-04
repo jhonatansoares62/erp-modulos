@@ -1,0 +1,19 @@
+{
+  "object": "whatsapp_business_account",
+  "entry": [{
+    "id": "WABA-ID",
+    "changes": [{
+      "value": {
+        "messaging_product": "whatsapp",
+        "messages": [{
+          "from": "5547984178525",
+          "id": "wamid.HBgN.text.dev001",
+          "timestamp": "1735689600",
+          "type": "text",
+          "text": { "body": "Olá, gostaria de um orçamento" }
+        }]
+      },
+      "field": "messages"
+    }]
+  }]
+}

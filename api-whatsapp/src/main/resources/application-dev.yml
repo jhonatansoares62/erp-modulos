@@ -1,0 +1,57 @@
+# Profile 'dev' — execucao LOCAL do api-whatsapp SEM Meta real e SEM PostgreSQL.
+#
+# Usa H2 em memoria (mesma config dos testes) + secrets dummy + aponta o Meta e o
+# ERP para os mocks locais do kit scripts/whatsapp-dev/ (Meta-mock :9199, ERP-echo :9198).
+#
+# Requer o Maven profile -Pdev (adiciona o driver H2 ao runtime classpath — em prod
+# o H2 nao entra no jar).
+#
+# Subir:
+#   export JAVA_HOME="/c/Program Files/Java/jdk21.0.10_7"
+#   ./mvnw -pl api-whatsapp -Pdev spring-boot:run -Dspring-boot.run.profiles=dev
+#
+# Testar:  bash scripts/whatsapp-dev/smoke.sh   (com o mock-servers.py rodando)
+
+server:
+  port: 9193
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:devdb_whatsapp;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS whatsapp
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      "[hibernate.boot.allow_jdbc_metadata_access]": "false"
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: whatsapp
+    default-schema: whatsapp
+    create-schemas: true
+
+# Secrets DUMMY — sem Meta real. O appSecret aqui e o que o smoke.sh usa para
+# assinar o HMAC do webhook simulado. erpCallbackUrl/metaApiBaseUrl apontam pros mocks.
+app:
+  modulos:
+    whatsapp:
+      phoneNumberId: dev-phone-id
+      accessToken: dev-access-token
+      appSecret: dev-app-secret
+      verifyToken: dev-verify-token
+      erpCallbackUrl: http://localhost:9198
+      callbackTimeout: 3s
+      metaApiBaseUrl: http://localhost:9199
+
+modulo:
+  versao: 1.0.0-dev
+  api-key: dev-key
+
+logging:
+  level:
+    br.com.erpkit.whatsapp: DEBUG

@@ -104,4 +104,19 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Execucao local com H2 (profile Spring 'dev'). Ativar com -Pdev.
+             Mantem o H2 FORA do jar de producao (que usa PostgreSQL). -->
+        <profile>
+            <id>dev</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>
