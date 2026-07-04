@@ -21,6 +21,7 @@
     <modules>
         <module>lib-shared</module>
         <module>lib-consultas-client</module>
+        <module>lib-whatsapp-client</module>
         <module>api-email</module>
         <module>api-storage</module>
         <module>api-consultas</module>
@@ -49,6 +50,13 @@
             <dependency>
                 <groupId>br.com.erpkit</groupId>
                 <artifactId>lib-consultas-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Cliente HTTP + SPI de comandos do módulo WhatsApp -->
+            <dependency>
+                <groupId>br.com.erpkit</groupId>
+                <artifactId>lib-whatsapp-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

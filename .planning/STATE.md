@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 5 CONTEXT.md committed (auto-mode); pronto para /gsd-plan-phase 5 em nova sessao
-last_updated: "2026-05-19T17:30:00.000Z"
-last_activity: 2026-05-19
+stopped_at: Phase 5 (lib-whatsapp-client) construida direto + testada + reator verde; proximo Phase 6 (Qualidade)
+last_updated: "2026-07-04T00:00:00.000Z"
+last_activity: 2026-07-04
 progress:
   total_phases: 6
-  completed_phases: 4
-  total_plans: 26
-  completed_plans: 26
-  percent: 67
+  completed_phases: 5
+  total_plans: 27
+  completed_plans: 27
+  percent: 83
 ---
 
 # Project State
@@ -21,16 +21,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Modulos reaproveitaveis entre ERPs ERPKit, sem custo operacional recorrente com terceiros — Modulo WhatsApp: custo zero de Meta garantido por design, nao por disciplina
-**Current focus:** Phase 05 — lib-whatsapp-client (CONTEXT.md pronto, plan-phase pendente)
+**Current focus:** Phase 06 — Qualidade (Testes WireMock + OpenAPI + README + RUNBOOK); Phase 5 concluida
 
 ## Current Position
 
-Phase: 5
-Plan: Not started (CONTEXT.md committed em 2026-05-19, plan-phase pending)
-Status: Phase 4 verificada (04-VERIFICATION.md passed 11/11) + Phase 5 CONTEXT.md committed via /gsd-autonomous auto-mode — proximo: /gsd-plan-phase 5
-Last activity: 2026-05-19
+Phase: 5 completa → proximo Phase 6
+Plan: Phase 5 construida direto (fora do fluxo GSD plan-phase, decisao do usuario)
+Status: lib-whatsapp-client entregue (13 arquivos, 9 tests verdes, reator 8 modulos BUILD SUCCESS) — proximo: Phase 6 (Qualidade)
+Last activity: 2026-07-04
 
-Progress: [████████░░] 67% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 6/6 + Phase 4 6/6 + Phase 5 CONTEXT 1/7; Phases 1+2+3+4 verified, Phase 5 planning)
+Progress: [████████░░] 83% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 6/6 + Phase 4 6/6 + Phase 5 1/1; Phases 1-4 verified, Phase 5 completa, Phase 6 pendente)
+
+## Sessao 2026-07-04
+
+**Entregue — Phase 5 (lib-whatsapp-client) construida DIRETO (usuario optou por bypass do GSD plan-phase):**
+- Novo modulo `lib-whatsapp-client/` espelhando `lib-consultas-client` — 13 arquivos:
+  - `WhatsAppClient` (interface) + `WhatsAppClientImpl` (Spring **RestClient** + Resilience4j identico ao consultas: CB 10/50%/60s + retry exp 3x). Layer 1 tipado (enviarTexto/Documento/Botoes/Lista) + Layer 2 `despachar(WhatsAppRespostaDto)` por Tipo + status/isOnline/isHabilitado/getCircuitBreakerState
+  - `WhatsAppProperties` (enabled=false, url=localhost:9193, apiKey opcional, timeout=PT5S)
+  - `WhatsAppClientAutoConfiguration` @ConditionalOnProperty(app.modulos.whatsapp.enabled=true) → 2 beans (client + registry via ObjectProvider.orderedStream)
+  - SPI `WhatsAppCommandHandler` (default matches()) + `WhatsAppCommandRegistry` (2-tier exact O(1) + fallback iter, thread-safe, primeiro-registrado-vence)
+  - 7 DTOs (WhatsAppComandoDto, WhatsAppRespostaDto discriminator-record + factories, BotaoDto, SecaoDto, ItemDto, EnvioResponse, StatusResponse) + 2 excecoes + META-INF imports
+  - pom raiz: `<module>` + `<dependencyManagement>` entry
+- **9 tests verdes** (WhatsAppClientAutoConfigurationTest 3 + WhatsAppCommandRegistryTest 6); reator 8 modulos BUILD SUCCESS
+- **Desvio consciente vs CONTEXT:** `WhatsAppComandoDto` espelha o `ComandoCallbackDTO` REAL da Phase 3 (telefone/comando/payload/idCliente/mediaBase64/mediaMimeType/mediaFilename), NAO o esboco do CONTEXT (que tinha wamid/tipo) — o wire format autoritativo e o que o api-whatsapp de fato envia.
+
+**Infra corrigida — JAVA_HOME:**
+- JAVA_HOME de Maquina apontava para `C:\Program Files\Amazon Corretto\jdk21.0.10_7` (inexistente); JDK 21 real (Corretto 21.0.10) esta em `C:\Program Files\Java\jdk21.0.10_7`. Corrigido via JAVA_HOME de usuario + bloco `env` em `.claude/settings.local.json`. Machine var continua errada (so User corrigida — sem admin).
+
+**Proximo — Phase 6 (Qualidade):** WireMock integration tests na lib (QA-02), SpringDoc/OpenAPI no api-whatsapp (QA-05), README por modulo (QA-04), RUNBOOK operacional (QA-06). Ver ROADMAP Phase 6 SC 1-5.
 
 ## Sessao 2026-05-19 (handoff)
 
