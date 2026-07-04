@@ -1,0 +1,11 @@
+-- V5: wa_id (numero EXATO do Meta, com o 9o digito) no log de mensagens.
+--
+-- O campo `telefone` guarda o numero NORMALIZADO (TelefoneBR strip do 9 fora de
+-- SP/RJ/ES) para matching/idempotencia interna. Mas para RESPONDER e preciso o
+-- wa_id exato que a Meta enviou (a Cloud API rejeita o formato reduzido — erro
+-- 131026/131030, descoberto no teste real 2026-07-04).
+--
+-- `wa_id` fica NULL para rows antigas e para saidas (direcao=out ja grava o wa_id
+-- no proprio `telefone`, pois o ERP envia o wa_id). O painel de monitoramento usa
+-- coalesce(wa_id, telefone) como numero de resposta.
+ALTER TABLE whatsapp.mensagens_log ADD COLUMN wa_id VARCHAR(20);

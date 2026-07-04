@@ -43,6 +43,11 @@ public class MensagemLog {
     @Column(name = "telefone", nullable = false, length = 20)
     private String telefone;
 
+    // wa_id EXATO do Meta (com 9o digito) — numero de RESPOSTA. NULL para saidas
+    // (telefone ja e o wa_id) e rows antigas. Ver V5 migration.
+    @Column(name = "wa_id", length = 20)
+    private String waId;
+
     @Column(name = "direcao", nullable = false, length = 3)
     @Enumerated(EnumType.STRING)
     private Direcao direcao;
@@ -85,6 +90,9 @@ public class MensagemLog {
 
     public String getTelefone() { return telefone; }
     public void setTelefone(String telefone) { this.telefone = telefone; }
+
+    public String getWaId() { return waId; }
+    public void setWaId(String waId) { this.waId = waId; }
 
     public Direcao getDirecao() { return direcao; }
     public void setDirecao(Direcao direcao) { this.direcao = direcao; }

@@ -65,7 +65,9 @@ public class MonitorController {
                 .map(m -> new MonitorMensagem(
                         m.getId(),
                         m.getDirecao() == null ? null : m.getDirecao().name(),
-                        m.getTelefone(),
+                        // numero de RESPOSTA: wa_id exato (com 9) quando houver; senao o
+                        // telefone (saidas ja gravam o wa_id ali)
+                        m.getWaId() != null ? m.getWaId() : m.getTelefone(),
                         m.getTipo(),
                         m.getConteudo(),
                         m.getCriadoEm() == null ? null : m.getCriadoEm().toEpochMilli()))

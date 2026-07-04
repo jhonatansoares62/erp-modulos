@@ -56,12 +56,15 @@ public class IdempotencyService {
      *                 "image", "audio", "desconhecido", etc.
      * @param conteudo conteudo extraido do payload (pode ser null para tipos sem texto)
      * @param mediaId  ID do media no Meta (opcional, null se nao tem media)
+     * @param waId     wa_id EXATO do Meta (com 9o digito) para resposta outbound;
+     *                 {@code null} para saidas (telefone ja e o wa_id)
      * @return {@code true} se inseriu nova row; {@code false} se duplicate
      *         (Meta reenviou — silenciar, nao reprocessar)
      */
     public boolean tentarPersistir(String wamid, String telefone, Direcao direcao,
-                                    String tipo, String conteudo, String mediaId) {
+                                    String tipo, String conteudo, String mediaId, String waId) {
         MensagemLog mensagem = new MensagemLog(wamid, telefone, direcao, tipo, conteudo, mediaId);
+        mensagem.setWaId(waId);
         try {
             repository.save(mensagem);
             log.debug("Idempotencia: wamid={} persistido (direcao={}, tipo={})", wamid, direcao, tipo);

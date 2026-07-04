@@ -66,7 +66,7 @@ class MensagemServiceTest {
             "wamid.001", "554784178525", "5547984178525", "text", "orcamento 1234", null);
         when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(m), List.of()));
         when(idempotency.tentarPersistir(eq("wamid.001"), anyString(), eq(Direcao.in),
-                                          eq("text"), eq("orcamento 1234"), eq(null)))
+                                          eq("text"), eq("orcamento 1234"), eq(null), anyString()))
             .thenReturn(true);
 
         service.processarWebhook(new byte[0]);
@@ -94,7 +94,7 @@ class MensagemServiceTest {
         MensagemEntranteDTO m = new MensagemEntranteDTO(
             "wamid.dup", "554784178525", "5547984178525", "text", "orcamento", null);
         when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(m), List.of()));
-        when(idempotency.tentarPersistir(any(), any(), any(), any(), any(), any())).thenReturn(false);
+        when(idempotency.tentarPersistir(any(), any(), any(), any(), any(), any(), any())).thenReturn(false);
 
         service.processarWebhook(new byte[0]);
 
@@ -110,7 +110,7 @@ class MensagemServiceTest {
         MensagemEntranteDTO m2 = new MensagemEntranteDTO(
             "wamid.002", "554784178525", "5547984178525", "text", "b", null);
         when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(m1, m2), List.of()));
-        when(idempotency.tentarPersistir(any(), any(), any(), any(), any(), any())).thenReturn(true);
+        when(idempotency.tentarPersistir(any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
 
         service.processarWebhook(new byte[0]);
 

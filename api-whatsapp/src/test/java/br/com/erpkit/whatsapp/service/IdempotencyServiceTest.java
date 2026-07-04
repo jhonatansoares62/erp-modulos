@@ -45,12 +45,15 @@ class IdempotencyServiceTest {
     void inserir_primeira_vez_retorna_true() {
         boolean novo = idempotency.tentarPersistir(
             "wamid.test.001", "5511987654321", Direcao.in,
-            "text", "Olá", null
+            "text", "Olá", null, "5511999998888"
         );
         assertThat(novo).isTrue();
         Optional<MensagemLog> persistido = repository.findByWamid("wamid.test.001");
         assertThat(persistido).isPresent();
         assertThat(persistido.get().getTelefone()).isEqualTo("5511987654321");
+        assertThat(persistido.get().getWaId())
+            .as("wa_id exato do Meta gravado para resposta outbound")
+            .isEqualTo("5511999998888");
         assertThat(persistido.get().getDirecao()).isEqualTo(Direcao.in);
         assertThat(persistido.get().getTipo()).isEqualTo("text");
         assertThat(persistido.get().getConteudo()).isEqualTo("Olá");
@@ -60,8 +63,8 @@ class IdempotencyServiceTest {
     @Test
     @DisplayName("Inserir mesmo wamid duas vezes — segunda retorna false e original preservado")
     void inserir_segunda_vez_retorna_false() {
-        idempotency.tentarPersistir("wamid.test.002", "5511111111111", Direcao.in, "text", "primeira", null);
-        boolean segunda = idempotency.tentarPersistir("wamid.test.002", "5511222222222", Direcao.in, "text", "segunda", null);
+        idempotency.tentarPersistir("wamid.test.002", "5511111111111", Direcao.in, "text", "primeira", null, null);
+        boolean segunda = idempotency.tentarPersistir("wamid.test.002", "5511222222222", Direcao.in, "text", "segunda", null, null);
         assertThat(segunda).isFalse();
         // UNIQUE constraint dispara antes do UPDATE — original preservado (DO NOTHING semantics)
         assertThat(repository.findByWamid("wamid.test.002")).get()
@@ -73,8 +76,8 @@ class IdempotencyServiceTest {
     @Test
     @DisplayName("Wamid diferentes — ambos retornam true e ambos persistidos")
     void inserir_dois_wamid_diferentes() {
-        assertThat(idempotency.tentarPersistir("wamid.test.003a", "5511333333333", Direcao.in, "text", "a", null)).isTrue();
-        assertThat(idempotency.tentarPersistir("wamid.test.003b", "5511333333333", Direcao.in, "text", "b", null)).isTrue();
+        assertThat(idempotency.tentarPersistir("wamid.test.003a", "5511333333333", Direcao.in, "text", "a", null, null)).isTrue();
+        assertThat(idempotency.tentarPersistir("wamid.test.003b", "5511333333333", Direcao.in, "text", "b", null, null)).isTrue();
         assertThat(repository.findByWamid("wamid.test.003a")).isPresent();
         assertThat(repository.findByWamid("wamid.test.003b")).isPresent();
     }
@@ -91,7 +94,7 @@ class IdempotencyServiceTest {
                 try {
                     start.await();
                     if (idempotency.tentarPersistir(
-                            "wamid.test.race", "5511444444444", Direcao.in, "text", "x", null)) {
+                            "wamid.test.race", "5511444444444", Direcao.in, "text", "x", null, null)) {
                         truthCount.incrementAndGet();
                     }
                 } catch (Exception e) {
@@ -124,7 +127,7 @@ class IdempotencyServiceTest {
     void desconhecido_com_nulls() {
         boolean novo = idempotency.tentarPersistir(
             "wamid.test.unknown", "5511555555555", Direcao.in,
-            "desconhecido", null, null
+            "desconhecido", null, null, null
         );
         assertThat(novo).isTrue();
         assertThat(repository.findByWamid("wamid.test.unknown")).get()

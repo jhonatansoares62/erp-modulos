@@ -76,7 +76,7 @@ public class MensagemService {
 
         for (MensagemEntranteDTO m : parsed.mensagens()) {
             boolean novo = idempotency.tentarPersistir(
-                m.wamid(), m.telefone(), Direcao.in, m.tipo(), m.conteudo(), m.mediaId()
+                m.wamid(), m.telefone(), Direcao.in, m.tipo(), m.conteudo(), m.mediaId(), m.telefoneWaId()
             );
             if (!novo) {
                 // Meta reenviou — ja persistido. Sem efeito colateral.
