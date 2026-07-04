@@ -63,12 +63,31 @@ public final class TelefoneBR {
      * @return numero normalizado contendo apenas digitos, ou {@code null} se input
      *         for {@code null}, ou string vazia se input nao tem nenhum digito.
      */
-    public static String normalizar(String telefone) {
+    /**
+     * Sanitiza para apenas digitos, SEM remover o 9o digito — preserva o numero
+     * EXATAMENTE como o Meta envia (o {@code wa_id}).
+     *
+     * <p><b>Use para o numero de RESPOSTA (outbound):</b> a Cloud API espera receber
+     * de volta o mesmo {@code wa_id} que enviou no inbound. Empiricamente (teste real
+     * 2026-07-04): o inbound veio {@code 5546920009012} (com 9) e responder para a
+     * versao normalizada {@code 554620009012} (sem 9) falha. A regra de strip do 9
+     * ({@link #normalizar}) serve apenas para matching/armazenamento interno.
+     *
+     * @param telefone numero em qualquer formato
+     * @return apenas digitos, ou {@code null} se input for {@code null}
+     */
+    public static String sanitizar(String telefone) {
         if (telefone == null) {
             return null;
         }
-        // Strip todos os nao-digitos: parenteses, espacos, hifens, plus, etc.
-        String digitos = telefone.replaceAll("\\D", "");
+        return telefone.replaceAll("\\D", "");
+    }
+
+    public static String normalizar(String telefone) {
+        String digitos = sanitizar(telefone);
+        if (digitos == null) {
+            return null;
+        }
         if (digitos.isEmpty()) {
             return digitos;  // string vazia se nada for digito
         }

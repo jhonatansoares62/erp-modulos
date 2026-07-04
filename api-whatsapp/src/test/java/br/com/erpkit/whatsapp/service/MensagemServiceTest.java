@@ -63,7 +63,7 @@ class MensagemServiceTest {
     @DisplayName("1 mensagem nova: tentarPersistir true -> publishEvent 1x com MensagemPersistidaEvent populado")
     void mensagem_nova_publica_event() throws Exception {
         MensagemEntranteDTO m = new MensagemEntranteDTO(
-            "wamid.001", "554784178525", "text", "orcamento 1234", null);
+            "wamid.001", "554784178525", "5547984178525", "text", "orcamento 1234", null);
         when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(m), List.of()));
         when(idempotency.tentarPersistir(eq("wamid.001"), anyString(), eq(Direcao.in),
                                           eq("text"), eq("orcamento 1234"), eq(null)))
@@ -76,6 +76,9 @@ class MensagemServiceTest {
         MensagemPersistidaEvent evt = captor.getValue();
         assertThat(evt.wamid()).isEqualTo("wamid.001");
         assertThat(evt.telefone()).isEqualTo("554784178525");
+        assertThat(evt.telefoneWaId())
+            .as("MensagemService propaga o wa_id EXATO (com 9) para o listener responder")
+            .isEqualTo("5547984178525");
         assertThat(evt.tipo()).isEqualTo("text");
         assertThat(evt.conteudo()).isEqualTo("orcamento 1234");
         assertThat(evt.mediaId()).isNull();
@@ -89,7 +92,7 @@ class MensagemServiceTest {
     @DisplayName("Mensagem duplicada: tentarPersistir false -> publishEvent 0x (Meta reenviou)")
     void mensagem_duplicada_nao_publica() throws Exception {
         MensagemEntranteDTO m = new MensagemEntranteDTO(
-            "wamid.dup", "554784178525", "text", "orcamento", null);
+            "wamid.dup", "554784178525", "5547984178525", "text", "orcamento", null);
         when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(m), List.of()));
         when(idempotency.tentarPersistir(any(), any(), any(), any(), any(), any())).thenReturn(false);
 
@@ -103,9 +106,9 @@ class MensagemServiceTest {
     @DisplayName("Multiplas mensagens novas: publishEvent N vezes (loop do orquestrador)")
     void multiplas_mensagens_publica_n() throws Exception {
         MensagemEntranteDTO m1 = new MensagemEntranteDTO(
-            "wamid.001", "554784178525", "text", "a", null);
+            "wamid.001", "554784178525", "5547984178525", "text", "a", null);
         MensagemEntranteDTO m2 = new MensagemEntranteDTO(
-            "wamid.002", "554784178525", "text", "b", null);
+            "wamid.002", "554784178525", "5547984178525", "text", "b", null);
         when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(m1, m2), List.of()));
         when(idempotency.tentarPersistir(any(), any(), any(), any(), any(), any())).thenReturn(true);
 

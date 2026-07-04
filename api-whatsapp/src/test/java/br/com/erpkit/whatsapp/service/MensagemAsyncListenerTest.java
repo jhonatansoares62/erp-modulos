@@ -59,14 +59,19 @@ class MensagemAsyncListenerTest {
 
     @InjectMocks MensagemAsyncListener listener;
 
+    // telefone NORMALIZADO (sem 9o digito, DDD 47) usado internamente vs
+    // telefoneWaId = wa_id EXATO do Meta (com 9o digito) usado no callback/resposta.
+    private static final String TEL_NORMALIZADO = "554784178525";
+    private static final String TEL_WA_ID = "5547984178525";
+
     private MensagemPersistidaEvent eventoText() {
         return new MensagemPersistidaEvent(
-            "wamid.001", "554784178525", TipoMensagem.TEXT, "orcamento 1234", null, null);
+            "wamid.001", TEL_NORMALIZADO, TEL_WA_ID, TipoMensagem.TEXT, "orcamento 1234", null, null);
     }
 
     private MensagemPersistidaEvent eventoDocumento() {
         return new MensagemPersistidaEvent(
-            "wamid.002", "554784178525", TipoMensagem.DOCUMENT, "fatura.pdf",
+            "wamid.002", TEL_NORMALIZADO, TEL_WA_ID, TipoMensagem.DOCUMENT, "fatura.pdf",
             "MEDIA-ID-001", null);
     }
 
@@ -122,7 +127,9 @@ class MensagemAsyncListenerTest {
         assertThat(dto.mediaMimeType()).isEqualTo("application/pdf");
         assertThat(dto.mediaFilename()).isEqualTo("fatura.pdf");
         assertThat(dto.idCliente()).isEqualTo(42L);
-        assertThat(dto.telefone()).isEqualTo("554784178525");
+        assertThat(dto.telefone())
+            .as("callback carrega o wa_id EXATO do Meta (com 9), NAO o normalizado")
+            .isEqualTo(TEL_WA_ID);
         assertThat(dto.comando()).isEqualTo(TipoMensagem.DOCUMENT);
         assertThat(dto.payload()).isEqualTo("fatura.pdf");
     }

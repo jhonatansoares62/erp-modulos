@@ -11,16 +11,18 @@ package br.com.erpkit.whatsapp.event;
  * <p>Wave 2 entrega apenas o tipo; Wave 5 publica via {@code ApplicationEventPublisher}
  * dentro de {@code MensagemService.processarWebhook}.
  *
- * @param wamid       ID unico do Meta (correlacao em logs estruturados)
- * @param telefone    JA NORMALIZADO via {@code TelefoneBR} (parser Phase 2 fez antes da persistencia)
- * @param tipo        constants de {@code TipoMensagem} (text, interactive_button, document, etc.)
- * @param conteudo    payload extraido (texto cru, "id|title", filename) — pode ser {@code null}
- * @param mediaId     id Meta para media (document/image/audio) — {@code null} se sem media
+ * @param wamid        ID unico do Meta (correlacao em logs estruturados)
+ * @param telefone     NORMALIZADO via {@code TelefoneBR.normalizar} (uso interno: clientes_zap + janela 24h)
+ * @param telefoneWaId {@code wa_id} EXATO do Meta (sem strip do 9o digito) — numero de RESPOSTA outbound
+ * @param tipo         constants de {@code TipoMensagem} (text, interactive_button, document, etc.)
+ * @param conteudo     payload extraido (texto cru, "id|title", filename) — pode ser {@code null}
+ * @param mediaId      id Meta para media (document/image/audio) — {@code null} se sem media
  * @param idClienteErp campo reservado, sempre {@code null} neste evento — listener busca via {@code ClienteZapService}
  */
 public record MensagemPersistidaEvent(
     String wamid,
     String telefone,
+    String telefoneWaId,
     String tipo,
     String conteudo,
     String mediaId,

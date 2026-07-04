@@ -88,7 +88,7 @@ public class MensagemService {
             // nao dispara se transacao falhar. idClienteErp = null sempre — listener
             // resolve via ClienteZapService.identificar.
             eventPublisher.publishEvent(new MensagemPersistidaEvent(
-                m.wamid(), m.telefone(), m.tipo(), m.conteudo(), m.mediaId(), null
+                m.wamid(), m.telefone(), m.telefoneWaId(), m.tipo(), m.conteudo(), m.mediaId(), null
             ));
         }
 

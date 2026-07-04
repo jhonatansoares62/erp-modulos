@@ -190,10 +190,13 @@ class WebhookAsyncIntegrationTest {
         assertThat(requests).hasSize(1);
 
         JsonNode payload = objectMapper.readTree(requests.get(0).getBodyAsString());
-        // Telefone normalizado (DDD 47 SC strip 9): 5547984178525 -> 554784178525
+        // O callback carrega o wa_id EXATO do Meta (from=5547984178525, COM o 9), nao a
+        // versao normalizada — a Cloud API exige o mesmo wa_id do inbound para responder
+        // (validado no teste real 2026-07-04: responder ao numero com strip do 9 falha).
+        // A normalizacao continua interna (clientes_zap + janela 24h).
         assertThat(payload.get("telefone").asText())
-                .as("Telefone normalizado pelo ClienteZapService.identificar")
-                .isEqualTo("554784178525");
+                .as("callback carrega o wa_id exato do Meta (com 9), nao o normalizado")
+                .isEqualTo("5547984178525");
         // Comando: primeira palavra lowercase do "Olá, gostaria de um orçamento"
         // ComandoExtractor.primeiraPalavra() -> split por whitespace -> "Olá," -> lowercase
         // -> "olá,". Aceitar valor real do parser (Wave 2 D-05).

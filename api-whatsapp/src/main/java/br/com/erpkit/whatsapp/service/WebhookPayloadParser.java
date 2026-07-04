@@ -98,11 +98,12 @@ public class WebhookPayloadParser {
 
     private MensagemEntranteDTO extrairMensagem(MessageDTO msg) {
         String wamid = msg.getId();
-        String telefone = TelefoneBR.normalizar(msg.getFrom());
+        String telefone = TelefoneBR.normalizar(msg.getFrom());     // interno (clientes_zap + janela)
+        String telefoneWaId = TelefoneBR.sanitizar(msg.getFrom());  // wa_id exato (resposta outbound)
         String tipo = mapTipo(msg);
         String conteudo = extrairConteudo(msg, tipo);
         String mediaId = extrairMediaId(msg);
-        return new MensagemEntranteDTO(wamid, telefone, tipo, conteudo, mediaId);
+        return new MensagemEntranteDTO(wamid, telefone, telefoneWaId, tipo, conteudo, mediaId);
     }
 
     /** Mapa {@code msg.type} -> constants {@link TipoMensagem}. Desconhecidos viram DESCONHECIDO. */

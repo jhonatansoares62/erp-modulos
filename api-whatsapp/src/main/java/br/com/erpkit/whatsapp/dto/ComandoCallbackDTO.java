@@ -11,7 +11,8 @@ package br.com.erpkit.whatsapp.dto;
  * <p>Wave 4 ({@code ErpCallbackClient.despachar}) usa este DTO no body do POST com
  * {@code @CircuitBreaker(name="erp-callback")} + {@code @Retry(name="erp-callback")}.
  *
- * @param telefone        normalizado via {@code TelefoneBR} (digitos)
+ * @param telefone        {@code wa_id} EXATO do Meta (digitos, SEM strip do 9o digito) — o ERP
+ *                        usa este numero para responder; a Cloud API exige o mesmo wa_id do inbound
  * @param comando         keyword extraida (ex: "orcamento", "aprovar_42", "document")
  * @param payload         conteudo cru da mensagem (texto, "id|title", filename) — pode ser {@code null}
  * @param idCliente       id_cliente_erp resolvido — {@code null} se cliente nao mapeado

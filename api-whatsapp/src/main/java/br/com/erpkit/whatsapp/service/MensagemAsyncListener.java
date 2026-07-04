@@ -127,9 +127,12 @@ public class MensagemAsyncListener {
             return;
         }
 
-        // [5] dispatch ERP (Resilience4j cuida de retry+CB+fallback)
+        // [5] dispatch ERP (Resilience4j cuida de retry+CB+fallback).
+        // telefone = wa_id EXATO do Meta (event.telefoneWaId), NAO o normalizado — o ERP
+        // usa este numero para RESPONDER, e a Cloud API exige o mesmo wa_id do inbound
+        // (a versao com strip do 9o digito falha no envio — validado no teste real).
         ComandoCallbackDTO payload = new ComandoCallbackDTO(
-            event.telefone(), comando, event.conteudo(),
+            event.telefoneWaId(), comando, event.conteudo(),
             cliente.getIdClienteErp(), mediaBase64, mediaMimeType, mediaFilename
         );
         try {

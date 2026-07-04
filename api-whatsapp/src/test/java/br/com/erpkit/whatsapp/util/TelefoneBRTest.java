@@ -36,6 +36,30 @@ class TelefoneBRTest {
     }
 
     // ============================================================
+    // sanitizar() — wa_id EXATO do Meta (NAO strip o 9) p/ resposta outbound
+    // ============================================================
+
+    @Test
+    @DisplayName("sanitizar preserva o 9o digito (wa_id do Meta) e remove nao-digitos")
+    void sanitizar_preserva_9() {
+        assertThat(TelefoneBR.sanitizar("+55 (47) 98417-8525")).isEqualTo("5547984178525");
+    }
+
+    @Test
+    @DisplayName("sanitizar(null) retorna null")
+    void sanitizar_null() {
+        assertThat(TelefoneBR.sanitizar(null)).isNull();
+    }
+
+    @Test
+    @DisplayName("mesmo input: sanitizar mantem o 9 (resposta), normalizar strip o 9 (interno)")
+    void sanitizar_vs_normalizar() {
+        String waId = "5547984178525";  // wa_id do Meta (DDD 47, com 9)
+        assertThat(TelefoneBR.sanitizar(waId)).isEqualTo("5547984178525");
+        assertThat(TelefoneBR.normalizar(waId)).isEqualTo("554784178525");
+    }
+
+    // ============================================================
     // Casos SP/RJ/ES (mantem 9o digito)
     // ============================================================
 
