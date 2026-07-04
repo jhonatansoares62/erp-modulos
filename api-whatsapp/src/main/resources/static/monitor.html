@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor WhatsApp — api-whatsapp</title>
+<style>
+  :root {
+    --bg: #0b141a; --panel: #111b21; --panel2: #1f2c34;
+    --in: #202c33; --out: #005c4b; --txt: #e9edef; --muted: #8696a0;
+    --green: #00a884; --red: #f15c6d; --amber: #f0b232; --blue: #53bdeb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--txt);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    background: var(--panel); padding: 12px 20px; display: flex; align-items: center;
+    gap: 16px; flex-wrap: wrap; border-bottom: 1px solid #222d34;
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 600; }
+  header h1 .emoji { margin-right: 8px; }
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-left: auto; align-items: center; }
+  .badge {
+    background: var(--panel2); padding: 5px 11px; border-radius: 20px; font-size: 12px;
+    color: var(--muted); white-space: nowrap;
+  }
+  .badge b { color: var(--txt); font-weight: 600; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot.err { background: var(--red); }
+  .cb-CLOSED { color: var(--green); } .cb-OPEN { color: var(--red); } .cb-HALF_OPEN { color: var(--amber); }
+
+  main {
+    flex: 1; overflow-y: auto; padding: 20px;
+    background-image: linear-gradient(rgba(11,20,26,.94), rgba(11,20,26,.94)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='2' cy='2' r='1' fill='%23223' /%3E%3C/svg%3E");
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .empty { color: var(--muted); text-align: center; margin-top: 60px; font-size: 15px; }
+
+  .msg { max-width: 72%; padding: 8px 12px 6px; border-radius: 10px; position: relative;
+         animation: pop .25s ease; word-wrap: break-word; }
+  .msg.in  { background: var(--in);  align-self: flex-start; border-top-left-radius: 3px; }
+  .msg.out { background: var(--out); align-self: flex-end;  border-top-right-radius: 3px; }
+  .msg.new { outline: 2px solid var(--green); }
+  @keyframes pop { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .meta { font-size: 11px; color: var(--muted); margin-bottom: 3px; display: flex; gap: 8px; align-items: center; }
+  .msg.out .meta { color: #afeee0; }
+  .tipo { background: rgba(255,255,255,.12); padding: 1px 6px; border-radius: 4px; font-size: 10px;
+          text-transform: uppercase; letter-spacing: .3px; }
+  .tel { font-weight: 600; }
+  .arrow { font-size: 12px; }
+  .conteudo { font-size: 14.5px; line-height: 1.35; white-space: pre-wrap; }
+  .conteudo.vazio { color: var(--muted); font-style: italic; }
+  .time { font-size: 10.5px; color: var(--muted); text-align: right; margin-top: 2px; }
+  .msg.out .time { color: #8fd9c9; }
+</style>
+</head>
+<body>
+  <header>
+    <h1><span class="emoji">📱</span>Monitor WhatsApp</h1>
+    <div class="badges">
+      <span class="badge"><span id="conn" class="dot err"></span><span id="connTxt">conectando…</span></span>
+      <span class="badge">Número: <b id="phone">—</b></span>
+      <span class="badge">Circuit: <b id="cb" class="cb-UNKNOWN">—</b></span>
+      <span class="badge">Total: <b id="total">0</b></span>
+    </div>
+  </header>
+  <main id="feed">
+    <div class="empty" id="empty">Aguardando mensagens… envie algo pro número de teste 📩</div>
+  </main>
+
+<script>
+  const seen = new Set();
+  let firstLoad = true;
+
+  function esc(s) {
+    if (s == null) return "";
+    return s.replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+  }
+  function hora(ms) {
+    if (!ms) return "";
+    return new Date(ms).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+
+  async function tick() {
+    try {
+      const r = await fetch("/monitor/feed", { cache: "no-store" });
+      if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+
+      document.getElementById("conn").className = "dot ok";
+      document.getElementById("connTxt").textContent = "ao vivo";
+      document.getElementById("phone").textContent = d.phoneNumberId || "—";
+      const cb = document.getElementById("cb");
+      cb.textContent = d.circuitBreakerState || "—";
+      cb.className = "cb-" + (d.circuitBreakerState || "UNKNOWN");
+      document.getElementById("total").textContent = d.total ?? 0;
+
+      const feed = document.getElementById("feed");
+      const empty = document.getElementById("empty");
+      // API devolve mais novo -> mais antigo; renderizamos mais novo no topo
+      const novas = (d.mensagens || []).filter(m => !seen.has(m.id));
+      if (novas.length && empty) empty.remove();
+
+      // insere do mais antigo pro mais novo entre os novos, no topo
+      for (const m of novas.slice().reverse()) {
+        seen.add(m.id);
+        const dir = m.direcao === "out" ? "out" : "in";
+        const el = document.createElement("div");
+        el.className = "msg " + dir + (firstLoad ? "" : " new");
+        el.innerHTML =
+          '<div class="meta">' +
+            '<span class="arrow">' + (dir === "out" ? "➡️ enviada" : "⬅️ recebida") + '</span>' +
+            '<span class="tel">' + esc(m.telefone) + '</span>' +
+            '<span class="tipo">' + esc(m.tipo || "?") + '</span>' +
+          '</div>' +
+          '<div class="conteudo' + (m.conteudo ? '' : ' vazio') + '">' +
+            (m.conteudo ? esc(m.conteudo) : "(sem texto)") + '</div>' +
+          '<div class="time">' + hora(m.criadoEm) + '</div>';
+        feed.insertBefore(el, feed.firstChild);
+        if (!firstLoad) setTimeout(() => el.classList.remove("new"), 2500);
+      }
+      firstLoad = false;
+    } catch (e) {
+      document.getElementById("conn").className = "dot err";
+      document.getElementById("connTxt").textContent = "sem conexão";
+    }
+  }
+
+  tick();
+  setInterval(tick, 1500);
+</script>
+</body>
+</html>

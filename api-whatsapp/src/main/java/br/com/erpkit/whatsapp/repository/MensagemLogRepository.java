@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -26,4 +27,7 @@ public interface MensagemLogRepository extends JpaRepository<MensagemLog, Long> 
 
     /** Helper para tests + listagem cronologica futura. */
     Page<MensagemLog> findByTelefoneOrderByCriadoEmDesc(String telefone, Pageable pageable);
+
+    /** Ultimas mensagens (in + out) para o painel de monitoramento (dev/meta). */
+    List<MensagemLog> findTop200ByOrderByIdDesc();
 }

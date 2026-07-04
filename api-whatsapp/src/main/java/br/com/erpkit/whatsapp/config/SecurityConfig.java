@@ -62,7 +62,9 @@ public class SecurityConfig {
     @Bean
     public FilterRegistrationBean<ApiKeyFilter> apiKeyFilter(@Value("${modulo.api-key:}") String apiKey) {
         FilterRegistrationBean<ApiKeyFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(new ApiKeyFilter(apiKey, Set.of("/webhook")));
+        // /webhook: publico via HMAC. /monitor: painel dev/meta (MonitorController so
+        // existe nesses profiles; em prod o path fica liberado mas sem endpoint).
+        registration.setFilter(new ApiKeyFilter(apiKey, Set.of("/webhook", "/monitor")));
         registration.addUrlPatterns("/*");
         // HIGHEST_PRECEDENCE + 10 — depois do HmacSignatureFilter, antes de
         // qualquer outro filter custom que apareca em phases futuras.
