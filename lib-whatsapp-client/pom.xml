@@ -54,6 +54,25 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- WireMock standalone para integration tests do WhatsAppClientImpl (QA-02).
+             Jetty 12 shadow evita conflito com Boot 3.5.9 (mesma versao do api-whatsapp) -->
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>3.10.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Jackson: em producao o ERP consumidor traz via spring-boot-starter-web
+             (o RestClient detecta os conversores JSON do classpath, igual ao RestTemplate
+             do lib-consultas-client). Em teste, declarado explicitamente para o RestClient
+             serializar/desserializar os DTOs contra o WireMock. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

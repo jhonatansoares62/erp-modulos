@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 5 (lib-whatsapp-client) construida direto + testada + reator verde; proximo Phase 6 (Qualidade)
+status: milestone-complete
+stopped_at: Milestone "Modulo WhatsApp" 6/6 completa (Phase 5 lib + Phase 6 qualidade); proximo engate no ERP-MUDAS (outro repo)
 last_updated: "2026-07-04T00:00:00.000Z"
 last_activity: 2026-07-04
 progress:
   total_phases: 6
-  completed_phases: 5
-  total_plans: 27
-  completed_plans: 27
-  percent: 83
+  completed_phases: 6
+  total_plans: 28
+  completed_plans: 28
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-05)
 
 **Core value:** Modulos reaproveitaveis entre ERPs ERPKit, sem custo operacional recorrente com terceiros — Modulo WhatsApp: custo zero de Meta garantido por design, nao por disciplina
-**Current focus:** Phase 06 — Qualidade (Testes WireMock + OpenAPI + README + RUNBOOK); Phase 5 concluida
+**Current focus:** Milestone "Modulo WhatsApp" COMPLETA (6/6). Proximo: engate no ERP-MUDAS (outra milestone/repo).
 
 ## Current Position
 
-Phase: 5 completa → proximo Phase 6
-Plan: Phase 5 construida direto (fora do fluxo GSD plan-phase, decisao do usuario)
-Status: lib-whatsapp-client entregue (13 arquivos, 9 tests verdes, reator 8 modulos BUILD SUCCESS) — proximo: Phase 6 (Qualidade)
+Phase: 6/6 completas — milestone fechada
+Plan: Phases 5 e 6 construidas direto (fora do fluxo GSD plan-phase, decisao do usuario)
+Status: api-whatsapp + lib-whatsapp-client entregues, testados (reator 8 modulos BUILD SUCCESS, ~282 tests) e documentados (README x2 + RUNBOOK + Swagger)
 Last activity: 2026-07-04
 
-Progress: [████████░░] 83% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 6/6 + Phase 4 6/6 + Phase 5 1/1; Phases 1-4 verified, Phase 5 completa, Phase 6 pendente)
+Progress: [██████████] 100% (Phase 1 7/7 + Phase 2 7/7 + Phase 3 6/6 + Phase 4 6/6 + Phase 5 1/1 + Phase 6 1/1)
 
 ## Sessao 2026-07-04
 
@@ -48,7 +48,14 @@ Progress: [████████░░] 83% (Phase 1 7/7 + Phase 2 7/7 + Phas
 **Infra corrigida — JAVA_HOME:**
 - JAVA_HOME de Maquina apontava para `C:\Program Files\Amazon Corretto\jdk21.0.10_7` (inexistente); JDK 21 real (Corretto 21.0.10) esta em `C:\Program Files\Java\jdk21.0.10_7`. Corrigido via JAVA_HOME de usuario + bloco `env` em `.claude/settings.local.json`. Machine var continua errada (so User corrigida — sem admin).
 
-**Proximo — Phase 6 (Qualidade):** WireMock integration tests na lib (QA-02), SpringDoc/OpenAPI no api-whatsapp (QA-05), README por modulo (QA-04), RUNBOOK operacional (QA-06). Ver ROADMAP Phase 6 SC 1-5.
+**Entregue — Phase 6 (Qualidade) construida DIRETO:**
+- `WhatsAppClientImplWireMockTest` — 16 cenarios WireMock na lib (4 envios + status + despachar + 4xx sem retry + 5xx retry/esgota + conexao recusada + X-API-Key condicional + isOnline + desabilitado). Fix: jackson-databind test-scope + RestClient detecta conversores do classpath (igual RestTemplate do consultas; ERP traz via starter-web em prod).
+- `OpenApiConfig` no api-whatsapp — bean OpenAPI (titulo/versao/descricao). SpringDoc ja expunha /swagger-ui.html + /v3/api-docs (ApiKeyFilter libera esses paths).
+- `api-whatsapp/README.md` + `lib-whatsapp-client/README.md` + `api-whatsapp/RUNBOOK.md` (com passo subscribed_apps — shadow delivery).
+- QA-01/QA-02 do api-whatsapp ja estavam cobertos desde Phases 1-4 (Hmac/Idempotency/MediaCache/Janela/CloudClient com WireMock).
+- Reator 8 modulos BUILD SUCCESS, ~282 tests (lib-whatsapp-client 25 + api-whatsapp 189 + demais).
+
+**MILESTONE COMPLETA.** Proximo: engate no ERP-MUDAS (ModulosController + handlers OrcamentoCommandHandler etc.) — outro repo/milestone, fora deste GSD project (D2 PROJECT.md).
 
 ## Sessao 2026-05-19 (handoff)
 

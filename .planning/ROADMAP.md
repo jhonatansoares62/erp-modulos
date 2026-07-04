@@ -11,7 +11,7 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 - [x] **Phase 3: Roteamento + Boundary Async** - ErpCallbackClient, MessageRouter, MensagemService.processarAsync() integrando Phases 1+2, ack 200 antes do async fan-out, download eager de media entrante
 - [x] **Phase 4: Outbound + Trava 24h + WhatsAppController** - WhatsAppCloudClient (texto/doc/botoes/lista, sem enviarTemplate), MediaCacheService, WindowEnforcementService (hard 409), endpoints internos ERP, log de saida
 - [x] **Phase 5: lib-whatsapp-client** - Starter Spring Boot espelhando lib-consultas-client: auto-config condicional, SPI WhatsAppCommandHandler + WhatsAppCommandRegistry, WhatsAppClient com Resilience4j (RestClient), META-INF auto-config (build direto, sem GSD plan-phase — 2026-07-04)
-- [ ] **Phase 6: Qualidade — Testes + OpenAPI + RUNBOOK** - Unit tests (HMAC/idempotencia/media-cache/janela-24h), integration tests WireMock (4 tipos de envio + webhook + 5xx + timeout), SpringDoc OpenAPI, README.md por modulo, RUNBOOK.md operacional
+- [x] **Phase 6: Qualidade — Testes + OpenAPI + RUNBOOK** - WireMock integration tests da lib-whatsapp-client (16 cenarios), OpenApiConfig (Swagger enriquecido) no api-whatsapp, README.md por modulo (api-whatsapp + lib-whatsapp-client), RUNBOOK.md operacional com passo subscribed_apps (build direto — 2026-07-04)
 
 ## Phase Details
 
@@ -118,7 +118,11 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
   3. `mvnw verify -pl api-whatsapp` e `mvnw verify -pl lib-whatsapp-client` e build agregado do reactor retornam BUILD SUCCESS
   4. README.md em `api-whatsapp/` e `lib-whatsapp-client/` com quickstart, lista de properties e exemplo de `WhatsAppCommandHandler`; SpringDoc OpenAPI acessivel em `/swagger-ui.html` e `/v3/api-docs`
   5. RUNBOOK.md documenta passo-a-passo: criar app Meta + WABA + Phone Number ID, gerar System User token permanente ("Never" expiry), verificar `GET /{WABA_ID}/subscribed_apps` (passo obrigatorio — shadow delivery bug), configurar webhook URL via Cloudflare Tunnel, testar hub.challenge via curl
-**Plans**: TBD
+**Plans**: build direto (fora do fluxo GSD plan-phase, decisao do usuario 2026-07-04)
+  - [x] WireMock integration tests da lib (`WhatsAppClientImplWireMockTest`, 16 cenarios: 4 envios + status + despachar + 4xx/5xx/refused + X-API-Key + isOnline + desabilitado); QA-01/QA-02 do api-whatsapp ja cobertos desde Phases 1-4 (Hmac/Idempotency/MediaCache/Janela/CloudClient/MetaMedia/ErpCallback com WireMock)
+  - [x] OpenApiConfig (bean OpenAPI com titulo/versao/descricao) no api-whatsapp; SpringDoc ja expunha /swagger-ui.html + /v3/api-docs (paths liberados pelo ApiKeyFilter)
+  - [x] README.md em api-whatsapp/ e lib-whatsapp-client/ + RUNBOOK.md operacional
+  - [x] Reator completo 8 modulos BUILD SUCCESS (~282 tests verdes; lib-whatsapp-client 25 + api-whatsapp 189)
 **UI hint**: no
 
 ## Progress
@@ -132,4 +136,6 @@ Dois novos modulos adicionados ao monorepo seguindo o padrao `api-<dominio>` + `
 | 3. Roteamento + Boundary Async | 6/6 | Complete (awaiting verifier) | 2026-05-05 |
 | 4. Outbound + Trava 24h + WhatsAppController | 6/6 | Complete (awaiting verifier) | 2026-05-06 |
 | 5. lib-whatsapp-client | 1/1 | Complete (build direto) | 2026-07-04 |
-| 6. Qualidade — Testes + OpenAPI + RUNBOOK | 0/TBD | Not started | - |
+| 6. Qualidade — Testes + OpenAPI + RUNBOOK | 1/1 | Complete (build direto) | 2026-07-04 |
+
+**Milestone "Modulo WhatsApp" — 6/6 fases completas.** api-whatsapp + lib-whatsapp-client entregues, testados (reator 8 modulos verde) e documentados. Proximo: engate no ERP-MUDAS (outra milestone/repo).
