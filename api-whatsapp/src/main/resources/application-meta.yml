@@ -1,0 +1,25 @@
+# Profile 'meta' — roda o api-whatsapp com secrets REAIS da Meta (vindos das env
+# vars de .secrets/odonto.env) mas usando H2 em memoria (sem PostgreSQL local).
+#
+# Diferente do profile 'dev' (que tem secrets dummy hardcoded), aqui os secrets
+# continuam vindo do bloco app.modulos.whatsapp do application.yml base, que le
+# ${WHATSAPP_*}. Este profile so troca o banco para H2.
+#
+# Subir:  bash scripts/whatsapp-dev/run-meta.sh   (source odonto.env + -Pdev + profile meta)
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:metadb_whatsapp;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS whatsapp
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      "[hibernate.boot.allow_jdbc_metadata_access]": "false"
+
+logging:
+  level:
+    br.com.erpkit.whatsapp: DEBUG
