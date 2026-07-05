@@ -106,4 +106,21 @@ public class ClienteZapService {
         }
         return true;
     }
+
+    /**
+     * Grava o {@code id_cliente_erp} resolvido no ERP para o telefone (D-07: registros
+     * nascem com id NULL; aqui vinculamos quando o ERP resolve o paciente pelo numero).
+     * Normaliza o telefone antes. Idempotente — re-vincular o mesmo id nao tem efeito.
+     *
+     * @return {@code true} se atualizou alguma linha (telefone existe em clientes_zap)
+     */
+    @Transactional
+    public boolean vincularClienteErp(String telefone, Long idClienteErp) {
+        String normalizado = TelefoneBR.normalizar(telefone);
+        int rows = repository.vincularIdClienteErp(normalizado, idClienteErp);
+        if (rows > 0) {
+            log.info("ClienteZap vinculado ao ERP: telefone={} id_cliente_erp={}", normalizado, idClienteErp);
+        }
+        return rows > 0;
+    }
 }

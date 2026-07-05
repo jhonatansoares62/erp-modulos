@@ -20,9 +20,12 @@ import org.springframework.test.context.DynamicPropertySource;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -196,5 +199,39 @@ class ErpCallbackClientTest {
         assertThat(countAfter)
                 .as("Circuit aberto: dispatch nao chega ao WireMock (CallNotPermittedException -> fallback)")
                 .isEqualTo(countBefore);
+    }
+
+    // ==================== resolverIdCliente ====================
+
+    @Test
+    @DisplayName("resolver: match unico -> le idCliente do body {\"idCliente\":3}")
+    void resolver_matchUnico_retornaId() {
+        wireMock.stubFor(get(urlPathEqualTo("/api/modulos/whatsapp/resolver"))
+                .withQueryParam("telefone", equalTo("554784178525"))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"idCliente\":3}")));
+
+        assertThat(client.resolverIdCliente("554784178525")).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("resolver: sem match -> body {} (idCliente ausente) -> null")
+    void resolver_semMatch_retornaNull() {
+        wireMock.stubFor(get(urlPathEqualTo("/api/modulos/whatsapp/resolver"))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{}")));
+
+        assertThat(client.resolverIdCliente("554700000000")).isNull();
+    }
+
+    @Test
+    @DisplayName("resolver: best-effort — erro no ERP (500) nao lanca, retorna null")
+    void resolver_erro_retornaNull() {
+        wireMock.stubFor(get(urlPathEqualTo("/api/modulos/whatsapp/resolver"))
+                .willReturn(aResponse().withStatus(500)));
+
+        assertThat(client.resolverIdCliente("554784178525")).isNull();
     }
 }

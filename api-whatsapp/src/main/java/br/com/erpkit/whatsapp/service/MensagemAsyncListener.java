@@ -120,6 +120,21 @@ public class MensagemAsyncListener {
             return;
         }
 
+        // [3.1] resolver id_cliente_erp no ERP se ainda NULL (D-07). Best-effort: falha
+        // aqui NAO interrompe o fluxo — o callback segue com id NULL (comportamento atual).
+        Long idClienteErp = cliente.getIdClienteErp();
+        if (idClienteErp == null) {
+            try {
+                Long resolvido = erpCallbackClient.resolverIdCliente(event.telefone());
+                if (resolvido != null && clienteZapService.vincularClienteErp(event.telefone(), resolvido)) {
+                    idClienteErp = resolvido;
+                }
+            } catch (Exception e) {
+                log.warn("Falha ao resolver/vincular id_cliente_erp: telefone={}: {}",
+                         event.telefone(), e.getMessage());
+            }
+        }
+
         // [4] extrair comando
         String comando = comandoExtractor.extrair(event.tipo(), event.conteudo());
         if (comando == null) {
@@ -133,7 +148,7 @@ public class MensagemAsyncListener {
         // (a versao com strip do 9o digito falha no envio — validado no teste real).
         ComandoCallbackDTO payload = new ComandoCallbackDTO(
             event.telefoneWaId(), comando, event.conteudo(),
-            cliente.getIdClienteErp(), mediaBase64, mediaMimeType, mediaFilename
+            idClienteErp, mediaBase64, mediaMimeType, mediaFilename
         );
         try {
             erpCallbackClient.despachar(payload);

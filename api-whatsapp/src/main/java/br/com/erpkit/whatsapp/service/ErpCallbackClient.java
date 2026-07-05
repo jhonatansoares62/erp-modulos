@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * Cliente HTTP para callback ao ERP (D-03 + ROU-02 + ROU-03 + ROU-04).
@@ -112,5 +113,31 @@ public class ErpCallbackClient {
         log.error("ERP callback falhou apos retry+CB: telefone={} comando={}: {}",
                 payload.telefone(), payload.comando(), t.getMessage());
         // ack-first: ERP pode ter executado parcialmente; nao retentar.
+    }
+
+    /**
+     * Resolve o id do cliente/paciente no ERP a partir do telefone
+     * ({@code GET /api/modulos/whatsapp/resolver?telefone=}). Usado para popular o
+     * {@code id_cliente_erp} do ClienteZap (D-07: nasce NULL).
+     *
+     * <p><b>Best-effort:</b> nunca lanca — qualquer falha (ERP fora do ar, 4xx, timeout)
+     * retorna {@code null} e o fluxo segue com id NULL (comportamento atual). Por isso NAO
+     * usa retry/CB: resolucao e opcional e nao pode atrasar/derrubar o dispatch do callback.
+     *
+     * @return id do paciente quando o ERP resolve com match unico; {@code null} caso contrario
+     */
+    public Long resolverIdCliente(String telefone) {
+        try {
+            Map<?, ?> body = restClient.get()
+                    .uri(uriBuilder -> uriBuilder.path("/api/modulos/whatsapp/resolver")
+                            .queryParam("telefone", telefone).build())
+                    .retrieve()
+                    .body(Map.class);
+            Object id = body != null ? body.get("idCliente") : null;
+            return id instanceof Number ? ((Number) id).longValue() : null;
+        } catch (Exception e) {
+            log.warn("Falha ao resolver id_cliente_erp no ERP: telefone={}: {}", telefone, e.getMessage());
+            return null;
+        }
     }
 }

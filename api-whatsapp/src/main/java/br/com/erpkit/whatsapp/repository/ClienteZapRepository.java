@@ -81,4 +81,21 @@ public interface ClienteZapRepository extends JpaRepository<ClienteZap, Long> {
         "WHERE telefone = :telefone",
         nativeQuery = true)
     Optional<Instant> buscarUltimaMensagemEm(@Param("telefone") String telefone);
+
+    /**
+     * Vincula o {@code id_cliente_erp} ao registro do telefone (JA NORMALIZADO).
+     * Usado quando o api-whatsapp resolve o cliente no ERP (via {@code /resolver})
+     * depois de {@link #findByTelefone} ter criado o registro com id_cliente_erp NULL
+     * (politica D-07). Update atomico via native query — evita L1 cache stale do JPA.
+     *
+     * @return linhas afetadas (0 se telefone nao existe, 1 se vinculou)
+     */
+    @Modifying
+    @Query(value =
+        "UPDATE whatsapp.clientes_zap " +
+        "SET id_cliente_erp = :idClienteErp " +
+        "WHERE telefone = :telefone",
+        nativeQuery = true)
+    int vincularIdClienteErp(@Param("telefone") String telefone,
+                             @Param("idClienteErp") Long idClienteErp);
 }

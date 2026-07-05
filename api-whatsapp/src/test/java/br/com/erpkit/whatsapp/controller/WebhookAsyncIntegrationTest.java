@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.junit.jupiter.api.AfterAll;
@@ -267,22 +268,26 @@ class WebhookAsyncIntegrationTest {
                 .as("Meta media GET deve ter ocorrido (step 1 metadata + step 2 bytes)")
                 .hasSizeGreaterThanOrEqualTo(1);
 
-        // Assert 2: ERP recebeu 1 callback
-        List<ServeEvent> erpEvents = wireMockErp.getAllServeEvents();
-        assertThat(erpEvents).hasSize(1);
+        // Assert 2: ERP recebeu 1 callback (POST /comando). O GET /resolver do listener
+        // (resolve id_cliente_erp) e best-effort e NAO conta como callback — por isso
+        // filtramos pelo POST em vez de getAllServeEvents() (que agora inclui o /resolver).
+        List<LoggedRequest> erpCallbacks =
+                wireMockErp.findAll(postRequestedFor(urlEqualTo("/api/modulos/whatsapp/comando")));
+        assertThat(erpCallbacks).hasSize(1);
+        LoggedRequest erpCallback = erpCallbacks.get(0);
 
         // Assert 3: Meta media GET timestamp ANTERIOR ao ERP POST timestamp.
         // Em SyncTaskExecutor inline, ordem garantida pelo listener D-01 step 1 -> step 5.
         // ServeEvents do WireMock sao ordenados por loggedDate DESC; pegar o ultimo
         // (mais antigo = primeiro recebido) para Meta.
         long metaFirstTime = metaEvents.get(metaEvents.size() - 1).getRequest().getLoggedDate().getTime();
-        long erpTime = erpEvents.get(0).getRequest().getLoggedDate().getTime();
+        long erpTime = erpCallback.getLoggedDate().getTime();
         assertThat(metaFirstTime)
                 .as("Meta media GET deve ocorrer ANTES do ERP POST (D-04 + ROU-05 — URL Meta TTL 5min)")
                 .isLessThanOrEqualTo(erpTime);
 
         // Assert 4: callback ERP recebeu mediaBase64 = base64([1,2,3,4,5]) = "AQIDBAU="
-        JsonNode payload = objectMapper.readTree(erpEvents.get(0).getRequest().getBodyAsString());
+        JsonNode payload = objectMapper.readTree(erpCallback.getBodyAsString());
         assertThat(payload.get("mediaBase64").asText())
                 .as("Base64 dos 5 bytes [1,2,3,4,5] = AQIDBAU=")
                 .isEqualTo("AQIDBAU=");
