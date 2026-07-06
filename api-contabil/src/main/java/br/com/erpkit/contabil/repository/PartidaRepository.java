@@ -21,7 +21,7 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
                    COALESCE(SUM(CASE WHEN p.tipo = 'C' THEN p.valor_centavos ELSE 0 END), 0) AS credito
             FROM contabil.partida p
             JOIN contabil.lancamento l ON l.id = p.lancamento_id
-            WHERE l.status = 'lancado' AND l.data_competencia BETWEEN :de AND :ate
+            WHERE l.status <> 'rascunho' AND l.data_competencia BETWEEN :de AND :ate
             GROUP BY p.conta_id
             """, nativeQuery = true)
     List<Object[]> somarPorConta(@Param("de") LocalDate de, @Param("ate") LocalDate ate);
@@ -33,7 +33,7 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
                    l.historico AS historico, p.tipo AS tipo, p.valor_centavos AS valor_centavos
             FROM contabil.partida p
             JOIN contabil.lancamento l ON l.id = p.lancamento_id
-            WHERE p.conta_id = :contaId AND l.status = 'lancado'
+            WHERE p.conta_id = :contaId AND l.status <> 'rascunho'
               AND l.data_competencia BETWEEN :de AND :ate
             ORDER BY l.data_competencia, l.numero
             """, nativeQuery = true)

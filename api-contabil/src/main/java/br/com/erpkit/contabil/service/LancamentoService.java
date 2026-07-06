@@ -1,6 +1,7 @@
 package br.com.erpkit.contabil.service;
 
 import br.com.erpkit.contabil.dto.EventoContabilRequest;
+import br.com.erpkit.contabil.dto.LancamentoResponse;
 import br.com.erpkit.contabil.model.Lancamento;
 import br.com.erpkit.contabil.model.Partida;
 import br.com.erpkit.contabil.model.RegraLancamento;
@@ -9,6 +10,7 @@ import br.com.erpkit.contabil.repository.LancamentoRepository;
 import br.com.erpkit.contabil.repository.PartidaRepository;
 import br.com.erpkit.contabil.repository.RegraPartidaRepository;
 import br.com.erpkit.shared.exception.ModuloException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,19 +37,23 @@ public class LancamentoService {
     private final LancamentoRepository lancamentoRepository;
     private final PartidaRepository partidaRepository;
     private final ContaContabilService contaService;
+    private final PeriodoService periodoService;
 
     public LancamentoService(RegraPartidaRepository regraPartidaRepository,
                              LancamentoRepository lancamentoRepository,
                              PartidaRepository partidaRepository,
-                             ContaContabilService contaService) {
+                             ContaContabilService contaService,
+                             PeriodoService periodoService) {
         this.regraPartidaRepository = regraPartidaRepository;
         this.lancamentoRepository = lancamentoRepository;
         this.partidaRepository = partidaRepository;
         this.contaService = contaService;
+        this.periodoService = periodoService;
     }
 
     @Transactional
     public Lancamento postarDeEvento(EventoContabilRequest evento, RegraLancamento regra) {
+        periodoService.validarPeriodoAberto(evento.getDataEvento());   // F8: lock date
         List<RegraPartida> linhas = regraPartidaRepository.findByRegraIdOrderByOrdem(regra.getId());
         if (linhas.isEmpty()) {
             throw new ModuloException("Roteiro sem partidas configuradas: regra " + regra.getId());
@@ -100,6 +106,56 @@ public class LancamentoService {
             partidaRepository.save(p);
         }
         return salvo;
+    }
+
+    /**
+     * Estorna um lançamento postado: cria um novo lançamento com as partidas invertidas (D↔C),
+     * ligado ao original (estornaId), e marca o original como 'estornado' (F3/F6, ITG 2000).
+     * Nunca edita/apaga o original.
+     */
+    @Transactional
+    public Lancamento estornar(Long lancamentoId, String motivo) {
+        Lancamento original = lancamentoRepository.findById(lancamentoId)
+                .orElseThrow(() -> new ModuloException("Lançamento não encontrado: " + lancamentoId, HttpStatus.NOT_FOUND));
+        if (!"lancado".equals(original.getStatus())) {
+            throw new ModuloException("Só é possível estornar lançamento 'lancado' (atual: " + original.getStatus() + ")");
+        }
+        periodoService.validarPeriodoAberto(original.getDataCompetencia());
+
+        Lancamento estorno = new Lancamento();
+        estorno.setNumero(lancamentoRepository.count() + 1);
+        estorno.setDataCompetencia(original.getDataCompetencia());
+        estorno.setHistorico("Estorno do lançamento " + original.getNumero()
+                + (motivo == null || motivo.isBlank() ? "" : " - " + motivo));
+        estorno.setEstornaId(original.getId());
+        estorno.setStatus("lancado");
+        estorno.setLancadoEm(Instant.now());
+        Lancamento salvo = lancamentoRepository.save(estorno);
+
+        for (Partida po : partidaRepository.findByLancamentoId(original.getId())) {
+            Partida pe = new Partida();
+            pe.setLancamentoId(salvo.getId());
+            pe.setContaId(po.getContaId());
+            pe.setTipo("D".equals(po.getTipo()) ? "C" : "D");   // inverte débito/crédito
+            pe.setValorCentavos(po.getValorCentavos());
+            pe.setOrdem(po.getOrdem());
+            partidaRepository.save(pe);
+        }
+
+        original.setEstornadoPorId(salvo.getId());
+        original.setStatus("estornado");
+        lancamentoRepository.save(original);
+        return salvo;
+    }
+
+    public LancamentoResponse detalhe(Long id) {
+        Lancamento l = lancamentoRepository.findById(id)
+                .orElseThrow(() -> new ModuloException("Lançamento não encontrado: " + id, HttpStatus.NOT_FOUND));
+        return toResponse(l);
+    }
+
+    public LancamentoResponse toResponse(Lancamento l) {
+        return LancamentoResponse.de(l, partidaRepository.findByLancamentoId(l.getId()));
     }
 
     private Long resolverConta(RegraPartida linha, Map<String, Object> contexto) {
