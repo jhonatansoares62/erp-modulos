@@ -14,6 +14,8 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
 
     List<Partida> findByContaId(Long contaId);
 
+    boolean existsByContaId(Long contaId);
+
     /** Soma débitos e créditos por conta, de lançamentos postados no período. [contaId, debito, credito]. */
     @Query(value = """
             SELECT p.conta_id AS conta_id,

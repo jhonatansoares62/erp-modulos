@@ -3,13 +3,17 @@ package br.com.erpkit.contabil.controller;
 import br.com.erpkit.contabil.dto.ContaArvoreNode;
 import br.com.erpkit.contabil.dto.ContaCreateDTO;
 import br.com.erpkit.contabil.dto.ContaResponse;
+import br.com.erpkit.contabil.dto.ContaUpdateDTO;
 import br.com.erpkit.contabil.model.ContaContabil;
 import br.com.erpkit.contabil.service.ContaContabilService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,5 +45,17 @@ public class ContaContabilController {
     public ResponseEntity<ContaResponse> criar(@Valid @RequestBody ContaCreateDTO dto) {
         ContaContabil criada = service.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(ContaResponse.de(criada));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ContaResponse> atualizar(@PathVariable Long id, @Valid @RequestBody ContaUpdateDTO dto) {
+        ContaContabil atualizada = service.atualizar(id, dto);
+        return ResponseEntity.ok(ContaResponse.de(atualizada));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+        service.softDelete(id);
+        return ResponseEntity.noContent().build();
     }
 }
