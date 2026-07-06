@@ -1,0 +1,24 @@
+# Profile 'dev' — execução local com H2 in-memory (modo PostgreSQL), sem depender
+# do PostgreSQL 5433. Ativar com: mvnw -pl api-contabil spring-boot:run -Pdev -Dspring-boot.run.profiles=dev
+# (o H2 vem via profile Maven 'dev' no pom).
+spring:
+  datasource:
+    url: jdbc:h2:mem:devdb_contabil;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS contabil
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      "[hibernate.boot.allow_jdbc_metadata_access]": "false"
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: contabil
+    default-schema: contabil
+    create-schemas: true

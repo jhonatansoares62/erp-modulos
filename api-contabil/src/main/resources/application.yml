@@ -1,0 +1,46 @@
+server:
+  port: ${SERVER_PORT:9194}
+
+spring:
+  application:
+    name: api-contabil
+
+  # PostgreSQL 15 local (porta 5433, schema 'contabil'). Coexiste com o ERP no
+  # mesmo banco 'erp_mudas' via schema dedicado. Defaults erp_mudas/erp_mudas_dev
+  # são só para dev local; em produção o instalador WinSW define as env vars.
+  datasource:
+    url: ${CONTABIL_DB_URL:jdbc:postgresql://localhost:5433/erp_mudas?currentSchema=contabil}
+    username: ${CONTABIL_DB_USERNAME:erp_mudas}
+    password: ${CONTABIL_DB_PASSWORD:erp_mudas_dev}
+
+  # JPA: ddl-auto validate — schema vem 100% do Flyway. Sem @Entity na Fase 0,
+  # a validação passa trivial. open-in-view false (convenção do monorepo).
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Flyway aplica V1.. no schema 'contabil'.
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: contabil
+    default-schema: contabil
+    create-schemas: true
+
+modulo:
+  versao: 0.1.0
+  api-key: ${API_KEY:}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    br.com.erpkit.contabil: INFO

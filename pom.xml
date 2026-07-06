@@ -22,10 +22,12 @@
         <module>lib-shared</module>
         <module>lib-consultas-client</module>
         <module>lib-whatsapp-client</module>
+        <module>lib-contabil-client</module>
         <module>api-email</module>
         <module>api-storage</module>
         <module>api-consultas</module>
         <module>api-whatsapp</module>
+        <module>api-contabil</module>
     </modules>
 
     <properties>
@@ -57,6 +59,13 @@
             <dependency>
                 <groupId>br.com.erpkit</groupId>
                 <artifactId>lib-whatsapp-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Cliente HTTP do módulo Contábil (eventos → partidas) -->
+            <dependency>
+                <groupId>br.com.erpkit</groupId>
+                <artifactId>lib-contabil-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
