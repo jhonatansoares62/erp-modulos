@@ -1,5 +1,6 @@
 package br.com.erpkit.contabil.controller;
 
+import br.com.erpkit.contabil.dto.BalancoResponse;
 import br.com.erpkit.contabil.dto.BalanceteResponse;
 import br.com.erpkit.contabil.dto.DreResponse;
 import br.com.erpkit.contabil.dto.RazaoResponse;
@@ -38,6 +39,12 @@ public class RelatorioController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate) {
         return ResponseEntity.ok(relatorioService.dre(nvl(de, MIN), nvl(ate, MAX)));
+    }
+
+    @GetMapping("/balanco")
+    public ResponseEntity<BalancoResponse> balanco(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
+        return ResponseEntity.ok(relatorioService.balanco(nvl(data, LocalDate.now())));
     }
 
     @GetMapping("/razao")

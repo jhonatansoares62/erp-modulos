@@ -1,5 +1,6 @@
 package br.com.erpkit.contabil;
 
+import br.com.erpkit.contabil.dto.BalancoResponse;
 import br.com.erpkit.contabil.dto.BalanceteResponse;
 import br.com.erpkit.contabil.dto.DreResponse;
 import br.com.erpkit.contabil.dto.RazaoResponse;
@@ -59,6 +60,29 @@ class RelatorioTest {
         assertThat(razao.getLinhas()).hasSize(1);
         assertThat(razao.getLinhas().get(0).getTipo()).isEqualTo("C");
         assertThat(razao.getSaldoFinalCentavos()).isEqualTo(45000);
+    }
+
+    @Test
+    void balancoFechaComResultadoNaoEncerradoNoPl() {
+        // Venda à vista PIX 150,00 → D Bancos (1.1.1.02) · C Receita (3.1.1.01). Sem encerramento,
+        // a receita aparece como resultado no PL, e Ativo = Passivo + PL.
+        eventoService.receber(evento("venda.finalizada", 15000, Map.of("meioPagamento", "pix", "condicao", "avista")));
+        entityManager.flush();
+
+        BalancoResponse bal = relatorioService.balanco(ATE);
+
+        assertThat(bal.getTotalAtivo()).isEqualTo(15000);
+        assertThat(bal.getAtivo()).hasSize(1);
+        assertThat(bal.getAtivo().get(0).getCodigo()).isEqualTo("1.1.1.02");
+        assertThat(bal.getAtivo().get(0).getSaldoCentavos()).isEqualTo(15000);
+
+        assertThat(bal.getResultadoExercicio()).isEqualTo(15000);
+        assertThat(bal.getPassivoPl()).hasSize(1);   // só o resultado do exercício a apurar
+        assertThat(bal.getPassivoPl().get(0).getNome()).contains("Resultado do Exerc");
+        assertThat(bal.getPassivoPl().get(0).getSaldoCentavos()).isEqualTo(15000);
+        assertThat(bal.getTotalPassivoPl()).isEqualTo(15000);
+
+        assertThat(bal.isFecha()).isTrue();
     }
 
     private EventoContabilRequest evento(String tipo, long valor, Map<String, Object> contexto) {

@@ -1,5 +1,6 @@
 package br.com.erpkit.contabil.service;
 
+import br.com.erpkit.contabil.dto.BalancoResponse;
 import br.com.erpkit.contabil.dto.BalanceteResponse;
 import br.com.erpkit.contabil.dto.DreResponse;
 import br.com.erpkit.contabil.dto.RazaoResponse;
@@ -94,6 +95,56 @@ public class RelatorioService {
         dre.setDespesasFinanceiras(despFin);
         dre.setResultadoLiquido(lucroBruto - despOper - despFin);
         return dre;
+    }
+
+    /**
+     * Balanço Patrimonial na data (posição acumulada do início até 'data'). ATIVO = saldo devedor
+     * (D-C); PASSIVO+PL = saldo credor (C-D). O resultado do exercício ainda não encerrado
+     * (receitas - custos - despesas) entra no PL como linha sintética para o balanço fechar.
+     */
+    public BalancoResponse balanco(LocalDate data) {
+        Map<Long, ContaContabil> contas = contaRepository.findAll().stream()
+                .collect(Collectors.toMap(ContaContabil::getId, c -> c));
+        List<BalancoResponse.Linha> ativo = new ArrayList<>();
+        List<BalancoResponse.Linha> passivoPl = new ArrayList<>();
+        long totalAtivo = 0;
+        long totalPassivoPl = 0;
+        long resultado = 0;
+        for (Object[] row : partidaRepository.somarPorConta(LocalDate.of(1900, 1, 1), data)) {
+            ContaContabil conta = contas.get(num(row[0]));
+            if (conta == null) continue;
+            long debito = num(row[1]);
+            long credito = num(row[2]);
+            switch (conta.getGrupo()) {
+                case "ativo" -> {
+                    long saldo = debito - credito;   // retificadora fica negativa naturalmente
+                    if (saldo != 0) {
+                        ativo.add(new BalancoResponse.Linha(conta.getCodigo(), conta.getNome(), saldo));
+                        totalAtivo += saldo;
+                    }
+                }
+                case "passivo", "pl" -> {
+                    long saldo = credito - debito;
+                    if (saldo != 0) {
+                        passivoPl.add(new BalancoResponse.Linha(conta.getCodigo(), conta.getNome(), saldo));
+                        totalPassivoPl += saldo;
+                    }
+                }
+                case "receita" -> resultado += (credito - debito);
+                case "custo", "despesa" -> resultado -= (debito - credito);
+                default -> { /* ignora */ }
+            }
+        }
+
+        // Resultado do exercício ainda não encerrado entra no PL (para o balanço fechar).
+        if (resultado != 0) {
+            passivoPl.add(new BalancoResponse.Linha("—", "Resultado do Exercício (a apurar)", resultado));
+            totalPassivoPl += resultado;
+        }
+
+        ativo.sort(Comparator.comparing(BalancoResponse.Linha::getCodigo));
+        passivoPl.sort(Comparator.comparing(BalancoResponse.Linha::getCodigo));
+        return new BalancoResponse(data, ativo, passivoPl, totalAtivo, totalPassivoPl, resultado);
     }
 
     public RazaoResponse razao(String codigo, LocalDate de, LocalDate ate) {
