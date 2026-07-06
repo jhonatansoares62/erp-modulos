@@ -65,6 +65,20 @@ public class ContabilClientImpl implements ContabilClient {
     }
 
     @Override
+    public String proxyGet(String path) {
+        verificarHabilitado();
+        return execute(() -> restTemplate.exchange(
+                props.getUrl() + path, HttpMethod.GET, criarEntity(null), String.class).getBody());
+    }
+
+    @Override
+    public String proxyPost(String path, String body) {
+        verificarHabilitado();
+        return execute(() -> restTemplate.exchange(
+                props.getUrl() + path, HttpMethod.POST, criarEntity(body), String.class).getBody());
+    }
+
+    @Override
     public boolean isOnline() {
         if (!props.isEnabled()) return false;
         try {

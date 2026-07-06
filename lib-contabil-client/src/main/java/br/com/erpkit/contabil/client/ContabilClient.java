@@ -13,6 +13,12 @@ public interface ContabilClient {
     /** Envia um evento de negócio para contabilização. Idempotente por eventoId. */
     EventoRecebidoResponse enviarEvento(EventoContabilRequest evento);
 
+    /** Proxy genérico GET para a API do módulo (ex.: "/v1/contas/arvore"). Retorna o JSON cru. */
+    String proxyGet(String path);
+
+    /** Proxy genérico POST para a API do módulo (ex.: "/v1/pendencias/{id}/salvar-regra"). */
+    String proxyPost(String path, String body);
+
     boolean isOnline();
 
     String getCircuitBreakerState();
