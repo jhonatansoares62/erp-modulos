@@ -57,11 +57,18 @@ public class LancamentoService {
     @Transactional
     public Lancamento postarDeEvento(EventoContabilRequest evento, RegraLancamento regra) {
         periodoService.validarPeriodoAberto(evento.getDataEvento());   // F8: lock date
+        List<PartidaSpec> specs = montarSpecs(evento, regra);
+        UUID origemEventoId = evento.getEventoId() == null ? null : UUID.fromString(evento.getEventoId());
+        return postarInterno(evento.getDataEvento(), renderHistorico(regra.getHistoricoTemplate(), evento),
+                specs, origemEventoId, origemDocumento(evento));
+    }
+
+    /** Resolve as partidas (conta + valor) de um evento por um roteiro, sem postar. */
+    public List<PartidaSpec> montarSpecs(EventoContabilRequest evento, RegraLancamento regra) {
         List<RegraPartida> linhas = regraPartidaRepository.findByRegraIdOrderByOrdem(regra.getId());
         if (linhas.isEmpty()) {
             throw new ModuloException("Roteiro sem partidas configuradas: regra " + regra.getId());
         }
-
         List<PartidaSpec> specs = new ArrayList<>();
         for (RegraPartida linha : linhas) {
             Long contaId = resolverConta(linha, evento.getContexto());
@@ -71,10 +78,21 @@ public class LancamentoService {
             }
             specs.add(new PartidaSpec(contaId, linha.getTipo(), valor));
         }
+        return specs;
+    }
 
-        UUID origemEventoId = evento.getEventoId() == null ? null : UUID.fromString(evento.getEventoId());
-        return postarInterno(evento.getDataEvento(), renderHistorico(regra.getHistoricoTemplate(), evento),
-                specs, origemEventoId, origemDocumento(evento));
+    /** True se as partidas do lançamento batem exatamente com as specs (conta, tipo, valor). */
+    public boolean partidasConferem(Long lancamentoId, List<PartidaSpec> specs) {
+        List<String> atuais = partidaRepository.findByLancamentoId(lancamentoId).stream()
+                .map(p -> p.getContaId() + "|" + p.getTipo() + "|" + p.getValorCentavos()).sorted().toList();
+        List<String> novas = specs.stream()
+                .map(s -> s.getContaId() + "|" + s.getTipo() + "|" + s.getValorCentavos()).sorted().toList();
+        return atuais.equals(novas);
+    }
+
+    public boolean isLancado(Long lancamentoId) {
+        return lancamentoRepository.findById(lancamentoId)
+                .map(l -> "lancado".equals(l.getStatus())).orElse(false);
     }
 
     /**

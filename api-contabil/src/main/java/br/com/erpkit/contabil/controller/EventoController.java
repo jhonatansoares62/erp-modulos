@@ -28,4 +28,10 @@ public class EventoController {
     public ResponseEntity<EventoRecebidoResponse> receber(@Valid @RequestBody EventoContabilRequest evento) {
         return ResponseEntity.ok(eventoService.receber(evento));
     }
+
+    /** Reprocessa (estorna-e-refaz) reaplicando o roteiro atual; no-op se nada mudou. */
+    @PostMapping("/reprocessar")
+    public ResponseEntity<EventoRecebidoResponse> reprocessar(@Valid @RequestBody EventoContabilRequest evento) {
+        return ResponseEntity.ok(eventoService.reprocessar(evento));
+    }
 }

@@ -2,6 +2,7 @@ package br.com.erpkit.contabil.service;
 
 import br.com.erpkit.contabil.dto.EventoContabilRequest;
 import br.com.erpkit.contabil.dto.EventoRecebidoResponse;
+import br.com.erpkit.contabil.dto.PartidaSpec;
 import br.com.erpkit.contabil.model.EventoRecebido;
 import br.com.erpkit.contabil.model.Lancamento;
 import br.com.erpkit.contabil.model.RegraLancamento;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -82,6 +84,53 @@ public class EventoService {
 
         eventoRepository.save(evento);
         return new EventoRecebidoResponse(id.toString(), evento.getStatus(), evento.getLancamentoId());
+    }
+
+    /**
+     * Reprocessa um evento já recebido reaplicando o roteiro atual sobre o payload atual
+     * (estorna-e-refaz). No-op se o lançamento vigente já bate com as partidas resultantes —
+     * então reprocessar repetidamente não duplica nem cria estornos à toa. Usado para
+     * reclassificar históricos quando o roteiro/parametrização muda (ex.: conta de liquidação).
+     */
+    @Transactional
+    public EventoRecebidoResponse reprocessar(EventoContabilRequest req) {
+        UUID id = parseId(req.getEventoId());
+        Optional<EventoRecebido> existenteOpt = eventoRepository.findById(id);
+        if (existenteOpt.isEmpty()) {
+            return receber(req);   // evento novo: caminho normal
+        }
+        EventoRecebido evento = existenteOpt.get();
+        Long lancId = evento.getLancamentoId();
+        boolean lancado = lancId != null && lancamentoService.isLancado(lancId);
+
+        Optional<RegraLancamento> regraOpt = roteiroService.casar(req.getTipo(), req.getContexto(), req.getDataEvento());
+        if (regraOpt.isEmpty()) {
+            if (lancado) {
+                lancamentoService.estornar(lancId, "Reprocessamento sem roteiro");
+            }
+            evento.setLancamentoId(null);
+            evento.setStatus("sem_regra");
+            evento.setPayload(serializar(req));
+            eventoRepository.save(evento);
+            return new EventoRecebidoResponse(id.toString(), evento.getStatus(), null);
+        }
+
+        RegraLancamento regra = regraOpt.get();
+        List<PartidaSpec> novas = lancamentoService.montarSpecs(req, regra);
+        if (lancado && lancamentoService.partidasConferem(lancId, novas)) {
+            return new EventoRecebidoResponse(id.toString(), evento.getStatus(), lancId);   // nada mudou
+        }
+        if (lancado) {
+            lancamentoService.estornar(lancId, "Reclassificação contábil (reprocessamento)");
+        }
+        Lancamento novo = lancamentoService.postarDeEvento(req, regra);
+        evento.setLancamentoId(novo.getId());
+        evento.setStatus("processado");
+        evento.setProcessadoEm(Instant.now());
+        evento.setPayload(serializar(req));
+        eventoRepository.save(evento);
+        log.info("Evento {} reprocessado: novo lançamento {}", id, novo.getId());
+        return new EventoRecebidoResponse(id.toString(), evento.getStatus(), novo.getId());
     }
 
     private UUID parseId(String eventoId) {
