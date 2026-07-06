@@ -1,12 +1,15 @@
 package br.com.erpkit.contabil.controller;
 
 import br.com.erpkit.contabil.dto.RegraCreateDTO;
+import br.com.erpkit.contabil.dto.RegraResponse;
 import br.com.erpkit.contabil.model.RegraLancamento;
 import br.com.erpkit.contabil.service.RegraService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,12 +29,20 @@ public class RegraController {
     }
 
     @GetMapping
-    public ResponseEntity<List<RegraLancamento>> listar(@RequestParam String evento) {
-        return ResponseEntity.ok(service.listarPorEvento(evento));
+    public ResponseEntity<List<RegraResponse>> listar(@RequestParam(required = false) String evento) {
+        return ResponseEntity.ok(evento == null || evento.isBlank()
+                ? service.listarTodas()
+                : service.listarPorEventoResponse(evento));
     }
 
     @PostMapping
     public ResponseEntity<RegraLancamento> criar(@Valid @RequestBody RegraCreateDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.criar(dto));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> desativar(@PathVariable Long id) {
+        service.desativar(id);
+        return ResponseEntity.noContent().build();
     }
 }

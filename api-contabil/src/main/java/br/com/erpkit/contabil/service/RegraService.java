@@ -2,12 +2,16 @@ package br.com.erpkit.contabil.service;
 
 import br.com.erpkit.contabil.dto.RegraCreateDTO;
 import br.com.erpkit.contabil.dto.RegraPartidaDTO;
+import br.com.erpkit.contabil.dto.RegraPartidaResponse;
+import br.com.erpkit.contabil.dto.RegraResponse;
+import br.com.erpkit.contabil.model.ContaContabil;
 import br.com.erpkit.contabil.model.RegraLancamento;
 import br.com.erpkit.contabil.model.RegraPartida;
 import br.com.erpkit.contabil.repository.RegraLancamentoRepository;
 import br.com.erpkit.contabil.repository.RegraPartidaRepository;
 import br.com.erpkit.shared.exception.ModuloException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +41,57 @@ public class RegraService {
 
     public List<RegraLancamento> listarPorEvento(String eventoTipo) {
         return regraRepository.findByEventoTipoAndAtivoTrueOrderByPrioridadeDesc(eventoTipo);
+    }
+
+    /** Todos os roteiros ativos (com partidas resolvidas), para o painel do contador. */
+    public List<RegraResponse> listarTodas() {
+        return regraRepository.findByAtivoTrueOrderByEventoTipoAscPrioridadeDesc()
+                .stream().map(this::toResponse).toList();
+    }
+
+    /** Roteiros ativos de um tipo de evento (com partidas resolvidas). */
+    public List<RegraResponse> listarPorEventoResponse(String evento) {
+        return regraRepository.findByEventoTipoAndAtivoTrueOrderByPrioridadeDesc(evento)
+                .stream().map(this::toResponse).toList();
+    }
+
+    /** Soft delete do roteiro (ativo=false). */
+    @Transactional
+    public void desativar(Long id) {
+        RegraLancamento r = regraRepository.findById(id)
+                .orElseThrow(() -> new ModuloException("Roteiro não encontrado: " + id, HttpStatus.NOT_FOUND));
+        r.setAtivo(false);
+        regraRepository.save(r);
+    }
+
+    private RegraResponse toResponse(RegraLancamento r) {
+        RegraResponse resp = new RegraResponse();
+        resp.setId(r.getId());
+        resp.setEventoTipo(r.getEventoTipo());
+        resp.setPrioridade(r.getPrioridade());
+        resp.setCondicoes(r.getCondicoes());
+        resp.setHistoricoTemplate(r.getHistoricoTemplate());
+        resp.setVigenciaInicio(r.getVigenciaInicio());
+        resp.setVigenciaFim(r.getVigenciaFim());
+        resp.setAtivo(r.isAtivo());
+        resp.setPartidas(partidaRepository.findByRegraIdOrderByOrdem(r.getId())
+                .stream().map(this::toPartidaResponse).toList());
+        return resp;
+    }
+
+    private RegraPartidaResponse toPartidaResponse(RegraPartida p) {
+        RegraPartidaResponse pr = new RegraPartidaResponse();
+        pr.setTipo(p.getTipo());
+        pr.setContaModo(p.getContaModo());
+        pr.setContaCampo(p.getContaCampo());
+        pr.setBase(p.getBase());
+        pr.setPercentual(p.getPercentual());
+        if (p.getContaId() != null) {
+            ContaContabil conta = contaService.buscarPorId(p.getContaId());
+            pr.setContaCodigo(conta.getCodigo());
+            pr.setContaNome(conta.getNome());
+        }
+        return pr;
     }
 
     @Transactional

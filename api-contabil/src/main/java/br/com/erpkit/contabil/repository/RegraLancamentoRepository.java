@@ -9,4 +9,7 @@ public interface RegraLancamentoRepository extends JpaRepository<RegraLancamento
 
     /** Regras ativas de um tipo de evento, mais específicas (maior prioridade) primeiro. */
     List<RegraLancamento> findByEventoTipoAndAtivoTrueOrderByPrioridadeDesc(String eventoTipo);
+
+    /** Todas as regras ativas, agrupadas por tipo de evento (prioridade desc dentro do tipo). */
+    List<RegraLancamento> findByAtivoTrueOrderByEventoTipoAscPrioridadeDesc();
 }
