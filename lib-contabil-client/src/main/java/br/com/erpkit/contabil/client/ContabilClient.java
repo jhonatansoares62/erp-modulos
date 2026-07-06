@@ -19,6 +19,12 @@ public interface ContabilClient {
     /** Proxy genérico POST para a API do módulo (ex.: "/v1/pendencias/{id}/salvar-regra"). */
     String proxyPost(String path, String body);
 
+    /** Proxy genérico PUT para a API do módulo (ex.: "/v1/contas/{id}"). */
+    String proxyPut(String path, String body);
+
+    /** Proxy genérico DELETE para a API do módulo (ex.: "/v1/contas/{id}"). */
+    String proxyDelete(String path);
+
     boolean isOnline();
 
     String getCircuitBreakerState();
