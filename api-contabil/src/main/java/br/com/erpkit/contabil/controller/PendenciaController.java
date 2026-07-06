@@ -3,6 +3,7 @@ package br.com.erpkit.contabil.controller;
 import br.com.erpkit.contabil.dto.EventoRecebidoResponse;
 import br.com.erpkit.contabil.dto.PendenciaResponse;
 import br.com.erpkit.contabil.dto.RegraCreateDTO;
+import br.com.erpkit.contabil.dto.ReprocessamentoResponse;
 import br.com.erpkit.contabil.service.PendenciaService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -35,5 +36,11 @@ public class PendenciaController {
     public ResponseEntity<EventoRecebidoResponse> salvarComoRegra(@PathVariable String eventoId,
                                                                   @Valid @RequestBody RegraCreateDTO dto) {
         return ResponseEntity.ok(service.salvarComoRegra(eventoId, dto));
+    }
+
+    /** Reprocessa em lote as pendências: os eventos que agora casam com alguma regra viram lançamento. */
+    @PostMapping("/reprocessar")
+    public ResponseEntity<ReprocessamentoResponse> reprocessar() {
+        return ResponseEntity.ok(service.reprocessar());
     }
 }

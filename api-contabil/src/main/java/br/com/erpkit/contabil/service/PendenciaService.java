@@ -4,6 +4,7 @@ import br.com.erpkit.contabil.dto.EventoContabilRequest;
 import br.com.erpkit.contabil.dto.EventoRecebidoResponse;
 import br.com.erpkit.contabil.dto.PendenciaResponse;
 import br.com.erpkit.contabil.dto.RegraCreateDTO;
+import br.com.erpkit.contabil.dto.ReprocessamentoResponse;
 import br.com.erpkit.contabil.model.EventoRecebido;
 import br.com.erpkit.contabil.model.Lancamento;
 import br.com.erpkit.contabil.model.RegraLancamento;
@@ -76,6 +77,31 @@ public class PendenciaService {
         evento.setProcessadoEm(Instant.now());
         eventoRepository.save(evento);
         return new EventoRecebidoResponse(eventoId, "processado", lanc.getId());
+    }
+
+    /**
+     * Reprocessa em lote toda a fila de pendências: re-passa cada evento sem_regra pelo motor
+     * de roteiros. Os que agora casam com alguma regra viram lançamento (útil depois de o
+     * contador cadastrar novas regras). Os que não casam seguem pendentes.
+     */
+    @Transactional
+    public ReprocessamentoResponse reprocessar() {
+        List<EventoRecebido> pendentes = eventoRepository.findByStatusOrderByRecebidoEm("sem_regra");
+        int reprocessados = 0;
+        for (EventoRecebido evento : pendentes) {
+            EventoContabilRequest req = desserializar(evento.getPayload());
+            Optional<RegraLancamento> regra = roteiroService.casar(evento.getTipo(), req.getContexto(), evento.getDataEvento());
+            if (regra.isEmpty()) {
+                continue;   // segue sem_regra
+            }
+            Lancamento lanc = lancamentoService.postarDeEvento(req, regra.get());
+            evento.setStatus("processado");
+            evento.setLancamentoId(lanc.getId());
+            evento.setProcessadoEm(Instant.now());
+            eventoRepository.save(evento);
+            reprocessados++;
+        }
+        return new ReprocessamentoResponse(pendentes.size(), reprocessados, pendentes.size() - reprocessados);
     }
 
     private UUID parseId(String eventoId) {
