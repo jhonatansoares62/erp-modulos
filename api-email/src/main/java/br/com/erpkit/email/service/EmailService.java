@@ -62,6 +62,9 @@ public class EmailService {
         email.setOrigem(dto.getOrigem());
         email.setReferenciaId(dto.getReferenciaId());
         email.setAgendadoPara(dto.getAgendadoPara());
+        email.setAnexoNome(dto.getAnexoNome());
+        email.setAnexoTipo(dto.getAnexoTipo());
+        email.setAnexoBase64(dto.getAnexoBase64());
 
         if (dto.getTemplate() != null && !dto.getTemplate().isBlank()) {
             String corpoRenderizado = renderizarTemplate(dto.getTemplate(), dto.getTemplateVariaveis());
@@ -183,6 +186,14 @@ public class EmailService {
         }
 
         helper.setText(email.getCorpo(), email.isHtml());
+
+        if (email.getAnexoBase64() != null && !email.getAnexoBase64().isBlank()) {
+            byte[] conteudo = java.util.Base64.getDecoder().decode(email.getAnexoBase64());
+            String nome = email.getAnexoNome() != null ? email.getAnexoNome() : "anexo";
+            String tipo = email.getAnexoTipo() != null ? email.getAnexoTipo() : "application/octet-stream";
+            helper.addAttachment(nome, new org.springframework.core.io.ByteArrayResource(conteudo), tipo);
+        }
+
         sender.send(message);
     }
 
@@ -231,6 +242,7 @@ public class EmailService {
         response.setOrigem(email.getOrigem());
         response.setReferenciaId(email.getReferenciaId());
         response.setAgendadoPara(email.getAgendadoPara());
+        response.setAnexoNome(email.getAnexoNome());
         response.setEnviadoEm(email.getEnviadoEm());
         response.setCriadoEm(email.getCriadoEm());
         return response;

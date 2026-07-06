@@ -17,6 +17,7 @@ public class EmailResponse {
     private String origem;
     private String referenciaId;
     private LocalDateTime agendadoPara;
+    private String anexoNome;
     private LocalDateTime enviadoEm;
     private LocalDateTime criadoEm;
 
@@ -116,6 +117,14 @@ public class EmailResponse {
 
     public void setReferenciaId(String referenciaId) {
         this.referenciaId = referenciaId;
+    }
+
+    public String getAnexoNome() {
+        return anexoNome;
+    }
+
+    public void setAnexoNome(String anexoNome) {
+        this.anexoNome = anexoNome;
     }
 
     public LocalDateTime getAgendadoPara() {

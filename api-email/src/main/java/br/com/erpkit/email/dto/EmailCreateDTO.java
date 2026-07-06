@@ -33,6 +33,13 @@ public class EmailCreateDTO {
 
     private LocalDateTime agendadoPara;
 
+    // Anexo opcional (ex.: PDF), conteúdo em base64.
+    private String anexoNome;
+
+    private String anexoTipo;
+
+    private String anexoBase64;
+
     // Getters e Setters
 
     public String getDestinatario() {
@@ -121,5 +128,29 @@ public class EmailCreateDTO {
 
     public void setAgendadoPara(LocalDateTime agendadoPara) {
         this.agendadoPara = agendadoPara;
+    }
+
+    public String getAnexoNome() {
+        return anexoNome;
+    }
+
+    public void setAnexoNome(String anexoNome) {
+        this.anexoNome = anexoNome;
+    }
+
+    public String getAnexoTipo() {
+        return anexoTipo;
+    }
+
+    public void setAnexoTipo(String anexoTipo) {
+        this.anexoTipo = anexoTipo;
+    }
+
+    public String getAnexoBase64() {
+        return anexoBase64;
+    }
+
+    public void setAnexoBase64(String anexoBase64) {
+        this.anexoBase64 = anexoBase64;
     }
 }

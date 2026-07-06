@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #333;">Lembrete de Vencimento</h2>
+    <p>Olá <span th:text="${clienteNome}">Cliente</span>,</p>
+    <p>Você tem uma parcela próxima do vencimento:</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr style="background: #f5f5f5;">
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Valor</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;" th:text="${valor}">R$ 0,00</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Parcela</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;" th:text="${parcela}">1</td>
+        </tr>
+        <tr style="background: #f5f5f5;" th:if="${referencia != null and !#strings.isEmpty(referencia)}">
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Referente a</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;" th:text="${referencia}">ORC-0000-000</td>
+        </tr>
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Vencimento</strong></td>
+            <td style="padding: 10px; border: 1px solid #ddd;" th:text="${vencimento}">00/00/0000</td>
+        </tr>
+    </table>
+    <p>Em caso de dúvidas sobre formas de pagamento, entre em contato conosco.</p>
+    <p th:if="${nomeEmpresa != null and !#strings.isEmpty(nomeEmpresa)}" style="color: #333; font-size: 13px; margin-top: 24px;">
+        <strong th:text="${nomeEmpresa}">Empresa</strong>
+        <span th:if="${telefoneEmpresa != null and !#strings.isEmpty(telefoneEmpresa)}" th:text="' — ' + ${telefoneEmpresa}"></span>
+    </p>
+    <p style="color: #666; font-size: 12px;">Este é um e-mail automático, não responda.</p>
+</body>
+</html>

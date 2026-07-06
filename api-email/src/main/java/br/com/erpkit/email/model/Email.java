@@ -56,6 +56,16 @@ public class Email {
     @Column(name = "agendado_para")
     private LocalDateTime agendadoPara;
 
+    // Anexo opcional (ex.: PDF de orçamento/recibo), conteúdo em base64.
+    @Column(name = "anexo_nome")
+    private String anexoNome;
+
+    @Column(name = "anexo_tipo")
+    private String anexoTipo;
+
+    @Column(name = "anexo_base64", columnDefinition = "TEXT")
+    private String anexoBase64;
+
     @Column(name = "enviado_em")
     private LocalDateTime enviadoEm;
 
@@ -185,6 +195,30 @@ public class Email {
 
     public void setAgendadoPara(LocalDateTime agendadoPara) {
         this.agendadoPara = agendadoPara;
+    }
+
+    public String getAnexoNome() {
+        return anexoNome;
+    }
+
+    public void setAnexoNome(String anexoNome) {
+        this.anexoNome = anexoNome;
+    }
+
+    public String getAnexoTipo() {
+        return anexoTipo;
+    }
+
+    public void setAnexoTipo(String anexoTipo) {
+        this.anexoTipo = anexoTipo;
+    }
+
+    public String getAnexoBase64() {
+        return anexoBase64;
+    }
+
+    public void setAnexoBase64(String anexoBase64) {
+        this.anexoBase64 = anexoBase64;
     }
 
     public LocalDateTime getEnviadoEm() {
