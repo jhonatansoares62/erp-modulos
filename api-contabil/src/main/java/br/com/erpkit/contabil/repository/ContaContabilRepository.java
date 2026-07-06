@@ -3,6 +3,7 @@ package br.com.erpkit.contabil.repository;
 import br.com.erpkit.contabil.model.ContaContabil;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,4 +16,7 @@ public interface ContaContabilRepository extends JpaRepository<ContaContabil, Lo
     List<ContaContabil> findByAtivoTrueOrderByCodigo();
 
     List<ContaContabil> findByPaiId(Long paiId);
+
+    /** Contas ativas de um conjunto de grupos (ex.: receita/custo/despesa para o encerramento). */
+    List<ContaContabil> findByGrupoInAndAtivoTrue(Collection<String> grupos);
 }

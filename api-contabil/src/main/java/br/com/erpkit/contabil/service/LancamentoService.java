@@ -2,6 +2,7 @@ package br.com.erpkit.contabil.service;
 
 import br.com.erpkit.contabil.dto.EventoContabilRequest;
 import br.com.erpkit.contabil.dto.LancamentoResponse;
+import br.com.erpkit.contabil.dto.PartidaSpec;
 import br.com.erpkit.contabil.model.Lancamento;
 import br.com.erpkit.contabil.model.Partida;
 import br.com.erpkit.contabil.model.RegraLancamento;
@@ -17,9 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,23 +62,54 @@ public class LancamentoService {
             throw new ModuloException("Roteiro sem partidas configuradas: regra " + regra.getId());
         }
 
-        List<Partida> partidas = new ArrayList<>();
-        long totalDebito = 0;
-        long totalCredito = 0;
+        List<PartidaSpec> specs = new ArrayList<>();
         for (RegraPartida linha : linhas) {
             Long contaId = resolverConta(linha, evento.getContexto());
-            contaService.validarRecebeLancamento(contaId);   // F5: só analítica
             long valor = calcularValor(linha, evento.getValorCentavos());
             if (valor <= 0) {
                 throw new ModuloException("Partida com valor não positivo na regra " + regra.getId());
             }
+            specs.add(new PartidaSpec(contaId, linha.getTipo(), valor));
+        }
+
+        UUID origemEventoId = evento.getEventoId() == null ? null : UUID.fromString(evento.getEventoId());
+        return postarInterno(evento.getDataEvento(), renderHistorico(regra.getHistoricoTemplate(), evento),
+                specs, origemEventoId, origemDocumento(evento));
+    }
+
+    /**
+     * Posta um lançamento a partir de partidas explícitas (fora de roteiro) — usado pelo
+     * encerramento de exercício. Impõe os mesmos invariantes de postarDeEvento (F5/F2), mas
+     * NÃO chama validarPeriodoAberto: o encerramento cai em 31/12, mês que pode já estar
+     * travado no fechamento mensal.
+     */
+    @Transactional
+    public Lancamento postar(LocalDate dataCompetencia, String historico, List<PartidaSpec> partidas) {
+        return postarInterno(dataCompetencia, historico, partidas, null, null);
+    }
+
+    /** Núcleo compartilhado: valida (F5/F2) e persiste cabeçalho + partidas imutáveis ('lancado'). */
+    private Lancamento postarInterno(LocalDate dataCompetencia, String historico, List<PartidaSpec> specs,
+                                     UUID origemEventoId, String origemDocumento) {
+        List<Partida> partidas = new ArrayList<>();
+        long totalDebito = 0;
+        long totalCredito = 0;
+        int ordem = 0;
+        for (PartidaSpec spec : specs) {
+            if (!"D".equals(spec.getTipo()) && !"C".equals(spec.getTipo())) {
+                throw new ModuloException("Tipo de partida inválido (use D|C): " + spec.getTipo());
+            }
+            if (spec.getValorCentavos() <= 0) {
+                throw new ModuloException("Partida com valor não positivo (centavos): " + spec.getValorCentavos());
+            }
+            contaService.validarRecebeLancamento(spec.getContaId());   // F5: só analítica
             Partida p = new Partida();
-            p.setContaId(contaId);
-            p.setTipo(linha.getTipo());
-            p.setValorCentavos(valor);
-            p.setOrdem(linha.getOrdem());
+            p.setContaId(spec.getContaId());
+            p.setTipo(spec.getTipo());
+            p.setValorCentavos(spec.getValorCentavos());
+            p.setOrdem(ordem++);
             partidas.add(p);
-            if ("D".equals(linha.getTipo())) totalDebito += valor; else totalCredito += valor;
+            if ("D".equals(spec.getTipo())) totalDebito += spec.getValorCentavos(); else totalCredito += spec.getValorCentavos();
         }
 
         // F2: pelo menos um débito e um crédito, e débitos = créditos.
@@ -91,12 +125,10 @@ public class LancamentoService {
 
         Lancamento lanc = new Lancamento();
         lanc.setNumero(lancamentoRepository.count() + 1);
-        lanc.setDataCompetencia(evento.getDataEvento());
-        lanc.setHistorico(renderHistorico(regra.getHistoricoTemplate(), evento));
-        if (evento.getEventoId() != null) {
-            lanc.setOrigemEventoId(java.util.UUID.fromString(evento.getEventoId()));
-        }
-        lanc.setOrigemDocumento(origemDocumento(evento));
+        lanc.setDataCompetencia(dataCompetencia);
+        lanc.setHistorico(historico);
+        lanc.setOrigemEventoId(origemEventoId);
+        lanc.setOrigemDocumento(origemDocumento);
         lanc.setStatus("lancado");
         lanc.setLancadoEm(Instant.now());
         Lancamento salvo = lancamentoRepository.save(lanc);

@@ -1,15 +1,24 @@
 package br.com.erpkit.contabil.service;
 
+import br.com.erpkit.contabil.dto.EncerramentoResponse;
+import br.com.erpkit.contabil.dto.PartidaSpec;
+import br.com.erpkit.contabil.model.ContaContabil;
 import br.com.erpkit.contabil.model.PeriodoFechado;
+import br.com.erpkit.contabil.repository.ContaContabilRepository;
+import br.com.erpkit.contabil.repository.PartidaRepository;
 import br.com.erpkit.contabil.repository.PeriodoFechadoRepository;
 import br.com.erpkit.shared.exception.ModuloException;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -24,9 +33,23 @@ public class PeriodoService {
     private static final DateTimeFormatter YM = DateTimeFormatter.ofPattern("yyyy-MM");
 
     private final PeriodoFechadoRepository repository;
+    private final PartidaRepository partidaRepository;
+    private final ContaContabilRepository contaRepository;
+    private final ContaContabilService contaService;
+    private final LancamentoService lancamentoService;
 
-    public PeriodoService(PeriodoFechadoRepository repository) {
+    // @Lazy no lancamentoService: LancamentoService injeta PeriodoService (validarPeriodoAberto);
+    // o encerramento inverte a dependência (posta lançamentos), fechando um ciclo que o Lazy quebra.
+    public PeriodoService(PeriodoFechadoRepository repository,
+                          PartidaRepository partidaRepository,
+                          ContaContabilRepository contaRepository,
+                          ContaContabilService contaService,
+                          @Lazy LancamentoService lancamentoService) {
         this.repository = repository;
+        this.partidaRepository = partidaRepository;
+        this.contaRepository = contaRepository;
+        this.contaService = contaService;
+        this.lancamentoService = lancamentoService;
     }
 
     @Transactional
@@ -57,5 +80,104 @@ public class PeriodoService {
                         + " está fechado; não é possível lançar em " + mesLanc);
             }
         });
+    }
+
+    /**
+     * Encerramento de exercício (ITG 1000 / CFC §6): zera as contas de resultado
+     * (receitas/custos/despesas) contra a conta transitória ARE (3.9.9.01) e transfere o
+     * resultado para o PL (Lucros 2.3.3.01 ou Prejuízos 2.3.3.02). Idempotência dura: um
+     * exercício só encerra uma vez (periodo_fechado tipo 'exercicio').
+     */
+    @Transactional
+    public EncerramentoResponse encerrarExercicio(int ano, String por) {
+        LocalDate de = LocalDate.of(ano, 1, 1);
+        LocalDate ate = LocalDate.of(ano, 12, 31);
+        LocalDate dataEnc = ate;
+        String competencia = String.valueOf(ano);
+
+        if (repository.existsByCompetenciaAndTipo(competencia, "exercicio")) {
+            throw new ModuloException("Exercício " + ano + " já está encerrado", HttpStatus.CONFLICT);
+        }
+
+        // Snapshot dos saldos ANTES de postar o encerramento: contaId -> [debito, credito].
+        Map<Long, long[]> movimento = new HashMap<>();
+        for (Object[] row : partidaRepository.somarPorConta(de, ate)) {
+            movimento.put(num(row[0]), new long[]{num(row[1]), num(row[2])});
+        }
+
+        List<ContaContabil> contasResultado = contaRepository.findByGrupoInAndAtivoTrue(
+                List.of("receita", "custo", "despesa"));
+        Long areId = contaService.buscarPorCodigo("3.9.9.01").getId();
+        Long lucrosId = contaService.buscarPorCodigo("2.3.3.01").getId();
+        Long prejuizosId = contaService.buscarPorCodigo("2.3.3.02").getId();
+
+        List<Long> lancamentoIds = new ArrayList<>();
+
+        // (a) Encerramento das receitas: D cada receita (saldo credor) · C ARE (soma).
+        List<PartidaSpec> partidasReceita = new ArrayList<>();
+        long totalReceitas = 0;
+        for (ContaContabil c : contasResultado) {
+            if (!"receita".equals(c.getGrupo())) continue;
+            long[] dc = movimento.get(c.getId());
+            if (dc == null) continue;
+            long valor = dc[1] - dc[0];   // crédito - débito (saldo credor)
+            if (valor > 0) {
+                partidasReceita.add(new PartidaSpec(c.getId(), "D", valor));
+                totalReceitas += valor;
+            }
+        }
+        if (totalReceitas > 0) {
+            partidasReceita.add(new PartidaSpec(areId, "C", totalReceitas));
+            lancamentoIds.add(lancamentoService.postar(dataEnc,
+                    "Encerramento das receitas do exercicio " + ano, partidasReceita).getId());
+        }
+
+        // (b) Encerramento de custos e despesas: C cada conta (saldo devedor) · D ARE (soma).
+        List<PartidaSpec> partidasDespesa = new ArrayList<>();
+        long totalDespesas = 0;
+        for (ContaContabil c : contasResultado) {
+            if (!"custo".equals(c.getGrupo()) && !"despesa".equals(c.getGrupo())) continue;
+            long[] dc = movimento.get(c.getId());
+            if (dc == null) continue;
+            long valor = dc[0] - dc[1];   // débito - crédito (saldo devedor)
+            if (valor > 0) {
+                partidasDespesa.add(new PartidaSpec(c.getId(), "C", valor));
+                totalDespesas += valor;
+            }
+        }
+        if (totalDespesas > 0) {
+            partidasDespesa.add(new PartidaSpec(areId, "D", totalDespesas));
+            lancamentoIds.add(lancamentoService.postar(dataEnc,
+                    "Encerramento de custos e despesas do exercicio " + ano, partidasDespesa).getId());
+        }
+
+        // (c) Apuração: transfere o resultado da ARE para o PL.
+        long resultado = totalReceitas - totalDespesas;
+        if (resultado > 0) {
+            List<PartidaSpec> apuracao = List.of(
+                    new PartidaSpec(areId, "D", resultado),
+                    new PartidaSpec(lucrosId, "C", resultado));
+            lancamentoIds.add(lancamentoService.postar(dataEnc,
+                    "Apuracao do resultado do exercicio " + ano, apuracao).getId());
+        } else if (resultado < 0) {
+            long prejuizo = -resultado;
+            List<PartidaSpec> apuracao = List.of(
+                    new PartidaSpec(prejuizosId, "D", prejuizo),
+                    new PartidaSpec(areId, "C", prejuizo));
+            lancamentoIds.add(lancamentoService.postar(dataEnc,
+                    "Apuracao do resultado do exercicio " + ano, apuracao).getId());
+        }
+
+        PeriodoFechado pf = new PeriodoFechado();
+        pf.setCompetencia(competencia);
+        pf.setTipo("exercicio");
+        pf.setFechadoPor(por);
+        repository.save(pf);
+
+        return new EncerramentoResponse(ano, totalReceitas, totalDespesas, resultado, lancamentoIds);
+    }
+
+    private static long num(Object o) {
+        return ((Number) o).longValue();
     }
 }

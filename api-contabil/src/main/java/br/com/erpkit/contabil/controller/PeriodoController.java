@@ -1,5 +1,7 @@
 package br.com.erpkit.contabil.controller;
 
+import br.com.erpkit.contabil.dto.EncerramentoResponse;
+import br.com.erpkit.contabil.dto.EncerrarExercicioDTO;
 import br.com.erpkit.contabil.dto.FecharPeriodoDTO;
 import br.com.erpkit.contabil.model.PeriodoFechado;
 import br.com.erpkit.contabil.service.PeriodoService;
@@ -33,5 +35,10 @@ public class PeriodoController {
     public ResponseEntity<PeriodoFechado> fechar(@Valid @RequestBody FecharPeriodoDTO dto) {
         PeriodoFechado p = service.fecharMensal(dto.getCompetencia(), dto.getFechadoPor());
         return ResponseEntity.status(HttpStatus.CREATED).body(p);
+    }
+
+    @PostMapping("/encerrar-exercicio")
+    public ResponseEntity<EncerramentoResponse> encerrarExercicio(@Valid @RequestBody EncerrarExercicioDTO dto) {
+        return ResponseEntity.ok(service.encerrarExercicio(dto.getAno(), dto.getPor()));
     }
 }
