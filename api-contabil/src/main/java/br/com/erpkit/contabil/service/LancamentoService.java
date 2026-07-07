@@ -106,6 +106,13 @@ public class LancamentoService {
         return postarInterno(dataCompetencia, historico, partidas, null, null);
     }
 
+    /** Igual ao postar, com um documento de origem (marcador para localizar/reaplicar depois). */
+    @Transactional
+    public Lancamento postar(LocalDate dataCompetencia, String historico, List<PartidaSpec> partidas,
+                             String origemDocumento) {
+        return postarInterno(dataCompetencia, historico, partidas, null, origemDocumento);
+    }
+
     /** Núcleo compartilhado: valida (F5/F2) e persiste cabeçalho + partidas imutáveis ('lancado'). */
     private Lancamento postarInterno(LocalDate dataCompetencia, String historico, List<PartidaSpec> specs,
                                      UUID origemEventoId, String origemDocumento) {
