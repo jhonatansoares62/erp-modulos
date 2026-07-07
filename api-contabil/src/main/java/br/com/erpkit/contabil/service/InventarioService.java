@@ -74,15 +74,22 @@ public class InventarioService {
         Long estoqueId = contaService.buscarPorCodigo(CONTA_ESTOQUE).getId();
         Long cmvId = contaService.buscarPorCodigo(CONTA_CMV).getId();
 
-        // Idempotência: reapurar o período estorna e desativa a apuração anterior.
-        apuracaoRepository.findByPeriodoDeAndPeriodoAteAndAtivoTrue(de, ate).ifPresent(anterior -> {
+        // Vigente única: uma nova apuração substitui (estorna e desativa) QUALQUER apuração
+        // vigente que se sobreponha ao período — não só a de período idêntico. Inventário
+        // periódico trabalha com períodos sequenciais não sobrepostos; sem isso, duas vigentes
+        // sobrepostas postariam CMV em dobro. Reapurar o mesmo período recai aqui (sobrepõe a si).
+        List<InventarioApuracao> sobrepostas =
+                apuracaoRepository.findByAtivoTrueAndPeriodoDeLessThanEqualAndPeriodoAteGreaterThanEqual(ate, de);
+        for (InventarioApuracao anterior : sobrepostas) {
             if (anterior.getLancamentoId() != null) {
-                lancamentoService.estornar(anterior.getLancamentoId(), "Reapuração de CMV do período");
+                lancamentoService.estornar(anterior.getLancamentoId(), "Substituição por apuração de CMV sobreposta");
             }
             anterior.setAtivo(false);
             apuracaoRepository.save(anterior);
-            entityManager.flush();   // torna o estorno visível às somas por conta abaixo
-        });
+        }
+        if (!sobrepostas.isEmpty()) {
+            entityManager.flush();   // torna os estornos visíveis às somas por conta abaixo
+        }
 
         long ei = saldoNet(estoqueId, MIN, de.minusDays(1));
         long disponivel = saldoNet(estoqueId, MIN, ate);   // = EI + Compras (estorno anterior já cancelado)
