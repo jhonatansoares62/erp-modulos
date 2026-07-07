@@ -2,6 +2,7 @@ package br.com.erpkit.contabil.service;
 
 import br.com.erpkit.contabil.dto.BalancoResponse;
 import br.com.erpkit.contabil.dto.BalanceteResponse;
+import br.com.erpkit.contabil.dto.DiarioResponse;
 import br.com.erpkit.contabil.dto.DreResponse;
 import br.com.erpkit.contabil.dto.RazaoResponse;
 import br.com.erpkit.contabil.model.ContaContabil;
@@ -149,11 +150,17 @@ public class RelatorioService {
         return new BalancoResponse(data, ativo, passivoPl, totalAtivo, totalPassivoPl, resultado);
     }
 
+    private static final LocalDate MIN = LocalDate.of(1900, 1, 1);
+
     public RazaoResponse razao(String codigo, LocalDate de, LocalDate ate) {
         ContaContabil conta = contaService.buscarPorCodigo(codigo);
         boolean devedora = "D".equals(conta.getNatureza());
+
+        // Saldo inicial: posição da conta ANTES do período (na direção natural da conta).
+        long saldoInicial = saldoNatural(conta.getId(), MIN, de.minusDays(1), devedora);
+        long saldo = saldoInicial;
+
         List<RazaoResponse.Linha> linhas = new ArrayList<>();
-        long saldo = 0;
         for (Object[] row : partidaRepository.razaoDaConta(conta.getId(), de, ate)) {
             LocalDate data = toLocalDate(row[0]);
             Long numero = row[1] == null ? null : num(row[1]);
@@ -166,7 +173,39 @@ public class RelatorioService {
             saldo += delta;
             linhas.add(new RazaoResponse.Linha(data, numero, historico, tipo, valor, saldo));
         }
-        return new RazaoResponse(conta.getCodigo(), conta.getNome(), de, ate, linhas, saldo);
+        return new RazaoResponse(conta.getCodigo(), conta.getNome(), de, ate, linhas, saldoInicial, saldo);
+    }
+
+    /** Saldo de uma conta na janela, na direção natural (devedora: D−C; credora: C−D). */
+    private long saldoNatural(Long contaId, LocalDate de, LocalDate ate, boolean devedora) {
+        List<Object[]> r = partidaRepository.somarConta(contaId, de, ate);
+        if (r.isEmpty()) return 0;
+        long debito = num(r.get(0)[0]);
+        long credito = num(r.get(0)[1]);
+        return devedora ? (debito - credito) : (credito - debito);
+    }
+
+    /** Livro Diário: lançamentos do período em ordem cronológica, cada um com suas partidas. */
+    public DiarioResponse diario(LocalDate de, LocalDate ate) {
+        List<DiarioResponse.Lancamento> lancamentos = new ArrayList<>();
+        DiarioResponse.Lancamento atual = null;
+        Long numeroAtual = null;
+        for (Object[] row : partidaRepository.diario(de, ate)) {
+            long numero = num(row[0]);
+            if (atual == null || !Long.valueOf(numero).equals(numeroAtual)) {
+                atual = new DiarioResponse.Lancamento(numero, toLocalDate(row[1]),
+                        row[2] == null ? null : String.valueOf(row[2]));
+                lancamentos.add(atual);
+                numeroAtual = numero;
+            }
+            String codigo = String.valueOf(row[3]);
+            String nome = String.valueOf(row[4]);
+            String tipo = String.valueOf(row[5]);
+            long valor = num(row[6]);
+            atual.getPartidas().add(new DiarioResponse.Partida(codigo, nome, tipo, valor));
+            if ("D".equals(tipo)) atual.addDebito(valor); else atual.addCredito(valor);
+        }
+        return new DiarioResponse(de, ate, lancamentos);
     }
 
     private static long num(Object o) {

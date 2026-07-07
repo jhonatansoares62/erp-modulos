@@ -41,4 +41,29 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
             """, nativeQuery = true)
     List<Object[]> razaoDaConta(@Param("contaId") Long contaId,
                                 @Param("de") LocalDate de, @Param("ate") LocalDate ate);
+
+    /** Débitos e créditos de UMA conta no período (para saldo inicial/final do razão). [debito, credito]. */
+    @Query(value = """
+            SELECT COALESCE(SUM(CASE WHEN p.tipo = 'D' THEN p.valor_centavos ELSE 0 END), 0) AS debito,
+                   COALESCE(SUM(CASE WHEN p.tipo = 'C' THEN p.valor_centavos ELSE 0 END), 0) AS credito
+            FROM contabil.partida p
+            JOIN contabil.lancamento l ON l.id = p.lancamento_id
+            WHERE p.conta_id = :contaId AND l.status <> 'rascunho'
+              AND l.data_competencia BETWEEN :de AND :ate
+            """, nativeQuery = true)
+    List<Object[]> somarConta(@Param("contaId") Long contaId,
+                              @Param("de") LocalDate de, @Param("ate") LocalDate ate);
+
+    /** Todas as partidas do período com lançamento e conta (Livro Diário), em ordem cronológica.
+     *  [numero, data_competencia, historico, codigo, nome, tipo, valor_centavos]. */
+    @Query(value = """
+            SELECT l.numero AS numero, l.data_competencia AS data_competencia, l.historico AS historico,
+                   c.codigo AS codigo, c.nome AS nome, p.tipo AS tipo, p.valor_centavos AS valor_centavos
+            FROM contabil.partida p
+            JOIN contabil.lancamento l ON l.id = p.lancamento_id
+            JOIN contabil.conta_contabil c ON c.id = p.conta_id
+            WHERE l.status <> 'rascunho' AND l.data_competencia BETWEEN :de AND :ate
+            ORDER BY l.data_competencia, l.numero, p.ordem
+            """, nativeQuery = true)
+    List<Object[]> diario(@Param("de") LocalDate de, @Param("ate") LocalDate ate);
 }

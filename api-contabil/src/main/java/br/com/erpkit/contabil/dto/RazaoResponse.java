@@ -11,15 +11,17 @@ public class RazaoResponse {
     private LocalDate de;
     private LocalDate ate;
     private List<Linha> linhas;
+    private long saldoInicialCentavos;
     private long saldoFinalCentavos;
 
     public RazaoResponse(String codigo, String nome, LocalDate de, LocalDate ate,
-                         List<Linha> linhas, long saldoFinalCentavos) {
+                         List<Linha> linhas, long saldoInicialCentavos, long saldoFinalCentavos) {
         this.codigo = codigo;
         this.nome = nome;
         this.de = de;
         this.ate = ate;
         this.linhas = linhas;
+        this.saldoInicialCentavos = saldoInicialCentavos;
         this.saldoFinalCentavos = saldoFinalCentavos;
     }
 
@@ -28,6 +30,7 @@ public class RazaoResponse {
     public LocalDate getDe() { return de; }
     public LocalDate getAte() { return ate; }
     public List<Linha> getLinhas() { return linhas; }
+    public long getSaldoInicialCentavos() { return saldoInicialCentavos; }
     public long getSaldoFinalCentavos() { return saldoFinalCentavos; }
 
     public static class Linha {

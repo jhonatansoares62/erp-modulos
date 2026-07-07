@@ -55,6 +55,13 @@ public class RelatorioController {
         return ResponseEntity.ok(relatorioService.razao(conta, nvl(de, MIN), nvl(ate, MAX)));
     }
 
+    @GetMapping("/diario")
+    public ResponseEntity<br.com.erpkit.contabil.dto.DiarioResponse> diario(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate) {
+        return ResponseEntity.ok(relatorioService.diario(nvl(de, MIN), nvl(ate, MAX)));
+    }
+
     private static LocalDate nvl(LocalDate v, LocalDate fallback) {
         return v == null ? fallback : v;
     }
