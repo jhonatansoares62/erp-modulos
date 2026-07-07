@@ -12,6 +12,7 @@ public class DreResponse {
     private LocalDate ate;
     private long receitaBruta;
     private long deducoes;
+    private long devolucoes;
     private long receitaLiquida;
     private long custos;
     private long lucroBruto;
@@ -31,6 +32,9 @@ public class DreResponse {
 
     public long getDeducoes() { return deducoes; }
     public void setDeducoes(long deducoes) { this.deducoes = deducoes; }
+
+    public long getDevolucoes() { return devolucoes; }
+    public void setDevolucoes(long devolucoes) { this.devolucoes = devolucoes; }
 
     public long getReceitaLiquida() { return receitaLiquida; }
     public void setReceitaLiquida(long receitaLiquida) { this.receitaLiquida = receitaLiquida; }

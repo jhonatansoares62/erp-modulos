@@ -133,6 +133,29 @@ public class EventoService {
         return new EventoRecebidoResponse(id.toString(), evento.getStatus(), novo.getId());
     }
 
+    /**
+     * Estorna o lançamento de um evento já processado (reversão D↔C, original preservado).
+     * Idempotente: se o lançamento já está estornado (ou não existe), é no-op — não estorna
+     * duas vezes a mesma coisa. Usado pela ação de estorno do ERP (por eventoId determinístico).
+     */
+    @Transactional
+    public EventoRecebidoResponse estornar(String eventoId, String motivo) {
+        UUID id = parseId(eventoId);
+        EventoRecebido evento = eventoRepository.findById(id).orElse(null);
+        if (evento == null || evento.getLancamentoId() == null) {
+            return new EventoRecebidoResponse(eventoId, evento == null ? "inexistente" : evento.getStatus(),
+                    evento == null ? null : evento.getLancamentoId());
+        }
+        if (lancamentoService.isLancado(evento.getLancamentoId())) {
+            Lancamento estorno = lancamentoService.estornar(evento.getLancamentoId(),
+                    motivo == null || motivo.isBlank() ? "Estorno solicitado" : motivo);
+            log.info("Evento {} estornado: lançamento {} revertido por {}", id, evento.getLancamentoId(), estorno.getId());
+            return new EventoRecebidoResponse(eventoId, "estornado", estorno.getId());
+        }
+        // Lançamento já estornado ou inexistente — no-op (idempotente).
+        return new EventoRecebidoResponse(eventoId, evento.getStatus(), evento.getLancamentoId());
+    }
+
     private UUID parseId(String eventoId) {
         try {
             return UUID.fromString(eventoId);
