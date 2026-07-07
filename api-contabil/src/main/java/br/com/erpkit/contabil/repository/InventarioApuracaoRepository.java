@@ -12,4 +12,7 @@ public interface InventarioApuracaoRepository extends JpaRepository<InventarioAp
     Optional<InventarioApuracao> findByPeriodoDeAndPeriodoAteAndAtivoTrue(LocalDate periodoDe, LocalDate periodoAte);
 
     List<InventarioApuracao> findAllByOrderByApuradoEmDesc();
+
+    /** Apurações vigentes, em ordem de período (período anterior primeiro). */
+    List<InventarioApuracao> findByAtivoTrueOrderByPeriodoAteAsc();
 }

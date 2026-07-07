@@ -121,6 +121,71 @@ public class InventarioService {
                 .map(InventarioApuracaoResponse::de).toList();
     }
 
+    /**
+     * Reaplica as apurações de inventário vigentes ao razão (idempotente). A apuração de CMV é
+     * postada fora do pipeline de eventos, então uma reconstrução do razão (contabilização
+     * retroativa) pode deixá-la órfã; este método garante que a vigente e o razão nunca divirjam.
+     * No-op quando o lançamento vigente já bate com a apuração; senão estorna-e-refaz recalculando
+     * o CMV a partir das compras já lançadas. Deve rodar DEPOIS das compras.
+     */
+    @Transactional
+    public int reaplicarVigentes() {
+        Long estoqueId = contaService.buscarPorCodigo(CONTA_ESTOQUE).getId();
+        Long cmvId = contaService.buscarPorCodigo(CONTA_CMV).getId();
+        int reaplicadas = 0;
+
+        for (InventarioApuracao a : apuracaoRepository.findByAtivoTrueOrderByPeriodoAteAsc()) {
+            if (ledgerConsistente(a, estoqueId, cmvId)) {
+                continue;   // razão já reflete a apuração vigente
+            }
+            periodoService.validarPeriodoAberto(a.getPeriodoAte());
+
+            if (a.getLancamentoId() != null && lancamentoService.isLancado(a.getLancamentoId())) {
+                lancamentoService.estornar(a.getLancamentoId(), "Reaplicação de CMV (contabilização retroativa)");
+                entityManager.flush();
+            }
+
+            long ei = saldoNet(estoqueId, MIN, a.getPeriodoDe().minusDays(1));
+            long disponivel = saldoNet(estoqueId, MIN, a.getPeriodoAte());
+            long ef = a.getEstoqueFinalCentavos();
+            if (ef > disponivel) {
+                // Estoque disponível mudou e o EF contado ficou inválido: não reaplica (evita CMV negativo).
+                a.setLancamentoId(null);
+                apuracaoRepository.save(a);
+                continue;
+            }
+            long cmv = disponivel - ef;
+            Long lancamentoId = null;
+            if (cmv > 0) {
+                Lancamento lanc = lancamentoService.postar(a.getPeriodoAte(),
+                        "Apuracao de CMV do periodo " + a.getPeriodoDe() + " a " + a.getPeriodoAte(),
+                        List.of(new PartidaSpec(cmvId, "D", cmv), new PartidaSpec(estoqueId, "C", cmv)));
+                lancamentoId = lanc.getId();
+            }
+            a.setEstoqueInicialCentavos(ei);
+            a.setComprasCentavos(disponivel - ei);
+            a.setCmvCentavos(cmv);
+            a.setLancamentoId(lancamentoId);
+            apuracaoRepository.save(a);
+            reaplicadas++;
+        }
+        return reaplicadas;
+    }
+
+    /** True se o razão já reflete a apuração (lançamento vigente igual a D CMV / C Estoque = cmv). */
+    private boolean ledgerConsistente(InventarioApuracao a, Long estoqueId, Long cmvId) {
+        if (a.getCmvCentavos() <= 0) {
+            return a.getLancamentoId() == null;
+        }
+        if (a.getLancamentoId() == null || !lancamentoService.isLancado(a.getLancamentoId())) {
+            return false;
+        }
+        List<PartidaSpec> specs = List.of(
+                new PartidaSpec(cmvId, "D", a.getCmvCentavos()),
+                new PartidaSpec(estoqueId, "C", a.getCmvCentavos()));
+        return lancamentoService.partidasConferem(a.getLancamentoId(), specs);
+    }
+
     private void validarPeriodo(LocalDate de, LocalDate ate) {
         if (de == null || ate == null || ate.isBefore(de)) {
             throw new ModuloException("Período inválido: 'de' deve ser menor ou igual a 'ate'",

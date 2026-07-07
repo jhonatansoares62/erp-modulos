@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/v1/inventario")
@@ -42,5 +43,11 @@ public class InventarioController {
     @PostMapping("/apurar")
     public ResponseEntity<InventarioApuracaoResponse> apurar(@Valid @RequestBody ApurarInventarioRequest req) {
         return ResponseEntity.ok(inventarioService.apurar(req));
+    }
+
+    /** Reaplica as apurações vigentes ao razão (idempotente). Chamado ao fim da retroativa. */
+    @PostMapping("/reaplicar")
+    public ResponseEntity<Map<String, Integer>> reaplicar() {
+        return ResponseEntity.ok(Map.of("reaplicadas", inventarioService.reaplicarVigentes()));
     }
 }
