@@ -62,7 +62,7 @@ public class RelatorioService {
     public DreResponse dre(LocalDate de, LocalDate ate) {
         Map<Long, ContaContabil> contas = contaRepository.findAll().stream()
                 .collect(Collectors.toMap(ContaContabil::getId, c -> c));
-        long receitaBruta = 0, deducoes = 0, custos = 0, despOper = 0, despFin = 0;
+        long receitaBruta = 0, deducoes = 0, custos = 0, despOper = 0, despFin = 0, recFin = 0;
         for (Object[] row : partidaRepository.somarPorConta(de, ate)) {
             ContaContabil conta = contas.get(num(row[0]));
             if (conta == null) continue;
@@ -70,7 +70,8 @@ public class RelatorioService {
             long credito = num(row[2]);
             switch (conta.getGrupo()) {
                 case "receita" -> {
-                    if (conta.isRetificadora()) deducoes += (debito - credito);
+                    if (conta.getCodigo().startsWith("3.1.2")) recFin += (credito - debito);   // receita financeira
+                    else if (conta.isRetificadora()) deducoes += (debito - credito);
                     else receitaBruta += (credito - debito);
                 }
                 case "custo" -> custos += (debito - credito);
@@ -93,7 +94,8 @@ public class RelatorioService {
         dre.setLucroBruto(lucroBruto);
         dre.setDespesasOperacionais(despOper);
         dre.setDespesasFinanceiras(despFin);
-        dre.setResultadoLiquido(lucroBruto - despOper - despFin);
+        dre.setReceitasFinanceiras(recFin);
+        dre.setResultadoLiquido(lucroBruto - despOper - despFin + recFin);
         return dre;
     }
 

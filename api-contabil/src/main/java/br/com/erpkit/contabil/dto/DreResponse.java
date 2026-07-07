@@ -17,6 +17,7 @@ public class DreResponse {
     private long lucroBruto;
     private long despesasOperacionais;
     private long despesasFinanceiras;
+    private long receitasFinanceiras;
     private long resultadoLiquido;
 
     public LocalDate getDe() { return de; }
@@ -45,6 +46,9 @@ public class DreResponse {
 
     public long getDespesasFinanceiras() { return despesasFinanceiras; }
     public void setDespesasFinanceiras(long despesasFinanceiras) { this.despesasFinanceiras = despesasFinanceiras; }
+
+    public long getReceitasFinanceiras() { return receitasFinanceiras; }
+    public void setReceitasFinanceiras(long receitasFinanceiras) { this.receitasFinanceiras = receitasFinanceiras; }
 
     public long getResultadoLiquido() { return resultadoLiquido; }
     public void setResultadoLiquido(long resultadoLiquido) { this.resultadoLiquido = resultadoLiquido; }
