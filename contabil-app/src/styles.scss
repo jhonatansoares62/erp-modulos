@@ -66,3 +66,17 @@ a { text-decoration: none; color: inherit; }
 .p-button { padding: 0.5rem 1rem; }
 .p-button-icon-only { padding: 0.5rem; }
 .p-tag { padding: 0.2rem 0.65rem; }
+// SelectButton/ToggleButton — PrimeNG 21 nao aplica padding no preset (labels ficam grudados).
+.p-togglebutton { padding: 0.5rem 0.9rem; }
+.p-togglebutton .p-togglebutton-content { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; }
+// Card e Dialog — restaurar respiro que o reset padding:0 removeu.
+.p-card-body { padding: 1rem; }
+.p-card-content { padding: 0; }
+.p-dialog-header { padding: 1.25rem 1.5rem; }
+.p-dialog-content { padding: 0 1.5rem 1.25rem; }
+.p-dialog-footer { padding: 1rem 1.5rem; }
+// Tabela — cabeçalho e células (o reset zera; PrimeNG 21 usa <th>/<td> sem classe própria).
+.p-datatable-thead > tr > th { padding: 0.4rem 0.75rem; }
+.p-datatable-tbody > tr > td { padding: 0.5rem 0.75rem; }
+// IconField (busca com ícone à esquerda).
+.p-iconfield > .p-inputtext { padding-left: 2.25rem; }
