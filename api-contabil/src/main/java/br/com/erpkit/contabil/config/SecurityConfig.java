@@ -1,6 +1,7 @@
 package br.com.erpkit.contabil.config;
 
-import br.com.erpkit.shared.security.ApiKeyFilter;
+import br.com.erpkit.contabil.security.ContabilAuthFilter;
+import br.com.erpkit.contabil.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -8,17 +9,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
 /**
- * Registra o {@link ApiKeyFilter} (lib-shared) para proteger os endpoints internos
- * com {@code X-API-Key}. Paths públicos padrão (/health, /api/info, /swagger-ui,
- * /v3/api-docs) já são liberados pelo filtro.
+ * Registra o {@link ContabilAuthFilter}, que aceita X-API-Key (service/ERP) OU Bearer JWT
+ * (contador). Substitui o antigo ApiKeyFilter puro, preservando a semântica de X-API-Key
+ * para não quebrar os eventos do ERP. O CORS (origem do app standalone) já vem liberado
+ * pelo CorsFilter do lib-shared.
  */
 @Configuration
 public class SecurityConfig {
 
     @Bean
-    public FilterRegistrationBean<ApiKeyFilter> apiKeyFilter(@Value("${modulo.api-key:}") String apiKey) {
-        FilterRegistrationBean<ApiKeyFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(new ApiKeyFilter(apiKey));
+    public FilterRegistrationBean<ContabilAuthFilter> authFilter(
+            @Value("${modulo.api-key:}") String apiKey, JwtService jwtService) {
+        FilterRegistrationBean<ContabilAuthFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new ContabilAuthFilter(apiKey, jwtService));
         registration.addUrlPatterns("/*");
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
         return registration;

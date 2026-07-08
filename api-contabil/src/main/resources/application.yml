@@ -35,6 +35,17 @@ modulo:
   versao: 0.1.0
   api-key: ${API_KEY:}
 
+# Auth própria do módulo contábil (app standalone do contador). Não afeta os eventos do ERP,
+# que seguem por X-API-Key. Em produção, sobrescrever via env/erpkit.
+contabil:
+  auth:
+    jwt-secret: ${CONTABIL_JWT_SECRET:dev-contabil-secret-troque-em-producao-0123456789}
+    jwt-expiration-hours: ${CONTABIL_JWT_EXP_HOURS:12}
+    seed-email: ${CONTABIL_SEED_EMAIL:contador@erpkit.local}
+    seed-password: ${CONTABIL_SEED_PASSWORD:Contabil@2026}
+    seed-nome: ${CONTABIL_SEED_NOME:Contador}
+    empresa-nome: ${CONTABIL_EMPRESA_NOME:ERP Odonto}
+
 springdoc:
   api-docs:
     path: /v3/api-docs
