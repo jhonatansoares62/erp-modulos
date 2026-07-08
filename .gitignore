@@ -34,6 +34,9 @@ Thumbs.db
 ### Uploads (dados de usuário) ###
 api-storage/uploads/
 
+### Build do contabil-app empacotado no jar da api-contabil (gerado por `ng build`) ###
+api-contabil/src/main/resources/static/
+
 ### Secrets locais (Meta Cloud API tokens, etc) ###
 .secrets/*.env
 !.secrets/*.env.example

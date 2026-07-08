@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Set;
 
 /**
  * Auth do módulo contábil. Aceita DUAS credenciais, sem quebrar o ERP:
@@ -30,8 +29,7 @@ public class ContabilAuthFilter extends OncePerRequestFilter {
     public static final String ATTR_EMAIL = "contador.email";
 
     private static final String API_KEY_HEADER = "X-API-Key";
-    private static final Set<String> PUBLIC_PATHS = Set.of(
-            "/health", "/api/info", "/swagger-ui", "/v3/api-docs", "/v1/auth/login");
+    private static final String LOGIN_PATH = "/v1/auth/login";
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
 
     private final String apiKey;
@@ -46,8 +44,8 @@ public class ContabilAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        // Preflight CORS e paths públicos passam direto.
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod()) || isPublic(request.getRequestURI())) {
+        // Preflight CORS, estáticos/SPA e endpoints públicos passam direto — só a API /v1/** é guardada.
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod()) || !isProtected(request.getRequestURI())) {
             chain.doFilter(request, response);
             return;
         }
@@ -82,8 +80,13 @@ public class ContabilAuthFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private boolean isPublic(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+    /**
+     * Apenas a API {@code /v1/**} é protegida (menos o login). Recursos estáticos do app
+     * (index.html, JS/CSS), rotas do SPA, /health, /api/info e o swagger passam livres — o
+     * app precisa carregar para então autenticar via {@code /v1/auth/login}.
+     */
+    private boolean isProtected(String path) {
+        return path.startsWith("/v1/") && !path.equals(LOGIN_PATH);
     }
 
     private void unauthorized(HttpServletResponse response, String detalhe) throws IOException {
