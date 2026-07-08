@@ -7,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { TagModule } from 'primeng/tag';
 import { finalize } from 'rxjs';
-import { ContabilService, Diario } from '../relatorios/contabil.service';
+import { ContabilidadeService, Diario } from '../../shared/services/contabilidade.service';
 
 /** Livro Diário: lançamentos do período em ordem cronológica, cada um com suas partidas (D=C). */
 @Component({
@@ -90,7 +90,7 @@ import { ContabilService, Diario } from '../relatorios/contabil.service';
   `],
 })
 export class DiarioComponent implements OnInit {
-  private service = inject(ContabilService);
+  private service = inject(ContabilidadeService);
   private destroyRef = inject(DestroyRef);
   private msg = inject(MessageService);
 

@@ -29,6 +29,13 @@ import { AuthService } from '../../core/auth.service';
       <a routerLink="/relatorios" routerLinkActive="ativo"><i class="pi pi-chart-bar"></i> Relatórios</a>
       <a routerLink="/razao" routerLinkActive="ativo"><i class="pi pi-book"></i> Razão</a>
       <a routerLink="/diario" routerLinkActive="ativo"><i class="pi pi-list"></i> Livro Diário</a>
+      <span class="tabs-sep"></span>
+      <a routerLink="/plano-contas" routerLinkActive="ativo"><i class="pi pi-sitemap"></i> Plano de Contas</a>
+      <a routerLink="/roteiros" routerLinkActive="ativo"><i class="pi pi-bolt"></i> Roteiros</a>
+      <a routerLink="/pendencias" routerLinkActive="ativo"><i class="pi pi-inbox"></i> Pendências</a>
+      <a routerLink="/inventario" routerLinkActive="ativo"><i class="pi pi-box"></i> Inventário</a>
+      <a routerLink="/abertura" routerLinkActive="ativo"><i class="pi pi-flag"></i> Abertura</a>
+      <a routerLink="/fiscal" routerLinkActive="ativo"><i class="pi pi-percentage"></i> Fiscal</a>
     </nav>
 
     <main class="conteudo">
@@ -49,8 +56,9 @@ import { AuthService } from '../../core/auth.service';
     .quem { font-size: .85rem; opacity: .9; display: inline-flex; align-items: center; gap: .35rem; }
     :host ::ng-deep .user .p-button.p-button-text { color: #fff; }
 
-    .tabs { display: flex; gap: .25rem; padding: 0 1.5rem; background: var(--color-slate-mid);
+    .tabs { display: flex; flex-wrap: wrap; gap: .25rem; padding: 0 1.5rem; background: var(--color-slate-mid);
       box-shadow: inset 0 -1px 0 rgba(255,255,255,.08); }
+    .tabs-sep { width: 1px; align-self: center; height: 1.3rem; background: rgba(255,255,255,.18); margin: 0 .5rem; }
     .tabs a { display: inline-flex; align-items: center; gap: .45rem; padding: .8rem 1rem;
       color: rgba(255,255,255,.75); font-size: .9rem; font-weight: 500;
       border-bottom: 3px solid transparent; transition: color .15s, border-color .15s; }

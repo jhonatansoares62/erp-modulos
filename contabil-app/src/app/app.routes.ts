@@ -24,6 +24,36 @@ export const routes: Routes = [
         path: 'diario',
         loadComponent: () => import('./features/diario/diario.component').then((m) => m.DiarioComponent),
       },
+      {
+        path: 'plano-contas',
+        loadComponent: () =>
+          import('./features/plano-contas/plano-contas.component').then((m) => m.ConfigPlanoContasTabComponent),
+      },
+      {
+        path: 'roteiros',
+        loadComponent: () =>
+          import('./features/roteiros/roteiros.component').then((m) => m.ConfigRoteirosTabComponent),
+      },
+      {
+        path: 'pendencias',
+        loadComponent: () =>
+          import('./features/pendencias/pendencias.component').then((m) => m.ConfigPendenciasTabComponent),
+      },
+      {
+        path: 'inventario',
+        loadComponent: () =>
+          import('./features/inventario/inventario.component').then((m) => m.ConfigInventarioTabComponent),
+      },
+      {
+        path: 'abertura',
+        loadComponent: () =>
+          import('./features/abertura/abertura.component').then((m) => m.ConfigAberturaTabComponent),
+      },
+      {
+        path: 'fiscal',
+        loadComponent: () =>
+          import('./features/fiscal/fiscal.component').then((m) => m.ConfigFiscalTabComponent),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'relatorios' },
     ],
   },

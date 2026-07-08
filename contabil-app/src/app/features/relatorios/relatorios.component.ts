@@ -7,7 +7,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { finalize } from 'rxjs';
-import { Balanco, Balancete, ContabilService, Dre } from './contabil.service';
+import { Balanco, Balancete, ContabilidadeService, Dre } from '../../shared/services/contabilidade.service';
 
 /**
  * Relatórios contábeis read-only: Balancete (com indicador débitos=créditos), DRE e Balanço
@@ -150,7 +150,7 @@ import { Balanco, Balancete, ContabilService, Dre } from './contabil.service';
   `],
 })
 export class RelatoriosComponent implements OnInit {
-  private service = inject(ContabilService);
+  private service = inject(ContabilidadeService);
   private destroyRef = inject(DestroyRef);
   private msg = inject(MessageService);
 

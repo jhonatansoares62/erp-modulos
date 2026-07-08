@@ -8,7 +8,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { finalize } from 'rxjs';
-import { Conta, ContabilService, Razao } from '../relatorios/contabil.service';
+import { Conta, ContabilidadeService, Razao } from '../../shared/services/contabilidade.service';
 
 /** Razão por conta: extrato cronológico de uma conta analítica com saldo acumulado. */
 @Component({
@@ -98,7 +98,7 @@ import { Conta, ContabilService, Razao } from '../relatorios/contabil.service';
   `],
 })
 export class RazaoComponent implements OnInit {
-  private service = inject(ContabilService);
+  private service = inject(ContabilidadeService);
   private destroyRef = inject(DestroyRef);
   private msg = inject(MessageService);
 
