@@ -3,17 +3,16 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
-import { API_BASE } from './api.config';
 
 /**
- * Injeta o Bearer JWT nas chamadas à api-contabil e, em 401, encerra a sessão e volta ao login.
+ * Injeta o Bearer JWT nas chamadas /v1 da api-contabil e, em 401, encerra a sessão e volta ao login.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
 
   const token = auth.token();
-  const isApi = req.url.startsWith(API_BASE);
+  const isApi = req.url.includes('/v1/');
   const isLogin = req.url.includes('/v1/auth/login');
 
   const authorized = token && isApi && !isLogin
