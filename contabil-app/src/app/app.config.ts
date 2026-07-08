@@ -21,6 +21,9 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     providePrimeNG({
       translation: {
+        accept: 'Sim',
+        reject: 'Não',
+        cancel: 'Cancelar',
         dayNames: ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'],
         dayNamesShort: ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'],
         dayNamesMin: ['D','S','T','Q','Q','S','S'],

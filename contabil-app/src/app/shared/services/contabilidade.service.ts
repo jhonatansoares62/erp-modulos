@@ -252,6 +252,34 @@ export interface ApuracaoFiscal {
   excedeSimples: boolean;
 }
 
+// ── DAS / Simples (nativo do módulo) ──
+export interface DasPagamento {
+  id: number;
+  competencia: string;
+  valorCentavos: number;
+  dataPagamento: string;
+  contaLiquidacao: string;
+  contaLiquidacaoNome: string;
+  lancamentoId: number | null;
+  origem: string;
+  createdAt: string | null;
+}
+
+export interface DasInfo {
+  saldoCentavos: number;
+  competencia: string | null;
+  saldoCompetenciaCentavos: number | null;
+  competenciaPaga: boolean;
+  historico: DasPagamento[];
+}
+
+export interface PagarDas {
+  competencia: string;
+  valorCentavos: number;
+  contaLiquidacao: string;
+  dataPagamento?: string;
+}
+
 /**
  * Fala DIRETO com a api-contabil (localhost:8750). O JWT é injetado pelo authInterceptor.
  * Espelha o ContabilidadeService do Odonto, mas nos paths reais /v1/* (não no proxy do ERP).
@@ -343,6 +371,17 @@ export class ContabilidadeService {
 
   listarInventario(): Observable<InventarioApuracao[]> {
     return this.http.get<InventarioApuracao[]>(`${this.base}/inventario`);
+  }
+
+  // ── DAS ──
+  dasInfo(competencia?: string): Observable<DasInfo> {
+    const params: Record<string, string> = {};
+    if (competencia) params['competencia'] = competencia;
+    return this.http.get<DasInfo>(`${this.base}/das`, { params });
+  }
+
+  pagarDas(dto: PagarDas): Observable<DasPagamento> {
+    return this.http.post<DasPagamento>(`${this.base}/das/pagar`, dto);
   }
 
   // ── Relatórios ──

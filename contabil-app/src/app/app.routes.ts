@@ -54,6 +54,10 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/fiscal/fiscal.component').then((m) => m.ConfigFiscalTabComponent),
       },
+      {
+        path: 'das',
+        loadComponent: () => import('./features/das/das.component').then((m) => m.DasComponent),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'relatorios' },
     ],
   },
