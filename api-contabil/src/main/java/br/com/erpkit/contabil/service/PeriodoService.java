@@ -116,40 +116,41 @@ public class PeriodoService {
 
         List<Long> lancamentoIds = new ArrayList<>();
 
-        // (a) Encerramento das receitas: D cada receita (saldo credor) · C ARE (soma).
+        // (a) Encerramento das receitas: zera CADA conta do grupo receita pelo seu saldo (inclusive
+        // retificadoras/contra-receita, como deduções e devoluções — saldo devedor), e joga o
+        // líquido na ARE. Assim nenhuma conta de receita fica aberta e o líquido = receita líquida.
         List<PartidaSpec> partidasReceita = new ArrayList<>();
-        long totalReceitas = 0;
+        long totalReceitas = 0;   // receita líquida do exercício (Σ crédito − débito do grupo)
         for (ContaContabil c : contasResultado) {
             if (!"receita".equals(c.getGrupo())) continue;
             long[] dc = movimento.get(c.getId());
             if (dc == null) continue;
-            long valor = dc[1] - dc[0];   // crédito - débito (saldo credor)
-            if (valor > 0) {
-                partidasReceita.add(new PartidaSpec(c.getId(), "D", valor));
-                totalReceitas += valor;
-            }
+            long saldoCredor = dc[1] - dc[0];   // crédito - débito
+            if (saldoCredor > 0) partidasReceita.add(new PartidaSpec(c.getId(), "D", saldoCredor));
+            else if (saldoCredor < 0) partidasReceita.add(new PartidaSpec(c.getId(), "C", -saldoCredor));
+            totalReceitas += saldoCredor;
         }
-        if (totalReceitas > 0) {
-            partidasReceita.add(new PartidaSpec(areId, "C", totalReceitas));
+        if (!partidasReceita.isEmpty() && totalReceitas != 0) {
+            partidasReceita.add(new PartidaSpec(areId, totalReceitas > 0 ? "C" : "D", Math.abs(totalReceitas)));
             lancamentoIds.add(lancamentoService.postarEncerramento(dataEnc,
                     "Encerramento das receitas do exercicio " + ano, partidasReceita).getId());
         }
 
-        // (b) Encerramento de custos e despesas: C cada conta (saldo devedor) · D ARE (soma).
+        // (b) Encerramento de custos e despesas: zera cada conta pelo saldo devedor (e contra-despesas
+        // pelo credor), líquido → ARE.
         List<PartidaSpec> partidasDespesa = new ArrayList<>();
-        long totalDespesas = 0;
+        long totalDespesas = 0;   // custos + despesas do exercício (Σ débito − crédito do grupo)
         for (ContaContabil c : contasResultado) {
             if (!"custo".equals(c.getGrupo()) && !"despesa".equals(c.getGrupo())) continue;
             long[] dc = movimento.get(c.getId());
             if (dc == null) continue;
-            long valor = dc[0] - dc[1];   // débito - crédito (saldo devedor)
-            if (valor > 0) {
-                partidasDespesa.add(new PartidaSpec(c.getId(), "C", valor));
-                totalDespesas += valor;
-            }
+            long saldoDevedor = dc[0] - dc[1];   // débito - crédito
+            if (saldoDevedor > 0) partidasDespesa.add(new PartidaSpec(c.getId(), "C", saldoDevedor));
+            else if (saldoDevedor < 0) partidasDespesa.add(new PartidaSpec(c.getId(), "D", -saldoDevedor));
+            totalDespesas += saldoDevedor;
         }
-        if (totalDespesas > 0) {
-            partidasDespesa.add(new PartidaSpec(areId, "D", totalDespesas));
+        if (!partidasDespesa.isEmpty() && totalDespesas != 0) {
+            partidasDespesa.add(new PartidaSpec(areId, totalDespesas > 0 ? "D" : "C", Math.abs(totalDespesas)));
             lancamentoIds.add(lancamentoService.postarEncerramento(dataEnc,
                     "Encerramento de custos e despesas do exercicio " + ano, partidasDespesa).getId());
         }
@@ -202,9 +203,11 @@ public class PeriodoService {
             long debito = num(row[1]);
             long credito = num(row[2]);
             switch (grupo) {
-                case "receita" -> receitas += Math.max(0, credito - debito);   // saldo credor
-                case "custo" -> custos += Math.max(0, debito - credito);        // saldo devedor
-                case "despesa" -> despesas += Math.max(0, debito - credito);    // saldo devedor
+                // receita líquida: soma o grupo receita já líquido de retificadoras (deduções,
+                // devoluções têm saldo devedor e entram negativas) — igual ao que o encerramento posta.
+                case "receita" -> receitas += (credito - debito);
+                case "custo" -> custos += (debito - credito);
+                case "despesa" -> despesas += (debito - credito);
                 default -> { /* contas patrimoniais não entram na apuração */ }
             }
         }
