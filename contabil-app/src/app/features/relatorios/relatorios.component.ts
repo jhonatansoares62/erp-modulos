@@ -39,32 +39,50 @@ import { Balanco, Balancete, ContabilidadeService, Dre } from '../../shared/serv
             <tr>
               <th>Código</th>
               <th>Conta</th>
+              <th style="text-align:right">Saldo anterior</th>
               <th style="text-align:right">Débitos</th>
               <th style="text-align:right">Créditos</th>
-              <th style="text-align:right">Saldo</th>
+              <th style="text-align:right">Saldo atual</th>
             </tr>
           </ng-template>
           <ng-template #body let-l>
             <tr>
               <td><code>{{ l.codigo }}</code></td>
               <td>{{ l.nome }}</td>
+              <td style="text-align:right">
+                @if (l.saldoAnteriorCentavos) {
+                  {{ reais(l.saldoAnteriorCentavos) }} <small class="nat">{{ l.saldoAnteriorNatureza }}</small>
+                } @else {
+                  <span class="zero">—</span>
+                }
+              </td>
               <td style="text-align:right">{{ reais(l.debitos) }}</td>
               <td style="text-align:right">{{ reais(l.creditos) }}</td>
-              <td style="text-align:right">{{ reais(l.debitos - l.creditos) }} <small class="nat">{{ l.saldoNatureza }}</small></td>
+              <td style="text-align:right">{{ reais(l.saldoAtualCentavos) }} <small class="nat">{{ l.saldoAtualNatureza }}</small></td>
             </tr>
           </ng-template>
           <ng-template #footer>
             <tr class="rel-total">
-              <td colspan="2">
+              <td colspan="3">
                 @if (b.fecha) {
-                  <p-tag value="Confere" severity="success" />
+                  <p-tag value="Movimento confere" severity="success" />
                 } @else {
-                  <p-tag value="Não confere" severity="danger" />
+                  <p-tag value="Movimento não confere" severity="danger" />
                 }
               </td>
               <td style="text-align:right">{{ reais(b.totalDebitos) }}</td>
               <td style="text-align:right">{{ reais(b.totalCreditos) }}</td>
               <td></td>
+            </tr>
+            <tr class="rel-total">
+              <td colspan="6" style="text-align:right">
+                @if (b.fechaSaldos) {
+                  <p-tag value="Saldos conferem" severity="success" />
+                } @else {
+                  <p-tag value="Saldos não conferem" severity="danger" />
+                }
+                <small class="tot-saldos">Σ devedores {{ reais(b.totalSaldoAtualDevedorCentavos) }} · Σ credores {{ reais(b.totalSaldoAtualCredorCentavos) }}</small>
+              </td>
             </tr>
           </ng-template>
         </p-table>
@@ -136,6 +154,8 @@ import { Balanco, Balancete, ContabilidadeService, Dre } from '../../shared/serv
     .vazio { color: var(--text-color-secondary); }
     .rel-total td { font-weight: 600; }
     .nat { color: var(--text-color-secondary); font-size: 0.72rem; margin-left: .15rem; }
+    .zero { color: var(--text-color-secondary); }
+    .tot-saldos { margin-left: .6rem; font-weight: 400; color: var(--text-color-secondary); font-size: .8rem; }
     .dre { max-width: 32rem; }
     .dre-linha { display: flex; justify-content: space-between; padding: .4rem 0; border-bottom: 1px solid var(--surface-border); }
     .dre-linha span:last-child { font-variant-numeric: tabular-nums; }

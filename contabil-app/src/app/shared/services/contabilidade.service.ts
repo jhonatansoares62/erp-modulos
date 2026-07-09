@@ -95,10 +95,14 @@ export interface RoteiroCreate {
 export interface BalanceteLinha {
   codigo: string;
   nome: string;
+  saldoAnteriorCentavos: number;
+  saldoAnteriorNatureza: string;   // D | C
   debitos: number;
   creditos: number;
-  saldoCentavos: number;
-  saldoNatureza: string;
+  saldoAtualCentavos: number;
+  saldoAtualNatureza: string;      // D | C
+  saldoCentavos: number;           // compat: = saldo atual
+  saldoNatureza: string;           // compat: = saldo atual
 }
 
 export interface Balancete {
@@ -107,7 +111,10 @@ export interface Balancete {
   linhas: BalanceteLinha[];
   totalDebitos: number;
   totalCreditos: number;
-  fecha: boolean;
+  fecha: boolean;                              // Σ débitos = Σ créditos (movimento)
+  totalSaldoAtualDevedorCentavos: number;
+  totalSaldoAtualCredorCentavos: number;
+  fechaSaldos: boolean;                        // Σ saldos atuais devedores = Σ credores
 }
 
 export interface Dre {

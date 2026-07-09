@@ -14,8 +14,11 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -37,27 +40,71 @@ public class RelatorioService {
         this.contaService = contaService;
     }
 
+    /**
+     * Balancete de verificação de 6 colunas (Saldo anterior | Débitos | Créditos | Saldo atual) com as
+     * duas conferências: (1) Σ débitos = Σ créditos do período e (2) Σ saldos atuais devedores = Σ credores.
+     * Entra toda conta analítica com saldo acumulado ≠ 0 OU movimento no período. O "saldo atual" (acumulado
+     * até 'ate') amarra com o Balanço Patrimonial na mesma data.
+     */
     public BalanceteResponse balancete(LocalDate de, LocalDate ate) {
         Map<Long, ContaContabil> contas = contaRepository.findAll().stream()
                 .collect(Collectors.toMap(ContaContabil::getId, c -> c));
+
+        // Saldo anterior = movimento acumulado ANTES de 'de'; período = movimento em [de, ate]. [D, C] por conta.
+        Map<Long, long[]> anterior = new HashMap<>();
+        for (Object[] row : partidaRepository.somarPorConta(MIN, de.minusDays(1))) {
+            anterior.put(num(row[0]), new long[]{num(row[1]), num(row[2])});
+        }
+        Map<Long, long[]> periodo = new HashMap<>();
+        for (Object[] row : partidaRepository.somarPorConta(de, ate)) {
+            periodo.put(num(row[0]), new long[]{num(row[1]), num(row[2])});
+        }
+
+        Set<Long> contaIds = new HashSet<>();
+        contaIds.addAll(anterior.keySet());
+        contaIds.addAll(periodo.keySet());
+
         List<BalanceteResponse.Linha> linhas = new ArrayList<>();
         long totalDebitos = 0;
         long totalCreditos = 0;
-        for (Object[] row : partidaRepository.somarPorConta(de, ate)) {
-            long contaId = num(row[0]);
-            long debito = num(row[1]);
-            long credito = num(row[2]);
+        long totalSaldoAtualDevedor = 0;
+        long totalSaldoAtualCredor = 0;
+        for (Long contaId : contaIds) {
             ContaContabil conta = contas.get(contaId);
             if (conta == null) continue;
-            long saldo = debito - credito;
-            String saldoNatureza = saldo >= 0 ? "D" : "C";
+            long[] ant = anterior.getOrDefault(contaId, ZERO);
+            long[] per = periodo.getOrDefault(contaId, ZERO);
+            long debitos = per[0];
+            long creditos = per[1];
+            long rawAnterior = ant[0] - ant[1];                  // D − C acumulado antes de 'de'
+            long rawAtual = rawAnterior + (debitos - creditos);  // D − C acumulado até 'ate'
+
+            if (rawAnterior == 0 && rawAtual == 0 && debitos == 0 && creditos == 0) continue;
+
+            String natAtual = lado(rawAtual, conta.getNatureza());
             linhas.add(new BalanceteResponse.Linha(
-                    conta.getCodigo(), conta.getNome(), debito, credito, Math.abs(saldo), saldoNatureza));
-            totalDebitos += debito;
-            totalCreditos += credito;
+                    conta.getCodigo(), conta.getNome(),
+                    Math.abs(rawAnterior), lado(rawAnterior, conta.getNatureza()),
+                    debitos, creditos,
+                    Math.abs(rawAtual), natAtual));
+
+            totalDebitos += debitos;
+            totalCreditos += creditos;
+            if ("D".equals(natAtual)) totalSaldoAtualDevedor += Math.abs(rawAtual);
+            else totalSaldoAtualCredor += Math.abs(rawAtual);
         }
         linhas.sort(Comparator.comparing(BalanceteResponse.Linha::getCodigo));
-        return new BalanceteResponse(de, ate, linhas, totalDebitos, totalCreditos);
+        return new BalanceteResponse(de, ate, linhas, totalDebitos, totalCreditos,
+                totalSaldoAtualDevedor, totalSaldoAtualCredor);
+    }
+
+    private static final long[] ZERO = {0L, 0L};
+
+    /** Lado (D/C) de um saldo raw (D−C): positivo→D, negativo→C, zero→lado natural da conta. */
+    private static String lado(long raw, String natureza) {
+        if (raw > 0) return "D";
+        if (raw < 0) return "C";
+        return natureza;
     }
 
     public DreResponse dre(LocalDate de, LocalDate ate) {
