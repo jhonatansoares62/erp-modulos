@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -113,6 +115,39 @@ class FiscalTest extends AbstractPostgresIT {
         assertThat(fiscalService.listarReceitaHistorica()).hasSize(1);
     }
 
+    @Test
+    void devolucaoNetaBaseImpostoERbt12() {
+        // Início no próprio mês → 1 mês de atividade (RBT12 = receita líquida × 12).
+        config(LocalDate.of(2026, 7, 1), null);
+        eventoService.receber(venda(100000, LocalDate.of(2026, 7, 10)));       // R$ 1.000,00 escriturado
+        eventoService.receber(devolucao(30000, LocalDate.of(2026, 7, 20)));    // R$ 300,00 devolvidos (D 3.1.1.05)
+        entityManager.flush();
+
+        MemoriaFiscalResponse mem = fiscalService.memoria(COMP);
+        // Base e RBT12 sobre o LÍQUIDO (1.000 − 300 = 700), não sobre a receita bruta (1.000).
+        assertThat(mem.getBaseCalculoCentavos()).isEqualTo(70000);
+        assertThat(mem.getRbt12Centavos()).isEqualTo(840000);   // 70000 × 12 ÷ 1
+        assertThat(fiscalService.rbt12(COMP)).isEqualTo(840000);
+
+        // Imposto da competência incide sobre a base líquida.
+        long impostoEsperado = BigDecimal.valueOf(70000).multiply(mem.getAliquotaEfetiva())
+                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP).longValueExact();
+        assertThat(mem.getImpostoCentavos()).isEqualTo(impostoEsperado);
+        assertThat(mem.getImpostoCentavos()).isPositive();
+    }
+
+    @Test
+    void semDevolucaoBaseEImpostoInalterados() {
+        // Mesmo cenário, sem devolução: base = receita bruta cheia, RBT12 idem (não regride).
+        config(LocalDate.of(2026, 7, 1), null);
+        eventoService.receber(venda(100000, LocalDate.of(2026, 7, 10)));
+        entityManager.flush();
+
+        MemoriaFiscalResponse mem = fiscalService.memoria(COMP);
+        assertThat(mem.getBaseCalculoCentavos()).isEqualTo(100000);
+        assertThat(mem.getRbt12Centavos()).isEqualTo(1200000);   // 100000 × 12 ÷ 1
+    }
+
     private void config(LocalDate inicioAtividade, LocalDate corte) {
         FiscalConfigDTO cfg = new FiscalConfigDTO();
         cfg.setDataInicioAtividade(inicioAtividade);
@@ -128,6 +163,17 @@ class FiscalTest extends AbstractPostgresIT {
         req.setDataEvento(data);
         req.setValorCentavos(valor);
         req.setContexto(Map.of("meioPagamento", "pix", "condicao", "avista"));
+        return req;
+    }
+
+    /** Devolução/cancelamento de venda (roteiro V11: D 3.1.1.05 · C 1.1.2.01). */
+    private EventoContabilRequest devolucao(long valor, LocalDate data) {
+        EventoContabilRequest req = new EventoContabilRequest();
+        req.setEventoId(UUID.randomUUID().toString());
+        req.setTipo("venda.devolvida");
+        req.setOrigem("erp-teste");
+        req.setDataEvento(data);
+        req.setValorCentavos(valor);
         return req;
     }
 }

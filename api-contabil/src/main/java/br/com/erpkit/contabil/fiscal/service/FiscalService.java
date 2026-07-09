@@ -41,6 +41,7 @@ import java.util.Map;
 public class FiscalService {
 
     private static final String CONTA_RECEITA = "3.1.1.01";                  // receita bruta operacional
+    private static final String CONTA_DEVOLUCAO = "3.1.1.05";                // (-) Devoluções/cancelamentos de vendas
     private static final BigDecimal LIMITE_FATOR_R = new BigDecimal("0.28"); // >=28% → Anexo III
     private static final long TETO_SIMPLES_CENTAVOS = 480000000L;            // R$ 4.800.000,00
 
@@ -173,7 +174,7 @@ public class FiscalService {
         return Math.max(1, (int) ChronoUnit.MONTHS.between(YearMonth.from(inicio), competencia) + 1);
     }
 
-    /** Σ receita escriturada (conta 3.1.1.01, crédito − débito) do 1º dia de mesDe ao último de mesAte. */
+    /** Σ receita escriturada LÍQUIDA de devoluções (3.1.1.01 − 3.1.1.05) do 1º dia de mesDe ao último de mesAte. */
     @Transactional
     public long somaReceitaEscriturada(YearMonth mesDe, YearMonth mesAte) {
         return receitaBruta(mesDe.atDay(1), mesAte.atEndOfMonth());
@@ -378,9 +379,18 @@ public class FiscalService {
         return faixa.getFaixa() <= 1 ? 0 : anteriorAte + 1;
     }
 
-    /** Receita bruta (crédito − débito) da conta operacional no período. */
+    /** Receita bruta LÍQUIDA de devoluções/cancelamentos (3.1.1.01 − 3.1.1.05) no período.
+     *  Vendas canceladas não compõem a receita bruta tributável do Simples (LC 123/2006 art. 3º §1º).
+     *  NÃO desconta 3.1.1.04 (Deduções de Tributos) — esse é o próprio imposto, não reduz a base. */
     private long receitaBruta(LocalDate de, LocalDate ate) {
-        Long contaId = contaService.buscarPorCodigo(CONTA_RECEITA).getId();
+        long bruta = saldoCredor(CONTA_RECEITA, de, ate);          // crédito − débito (receita)
+        long devolucoes = -saldoCredor(CONTA_DEVOLUCAO, de, ate);  // 3.1.1.05 tem saldo devedor → +valor
+        return bruta - devolucoes;
+    }
+
+    /** (crédito − débito) da conta no período; 0 se não houver partidas. */
+    private long saldoCredor(String codigo, LocalDate de, LocalDate ate) {
+        Long contaId = contaService.buscarPorCodigo(codigo).getId();
         List<Object[]> r = partidaRepository.somarConta(contaId, de, ate);
         if (r.isEmpty()) return 0;
         long debito = ((Number) r.get(0)[0]).longValue();
