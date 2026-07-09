@@ -58,6 +58,11 @@ export const routes: Routes = [
         path: 'das',
         loadComponent: () => import('./features/das/das.component').then((m) => m.DasComponent),
       },
+      {
+        path: 'encerramento',
+        loadComponent: () =>
+          import('./features/encerramento/encerramento.component').then((m) => m.EncerramentoComponent),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'relatorios' },
     ],
   },

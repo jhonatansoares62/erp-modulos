@@ -280,6 +280,33 @@ export interface PagarDas {
   dataPagamento?: string;
 }
 
+// ── Períodos / Encerramento de exercício ──
+export interface PeriodoFechado {
+  id: number;
+  empresaId: string | null;
+  competencia: string;   // 'YYYY' (exercicio) ou 'YYYY-MM' (mensal)
+  tipo: string;          // mensal | exercicio
+  dataFechamento: string;
+  fechadoPor: string | null;
+}
+
+export interface EncerramentoPreview {
+  ano: number;
+  encerrado: boolean;
+  receitas: number;
+  custos: number;
+  despesas: number;
+  resultado: number;
+}
+
+export interface EncerramentoResultado {
+  ano: number;
+  totalReceitas: number;
+  totalDespesas: number;
+  resultado: number;
+  lancamentoIds: number[];
+}
+
 /**
  * Fala DIRETO com a api-contabil (localhost:8750). O JWT é injetado pelo authInterceptor.
  * Espelha o ContabilidadeService do Odonto, mas nos paths reais /v1/* (não no proxy do ERP).
@@ -382,6 +409,21 @@ export class ContabilidadeService {
 
   pagarDas(dto: PagarDas): Observable<DasPagamento> {
     return this.http.post<DasPagamento>(`${this.base}/das/pagar`, dto);
+  }
+
+  // ── Períodos / Encerramento de exercício ──
+  periodos(): Observable<PeriodoFechado[]> {
+    return this.http.get<PeriodoFechado[]>(`${this.base}/periodos`);
+  }
+
+  encerramentoPreview(ano: number): Observable<EncerramentoPreview> {
+    return this.http.get<EncerramentoPreview>(`${this.base}/periodos/encerramento/preview`, {
+      params: { ano: String(ano) },
+    });
+  }
+
+  encerrarExercicio(ano: number, por?: string): Observable<EncerramentoResultado> {
+    return this.http.post<EncerramentoResultado>(`${this.base}/periodos/encerrar-exercicio`, { ano, por });
   }
 
   // ── Relatórios ──

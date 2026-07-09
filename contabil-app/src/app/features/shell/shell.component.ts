@@ -37,6 +37,7 @@ import { AuthService } from '../../core/auth.service';
       <a routerLink="/abertura" routerLinkActive="ativo"><i class="pi pi-flag"></i> Abertura</a>
       <a routerLink="/fiscal" routerLinkActive="ativo"><i class="pi pi-percentage"></i> Fiscal</a>
       <a routerLink="/das" routerLinkActive="ativo"><i class="pi pi-money-bill"></i> DAS</a>
+      <a routerLink="/encerramento" routerLinkActive="ativo"><i class="pi pi-lock"></i> Encerramento</a>
     </nav>
 
     <main class="conteudo">
