@@ -69,6 +69,10 @@ a { text-decoration: none; color: inherit; }
 // SelectButton/ToggleButton — PrimeNG 21 nao aplica padding no preset (labels ficam grudados).
 .p-togglebutton { padding: 0.5rem 0.9rem; }
 .p-togglebutton .p-togglebutton-content { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; }
+// ToggleSwitch — o reset margin:0 (unlayered) vence a margem que o tema usa (no @layer) pra
+// centralizar o handle, e ele fica caido/transbordando o trilho. Recentraliza via transform
+// (o slide on/off e por `left`, entao o translateY nao conflita).
+.p-toggleswitch-handle { transform: translateY(-50%); }
 // Card e Dialog — restaurar respiro que o reset padding:0 removeu.
 .p-card-body { padding: 1rem; }
 .p-card-content { padding: 0; }
