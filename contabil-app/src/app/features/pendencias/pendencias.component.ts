@@ -20,8 +20,9 @@ import { Conta, ContabilidadeService, Pendencia, RegraCreate } from '../../share
   template: `
     <div class="pend-head">
       <p class="pend-info">
-        Eventos que chegaram sem roteiro. Classifique uma vez e o módulo passa a contabilizar
-        automaticamente os próximos iguais.
+        Eventos aguardando resolução. <strong>Sem roteiro</strong>: classifique uma vez e o módulo passa a
+        contabilizar os próximos iguais. <strong>Período fechado</strong>: reabra o exercício (aba Encerramento)
+        para o evento poder postar. O botão Reprocessar cobre os dois.
       </p>
       <div class="pend-acoes">
         <app-botao label="Reprocessar" icon="pi pi-sync" size="small" [loading]="reprocessando()"
@@ -37,16 +38,28 @@ import { Conta, ContabilidadeService, Pendencia, RegraCreate } from '../../share
     } @else {
       <p-table [value]="pendencias()" [rows]="10" [paginator]="pendencias().length > 10" styleClass="p-datatable-sm">
         <ng-template #header>
-          <tr><th>Evento</th><th>Origem</th><th>Data</th><th style="text-align:right">Valor</th><th></th></tr>
+          <tr><th>Evento</th><th>Origem</th><th>Situação</th><th>Data</th><th style="text-align:right">Valor</th><th></th></tr>
         </ng-template>
         <ng-template #body let-p>
           <tr>
             <td><code>{{ p.tipo }}</code></td>
             <td>{{ p.origem }}</td>
+            <td>
+              @if (p.status === 'periodo_fechado') {
+                <p-tag severity="warn" icon="pi pi-lock" value="Período fechado" />
+                @if (p.motivo) { <div class="pend-motivo">{{ p.motivo }}</div> }
+              } @else {
+                <p-tag severity="info" icon="pi pi-question-circle" value="Sem roteiro" />
+              }
+            </td>
             <td>{{ p.dataEvento }}</td>
             <td style="text-align:right">{{ reais(p.valorCentavos) }}</td>
             <td style="text-align:right">
-              <app-botao label="Classificar" icon="pi pi-check" size="small" (clicado)="abrir(p)" />
+              @if (p.status === 'periodo_fechado') {
+                <span class="pend-dica-acao"><i class="pi pi-info-circle"></i> Reabra o exercício</span>
+              } @else {
+                <app-botao label="Classificar" icon="pi pi-check" size="small" (clicado)="abrir(p)" />
+              }
             </td>
           </tr>
         </ng-template>
@@ -90,6 +103,9 @@ import { Conta, ContabilidadeService, Pendencia, RegraCreate } from '../../share
     .pend-acoes { display: flex; align-items: center; gap: .5rem; }
     .pend-info { margin: 0; font-size: .85rem; color: var(--text-color-secondary); }
     .vazio { color: var(--text-color-secondary); }
+    .pend-motivo { margin-top: .25rem; font-size: .78rem; color: var(--text-color-secondary); max-width: 22rem; }
+    .pend-dica-acao { font-size: .8rem; color: var(--text-color-secondary); white-space: nowrap; }
+    .pend-dica-acao .pi { font-size: .75rem; margin-right: .2rem; }
     .dlg-evento { margin: 0 0 1rem; }
     .dlg-form { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.25rem; }
     .field { display: flex; flex-direction: column; gap: .35rem; }

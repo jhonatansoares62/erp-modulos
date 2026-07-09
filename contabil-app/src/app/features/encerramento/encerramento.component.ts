@@ -12,6 +12,7 @@ import {
   EncerramentoPreview,
   EncerramentoResultado,
   PeriodoFechado,
+  ReaberturaResultado,
 } from '../../shared/services/contabilidade.service';
 
 /**
@@ -48,7 +49,13 @@ import {
         </div>
 
         @if (p.encerrado) {
-          <p-tag severity="success" icon="pi pi-check-circle" [value]="'Exercício ' + p.ano + ' encerrado'" styleClass="enc-tag" />
+          <div class="enc-reabrir">
+            <p-tag severity="success" icon="pi pi-check-circle" [value]="'Exercício ' + p.ano + ' encerrado'" styleClass="enc-tag" />
+            <app-botao label="Reabrir exercício" icon="pi pi-lock-open" severity="danger" [text]="true" size="small"
+                       [loading]="reabrindo()" (clicado)="confirmarReabrir()" />
+          </div>
+          <span class="enc-hint">Reabrir reverte os lançamentos de encerramento, destrava {{ p.ano }} e reprocessa as
+            pendências presas em período fechado — depois é preciso RE-ENCERRAR.</span>
         } @else if (!temMovimento()) {
           <div class="enc-aviso"><i class="pi pi-info-circle"></i>
             <span>Sem movimento de resultado em {{ p.ano }} — nada a encerrar.</span></div>
@@ -110,6 +117,7 @@ import {
     .enc-preview .total.lucro strong { color: var(--color-success, #16a34a); }
     .enc-preview .total.prejuizo strong { color: var(--color-danger, #dc2626); }
     :host ::ng-deep .enc-tag { font-size: .95rem; padding: .5rem .8rem; }
+    .enc-reabrir { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: .4rem; }
     .enc-acao { display: flex; flex-direction: column; gap: .5rem; }
     .enc-hint { font-size: .82rem; color: var(--text-color-secondary); }
     .enc-aviso { display: flex; align-items: center; gap: .6rem; padding: .6rem .9rem; border: 1px solid var(--surface-border);
@@ -132,6 +140,7 @@ export class EncerramentoComponent implements OnInit {
   encerrados = signal<PeriodoFechado[]>([]);
   gerados = signal<number[]>([]);
   encerrando = signal(false);
+  reabrindo = signal(false);
 
   ano: number = new Date().getFullYear();
   readonly anos = Array.from({ length: 6 }, (_, i) => {
@@ -198,6 +207,38 @@ export class EncerramentoComponent implements OnInit {
         error: (err) => this.msg.add({ severity: 'error', summary: 'Encerramento',
           detail: err?.error?.detalhe || err?.error?.mensagem || err?.error?.message
             || (err?.status === 409 ? 'Exercício já encerrado.' : 'Falha ao encerrar o exercício.') }),
+      });
+  }
+
+  confirmarReabrir(): void {
+    const p = this.preview();
+    if (!p || !p.encerrado || this.reabrindo()) return;
+    this.confirm.confirm({
+      header: `Reabrir exercício ${p.ano}`,
+      message: `Reabrir o exercício de ${p.ano}? Isso REVERTE os lançamentos de encerramento (a ARE volta a `
+        + `zerar e o resultado deixa de ser transportado ao PL), destrava o ano e reprocessa as pendências `
+        + `presas em período fechado — que passam a postar. Depois será preciso RE-ENCERRAR ${p.ano}.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Reabrir',
+      rejectLabel: 'Cancelar',
+      accept: () => this.reabrir(),
+    });
+  }
+
+  private reabrir(): void {
+    this.reabrindo.set(true);
+    this.service.reabrirExercicio(this.ano, this.auth.user()?.nome, 'Reabertura via tela de Encerramento')
+      .pipe(takeUntilDestroyed(this.destroyRef), finalize(() => this.reabrindo.set(false)))
+      .subscribe({
+        next: (r: ReaberturaResultado) => {
+          this.msg.add({ severity: 'success', summary: 'Exercício reaberto',
+            detail: `Exercício ${r.ano} reaberto: ${r.lancamentosEstornados} lançamento(s) de encerramento `
+              + `revertido(s), ${r.pendenciasReprocessadas} pendência(s) reprocessada(s). Re-encerre após ajustar.` });
+          this.carregar();
+        },
+        error: (err) => this.msg.add({ severity: 'error', summary: 'Reabertura',
+          detail: err?.error?.detalhe || err?.error?.mensagem || err?.error?.message
+            || (err?.status === 409 ? 'Exercício não está encerrado.' : 'Falha ao reabrir o exercício.') }),
       });
   }
 

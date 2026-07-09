@@ -13,5 +13,8 @@ public interface PeriodoFechadoRepository extends JpaRepository<PeriodoFechado, 
 
     boolean existsByCompetenciaAndTipo(String competencia, String tipo);
 
+    /** Registro de fechamento por competência e tipo (ex.: exercício de um ano), para reabrir. */
+    Optional<PeriodoFechado> findByCompetenciaAndTipo(String competencia, String tipo);
+
     List<PeriodoFechado> findAllByOrderByCompetenciaDesc();
 }

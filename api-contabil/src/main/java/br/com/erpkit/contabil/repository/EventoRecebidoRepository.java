@@ -9,4 +9,7 @@ import java.util.UUID;
 public interface EventoRecebidoRepository extends JpaRepository<EventoRecebido, UUID> {
 
     List<EventoRecebido> findByStatusOrderByRecebidoEm(String status);
+
+    /** Pendências de vários status (ex.: sem_regra + periodo_fechado), mais antigas primeiro. */
+    List<EventoRecebido> findByStatusInOrderByRecebidoEm(List<String> status);
 }

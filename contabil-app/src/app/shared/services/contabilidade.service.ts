@@ -46,6 +46,8 @@ export interface Pendencia {
   dataEvento: string;
   valorCentavos: number;
   recebidoEm: string;
+  status?: string;   // sem_regra | periodo_fechado
+  motivo?: string;   // erro_mensagem quando periodo_fechado (ex.: "Exercício 2026 está encerrado…")
 }
 
 export interface PartidaRegra {
@@ -356,6 +358,12 @@ export interface EncerramentoResultado {
   lancamentoIds: number[];
 }
 
+export interface ReaberturaResultado {
+  ano: number;
+  lancamentosEstornados: number;
+  pendenciasReprocessadas: number;
+}
+
 /**
  * Fala DIRETO com a api-contabil (localhost:8750). O JWT é injetado pelo authInterceptor.
  * Espelha o ContabilidadeService do Odonto, mas nos paths reais /v1/* (não no proxy do ERP).
@@ -487,6 +495,10 @@ export class ContabilidadeService {
 
   encerrarExercicio(ano: number, por?: string): Observable<EncerramentoResultado> {
     return this.http.post<EncerramentoResultado>(`${this.base}/periodos/encerrar-exercicio`, { ano, por });
+  }
+
+  reabrirExercicio(ano: number, por?: string, motivo?: string): Observable<ReaberturaResultado> {
+    return this.http.post<ReaberturaResultado>(`${this.base}/periodos/reabrir-exercicio`, { ano, por, motivo });
   }
 
   // ── Relatórios ──

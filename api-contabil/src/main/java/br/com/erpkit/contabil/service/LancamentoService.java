@@ -195,6 +195,10 @@ public class LancamentoService {
         estorno.setHistorico("Estorno do lançamento " + original.getNumero()
                 + (motivo == null || motivo.isBlank() ? "" : " - " + motivo));
         estorno.setEstornaId(original.getId());
+        // A reversão herda o tipo do original: estorno de 'encerramento' também é 'encerramento' e
+        // segue EXCLUÍDO da DRE e do recompute do encerramento (senão reabrir o exercício dobraria a
+        // DRE). Estornos de 'normal' (devolução, reclassificação) continuam 'normal'.
+        estorno.setTipo(original.getTipo());
         estorno.setStatus("lancado");
         estorno.setLancadoEm(Instant.now());
         Lancamento salvo = lancamentoRepository.save(estorno);

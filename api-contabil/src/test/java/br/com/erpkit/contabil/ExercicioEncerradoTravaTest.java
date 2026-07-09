@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * lancamento→evento_recebido); nos que passam por receber() o evento é persistido antes (FK ok).
  */
 @Transactional
-class ExercicioEncerradoTravaIT extends AbstractPostgresIT {
+class ExercicioEncerradoTravaTest extends AbstractPostgresIT {
 
     @Autowired PeriodoService periodoService;
     @Autowired LancamentoService lancamentoService;

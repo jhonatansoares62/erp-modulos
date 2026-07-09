@@ -3,12 +3,18 @@ package br.com.erpkit.contabil.service;
 import br.com.erpkit.contabil.dto.EncerramentoPreviewResponse;
 import br.com.erpkit.contabil.dto.EncerramentoResponse;
 import br.com.erpkit.contabil.dto.PartidaSpec;
+import br.com.erpkit.contabil.dto.ReaberturaResponse;
+import br.com.erpkit.contabil.dto.ReprocessamentoResponse;
 import br.com.erpkit.contabil.model.ContaContabil;
+import br.com.erpkit.contabil.model.Lancamento;
 import br.com.erpkit.contabil.model.PeriodoFechado;
 import br.com.erpkit.contabil.repository.ContaContabilRepository;
+import br.com.erpkit.contabil.repository.LancamentoRepository;
 import br.com.erpkit.contabil.repository.PartidaRepository;
 import br.com.erpkit.contabil.repository.PeriodoFechadoRepository;
 import br.com.erpkit.shared.exception.ModuloException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,25 +39,33 @@ public class PeriodoService {
 
     private static final Pattern MENSAL = Pattern.compile("\\d{4}-\\d{2}");
     private static final DateTimeFormatter YM = DateTimeFormatter.ofPattern("yyyy-MM");
+    private static final Logger log = LoggerFactory.getLogger(PeriodoService.class);
 
     private final PeriodoFechadoRepository repository;
     private final PartidaRepository partidaRepository;
     private final ContaContabilRepository contaRepository;
     private final ContaContabilService contaService;
     private final LancamentoService lancamentoService;
+    private final LancamentoRepository lancamentoRepository;
+    private final PendenciaService pendenciaService;
 
-    // @Lazy no lancamentoService: LancamentoService injeta PeriodoService (validarPeriodoAberto);
-    // o encerramento inverte a dependência (posta lançamentos), fechando um ciclo que o Lazy quebra.
+    // @Lazy no lancamentoService e pendenciaService: ambos injetam PeriodoService (validarPeriodoAberto/
+    // motivoPeriodoFechado); o encerramento e a reabertura invertem a dependência (postam lançamentos,
+    // reprocessam pendências), fechando ciclos que o Lazy quebra.
     public PeriodoService(PeriodoFechadoRepository repository,
                           PartidaRepository partidaRepository,
                           ContaContabilRepository contaRepository,
                           ContaContabilService contaService,
-                          @Lazy LancamentoService lancamentoService) {
+                          @Lazy LancamentoService lancamentoService,
+                          LancamentoRepository lancamentoRepository,
+                          @Lazy PendenciaService pendenciaService) {
         this.repository = repository;
         this.partidaRepository = partidaRepository;
         this.contaRepository = contaRepository;
         this.contaService = contaService;
         this.lancamentoService = lancamentoService;
+        this.lancamentoRepository = lancamentoRepository;
+        this.pendenciaService = pendenciaService;
     }
 
     @Transactional
@@ -204,6 +218,43 @@ public class PeriodoService {
         repository.save(pf);
 
         return new EncerramentoResponse(ano, totalReceitas, totalDespesas, resultado, lancamentoIds);
+    }
+
+    /**
+     * Reabre um exercício encerrado (correção contábil). Ordem importa: (1) remove a trava do exercício
+     * — sem isso os estornos, que validam período, seriam rejeitados; (2) reverte os lançamentos de
+     * encerramento do ano (a reversão herda tipo='encerramento', então a DRE volta a = movimento e o
+     * transporte para o PL é desfeito); (3) reprocessa as pendências 'periodo_fechado' do ano, que
+     * agora postam. Só reverte ENCERRAMENTOS ORIGINAIS (estornaId nulo) — nunca reversões anteriores,
+     * pra reabrir múltiplas vezes não dobrar. O contador deve RE-ENCERRAR depois.
+     */
+    @Transactional
+    public ReaberturaResponse reabrirExercicio(int ano, String por, String motivo) {
+        String competencia = String.valueOf(ano);
+        PeriodoFechado exercicio = repository.findByCompetenciaAndTipo(competencia, "exercicio")
+                .orElseThrow(() -> new ModuloException("Exercício " + ano + " não está encerrado", HttpStatus.CONFLICT));
+        LocalDate de = LocalDate.of(ano, 1, 1);
+        LocalDate ate = LocalDate.of(ano, 12, 31);
+
+        // 1. Remove a trava e faz o flush ANTES dos estornos (que chamam validarPeriodoAberto).
+        repository.delete(exercicio);
+        repository.flush();
+
+        // 2. Reverte os lançamentos de encerramento ORIGINAIS do ano (pula reversões: estornaId != null).
+        int estornados = 0;
+        for (Lancamento l : lancamentoRepository.findByTipoAndStatusAndDataCompetenciaBetween(
+                "encerramento", "lancado", de, ate)) {
+            if (l.getEstornaId() != null) continue;
+            lancamentoService.estornar(l.getId(), "Reabertura do exercício " + ano);
+            estornados++;
+        }
+
+        // 3. Reprocessa as pendências de período fechado do ano (agora que o ano está aberto).
+        ReprocessamentoResponse rep = pendenciaService.reprocessarPeriodoFechado(ano);
+
+        log.info("Exercício {} reaberto por '{}' (motivo: {}): {} lançamentos de encerramento estornados, "
+                + "{} pendências reprocessadas", ano, por, motivo, estornados, rep.getReprocessados());
+        return new ReaberturaResponse(ano, estornados, rep.getReprocessados());
     }
 
     /**

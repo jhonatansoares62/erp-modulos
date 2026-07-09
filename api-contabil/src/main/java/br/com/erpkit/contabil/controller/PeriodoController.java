@@ -4,6 +4,8 @@ import br.com.erpkit.contabil.dto.EncerramentoPreviewResponse;
 import br.com.erpkit.contabil.dto.EncerramentoResponse;
 import br.com.erpkit.contabil.dto.EncerrarExercicioDTO;
 import br.com.erpkit.contabil.dto.FecharPeriodoDTO;
+import br.com.erpkit.contabil.dto.ReaberturaResponse;
+import br.com.erpkit.contabil.dto.ReabrirExercicioDTO;
 import br.com.erpkit.contabil.model.PeriodoFechado;
 import br.com.erpkit.contabil.service.PeriodoService;
 import jakarta.validation.Valid;
@@ -47,5 +49,11 @@ public class PeriodoController {
     @PostMapping("/encerrar-exercicio")
     public ResponseEntity<EncerramentoResponse> encerrarExercicio(@Valid @RequestBody EncerrarExercicioDTO dto) {
         return ResponseEntity.ok(service.encerrarExercicio(dto.getAno(), dto.getPor()));
+    }
+
+    /** Reabre um exercício encerrado: reverte o encerramento e reprocessa as pendências presas do ano. */
+    @PostMapping("/reabrir-exercicio")
+    public ResponseEntity<ReaberturaResponse> reabrirExercicio(@Valid @RequestBody ReabrirExercicioDTO dto) {
+        return ResponseEntity.ok(service.reabrirExercicio(dto.getAno(), dto.getPor(), dto.getMotivo()));
     }
 }
