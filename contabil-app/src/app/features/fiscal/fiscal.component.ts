@@ -169,9 +169,11 @@ import {
     .w-full { width: 100%; }
     .hint2 { margin: 0 0 .75rem; font-size: .78rem; color: var(--text-color-secondary); }
     .hist { margin-top: 1.25rem; border-top: 1px dashed var(--surface-border); padding-top: 1rem; }
-    .hist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: .6rem; }
-    .hist-linha { display: flex; flex-direction: column; gap: .25rem; }
+    .hist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: .9rem .7rem; }
+    .hist-linha { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
     .hist-linha label { font-size: .72rem; color: var(--text-color-secondary); }
+    :host ::ng-deep .hist-linha .p-inputnumber { width: 100%; display: block; }
+    :host ::ng-deep .hist-linha .p-inputnumber input { width: 100%; min-width: 0; }
     .hist-total { display: flex; justify-content: space-between; align-items: center; margin: .9rem 0; padding-top: .6rem; border-top: 2px solid var(--surface-border); }
     .fis-ap .linha { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0; border-bottom: 1px solid var(--surface-border); }
     .fis-ap .total { border-bottom: none; border-top: 2px solid var(--surface-border); margin-top: .25rem; padding-top: .6rem; }
