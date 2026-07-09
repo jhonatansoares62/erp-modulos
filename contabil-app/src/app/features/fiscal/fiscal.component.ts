@@ -56,13 +56,13 @@ import {
           <app-botao label="Salvar" icon="pi pi-check" [loading]="salvando()" (clicado)="salvar()" />
         </div>
 
-        @if (corte && historico.length) {
+        @if (corte && historico().length) {
           <div class="hist">
             <h5>Receita bruta histórica (12 meses anteriores ao corte)</h5>
             <p class="hint2">Empresa migrando (&gt; 1 ano): informe a receita bruta dos 12 meses antes do corte
               para o RBT12 cair na faixa/alíquota corretas antes de qualquer venda escriturada.</p>
             <div class="hist-grid">
-              @for (h of historico; track h.competencia) {
+              @for (h of historico(); track h.competencia) {
                 <div class="hist-linha">
                   <label>{{ competenciaLabel(h.competencia) }}</label>
                   <p-inputnumber [(ngModel)]="h.reais" mode="currency" currency="BRL" locale="pt-BR"
@@ -217,7 +217,8 @@ export class ConfigFiscalTabComponent implements OnInit {
   inicio: Date | null = null;
   corte: Date | null = null;
   folhaReais = 0;
-  historico: { competencia: string; reais: number }[] = [];
+  historico = signal<{ competencia: string; reais: number }[]>([]);
+  private historicoSalvo = new Map<string, number>();   // último GET do servidor (centavos por competência)
   competenciaMes: Date = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
   ngOnInit(): void {
@@ -227,8 +228,7 @@ export class ConfigFiscalTabComponent implements OnInit {
         this.folhaReais = (c.folha12mCentavos ?? 0) / 100;
         this.inicio = this.parseData(c.dataInicioAtividade);
         this.corte = this.parseData(c.dataEntradaSistema ?? null);
-        this.regenerarGrade();
-        this.carregarHistorico();
+        this.carregarHistorico();   // busca do servidor e só então monta a grade (evita render com zeros)
       },
       error: () => {},
     });
@@ -260,36 +260,33 @@ export class ConfigFiscalTabComponent implements OnInit {
     });
   }
 
-  /** Regenera as 12 competências [corte-12 .. corte-1], preservando os valores já digitados. */
+  /** Monta as 12 competências [corte-12 .. corte-1] casando com o histórico salvo (0 só sem registro);
+   *  preserva valores já digitados nas competências que permanecem. */
   regenerarGrade(): void {
-    if (!this.corte) { this.historico = []; return; }
-    const anteriores = new Map(this.historico.map((h) => [h.competencia, h.reais]));
+    if (!this.corte) { this.historico.set([]); return; }
+    const digitados = new Map(this.historico().map((h) => [h.competencia, h.reais]));
     const base = new Date(this.corte.getFullYear(), this.corte.getMonth(), 1);
     const linhas: { competencia: string; reais: number }[] = [];
     for (let i = 12; i >= 1; i--) {
-      const d = new Date(base.getFullYear(), base.getMonth() - i, 1);
-      const comp = this.ym(d);
-      linhas.push({ competencia: comp, reais: anteriores.get(comp) ?? 0 });
+      const comp = this.ym(new Date(base.getFullYear(), base.getMonth() - i, 1));
+      const reais = digitados.has(comp) ? digitados.get(comp)! : (this.historicoSalvo.get(comp) ?? 0) / 100;
+      linhas.push({ competencia: comp, reais });
     }
-    this.historico = linhas;
+    this.historico.set(linhas);
   }
 
   private carregarHistorico(): void {
     this.service.receitaHistorica().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (itens: ReceitaHistoricaItem[]) => {
-        const mapa = new Map(itens.map((i) => [i.competencia, i.receitaBrutaCentavos]));
-        for (const h of this.historico) {
-          if (mapa.has(h.competencia)) h.reais = (mapa.get(h.competencia) ?? 0) / 100;
-        }
-        // dispara change detection recriando a referência do array
-        this.historico = [...this.historico];
+        this.historicoSalvo = new Map(itens.map((i) => [i.competencia, i.receitaBrutaCentavos]));
+        this.regenerarGrade();
       },
-      error: () => {},
+      error: () => this.regenerarGrade(),
     });
   }
 
   salvarHistorico(): void {
-    const itens: ReceitaHistoricaItem[] = this.historico.map((h) => ({
+    const itens: ReceitaHistoricaItem[] = this.historico().map((h) => ({
       competencia: h.competencia,
       receitaBrutaCentavos: Math.round((h.reais ?? 0) * 100),
     }));
@@ -298,7 +295,8 @@ export class ConfigFiscalTabComponent implements OnInit {
       takeUntilDestroyed(this.destroyRef),
       finalize(() => this.salvandoHist.set(false)),
     ).subscribe({
-      next: () => {
+      next: (salvos) => {
+        this.historicoSalvo = new Map(salvos.map((i) => [i.competencia, i.receitaBrutaCentavos]));
         this.msg.add({ severity: 'success', summary: 'Fiscal', detail: 'Receita histórica salva.' });
         this.carregarApuracao();
         this.carregarMemoria();
@@ -309,7 +307,7 @@ export class ConfigFiscalTabComponent implements OnInit {
   }
 
   totalHistoricoCentavos(): number {
-    return this.historico.reduce((s, h) => s + Math.round((h.reais ?? 0) * 100), 0);
+    return this.historico().reduce((s, h) => s + Math.round((h.reais ?? 0) * 100), 0);
   }
 
   carregarMemoria(): void {

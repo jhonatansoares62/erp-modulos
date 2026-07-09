@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -80,6 +81,36 @@ class FiscalTest extends AbstractPostgresIT {
         // Sem venda escriturada no mês → base e imposto zerados.
         assertThat(mem.getBaseCalculoCentavos()).isZero();
         assertThat(mem.getImpostoCentavos()).isZero();
+    }
+
+    @Test
+    void receitaHistoricaRoundTripPersisteERecarregaComSoma() {
+        // Salva 12 competências com valores distintos; ao recarregar (listar), a grade repovoa e o total bate.
+        List<ReceitaHistoricaDTO> itens = new ArrayList<>();
+        long somaEsperada = 0;
+        for (int i = 12; i >= 1; i--) {
+            long v = 3000000 + i * 100000L;
+            itens.add(new ReceitaHistoricaDTO(COMP.minusMonths(i).toString(), v));
+            somaEsperada += v;
+        }
+        fiscalService.salvarReceitaHistorica(itens);
+
+        List<ReceitaHistoricaDTO> lidos = fiscalService.listarReceitaHistorica();
+        assertThat(lidos).hasSize(12);
+        assertThat(lidos).isSortedAccordingTo(Comparator.comparing(ReceitaHistoricaDTO::getCompetencia));
+
+        long soma = 0;
+        for (ReceitaHistoricaDTO enviado : itens) {
+            ReceitaHistoricaDTO lido = lidos.stream()
+                    .filter(l -> l.getCompetencia().equals(enviado.getCompetencia())).findFirst().orElseThrow();
+            assertThat(lido.getReceitaBrutaCentavos()).isEqualTo(enviado.getReceitaBrutaCentavos());
+            soma += lido.getReceitaBrutaCentavos();
+        }
+        assertThat(soma).isEqualTo(somaEsperada);
+
+        // REPLACE-ALL: salvar de novo substitui tudo (não acumula).
+        fiscalService.salvarReceitaHistorica(List.of(new ReceitaHistoricaDTO(COMP.minusMonths(1).toString(), 500000)));
+        assertThat(fiscalService.listarReceitaHistorica()).hasSize(1);
     }
 
     private void config(LocalDate inicioAtividade, LocalDate corte) {

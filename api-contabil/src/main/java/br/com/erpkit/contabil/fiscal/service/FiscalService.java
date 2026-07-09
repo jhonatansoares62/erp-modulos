@@ -24,8 +24,10 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Pacote fiscal (Simples Nacional). O RBT12 é o dos 12 meses ANTERIORES à competência (LC 123/2006,
@@ -94,16 +96,28 @@ public class FiscalService {
                 .toList();
     }
 
-    /** REPLACE-ALL: substitui todo o histórico pelo array informado (negativos viram 0; competência vazia é ignorada). */
+    /** REPLACE-ALL (upsert por competência): remove o que não veio no payload e atualiza/insere o resto
+     *  (negativos viram 0; competência vazia é ignorada). Upsert em vez de delete-all+insert para não
+     *  esbarrar no merge de entidade de ID atribuído com o contexto de persistência. */
     @Transactional
     public List<ReceitaHistoricaDTO> salvarReceitaHistorica(List<ReceitaHistoricaDTO> itens) {
-        receitaHistoricaRepository.deleteAllInBatch();
+        Map<String, Long> novos = new LinkedHashMap<>();
         if (itens != null) {
             for (ReceitaHistoricaDTO dto : itens) {
                 if (dto.getCompetencia() == null || dto.getCompetencia().isBlank()) continue;
-                receitaHistoricaRepository.save(
-                        new ReceitaHistorica(dto.getCompetencia().trim(), Math.max(0, dto.getReceitaBrutaCentavos())));
+                novos.put(dto.getCompetencia().trim(), Math.max(0, dto.getReceitaBrutaCentavos()));
             }
+        }
+        for (ReceitaHistorica existente : receitaHistoricaRepository.findAll()) {
+            if (!novos.containsKey(existente.getCompetencia())) {
+                receitaHistoricaRepository.delete(existente);
+            }
+        }
+        for (Map.Entry<String, Long> e : novos.entrySet()) {
+            ReceitaHistorica rh = receitaHistoricaRepository.findById(e.getKey())
+                    .orElseGet(() -> new ReceitaHistorica(e.getKey(), 0));
+            rh.setReceitaBrutaCentavos(e.getValue());
+            receitaHistoricaRepository.save(rh);
         }
         return listarReceitaHistorica();
     }
