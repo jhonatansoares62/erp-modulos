@@ -7,18 +7,15 @@ import br.com.erpkit.contabil.model.RegraLancamento;
 import br.com.erpkit.contabil.service.RegraService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import br.com.erpkit.contabil.support.AbstractPostgresIT;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class RegraPanelTest {
+class RegraPanelTest extends AbstractPostgresIT {
 
     @Autowired RegraService regraService;
 

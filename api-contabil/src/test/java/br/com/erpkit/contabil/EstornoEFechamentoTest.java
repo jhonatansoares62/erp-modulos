@@ -12,8 +12,7 @@ import br.com.erpkit.shared.exception.ModuloException;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import br.com.erpkit.contabil.support.AbstractPostgresIT;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -24,10 +23,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class EstornoEFechamentoTest {
+class EstornoEFechamentoTest extends AbstractPostgresIT {
 
     private static final LocalDate DE = LocalDate.of(2026, 1, 1);
     private static final LocalDate ATE = LocalDate.of(2026, 12, 31);

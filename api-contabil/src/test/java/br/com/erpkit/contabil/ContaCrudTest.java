@@ -10,8 +10,7 @@ import br.com.erpkit.contabil.service.EventoService;
 import br.com.erpkit.shared.exception.ModuloException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import br.com.erpkit.contabil.support.AbstractPostgresIT;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -21,10 +20,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class ContaCrudTest {
+class ContaCrudTest extends AbstractPostgresIT {
 
     @Autowired ContaContabilService contaService;
     @Autowired ContaContabilRepository contaRepository;

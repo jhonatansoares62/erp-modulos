@@ -14,8 +14,7 @@ import br.com.erpkit.contabil.service.PendenciaService;
 import br.com.erpkit.contabil.service.RegraService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import br.com.erpkit.contabil.support.AbstractPostgresIT;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -25,10 +24,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class PendenciaTest {
+class PendenciaTest extends AbstractPostgresIT {
 
     @Autowired EventoService eventoService;
     @Autowired PendenciaService pendenciaService;
