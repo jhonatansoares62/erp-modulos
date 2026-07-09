@@ -11,8 +11,7 @@ import br.com.erpkit.contabil.service.PeriodoService;
 import br.com.erpkit.shared.exception.ModuloException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import br.com.erpkit.contabil.support.AbstractPostgresIT;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -23,10 +22,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-@ActiveProfiles("test")
 @Transactional
-class EncerramentoExercicioTest {
+class EncerramentoExercicioTest extends AbstractPostgresIT {
 
     @Autowired EventoService eventoService;
     @Autowired PeriodoService periodoService;
@@ -39,7 +36,7 @@ class EncerramentoExercicioTest {
         // Receita: venda à vista PIX 120000 → D Bancos (1.1.1.02) · C Receita (3.1.1.01).
         EventoRecebidoResponse venda = eventoService.receber(venda(120000));
         assertThat(venda.getStatus()).isEqualTo("processado");
-        // Despesa: 90000 → D Despesas administrativas (3.2.2.01) · C Caixa (1.1.1.01).
+        // Despesa: 90000 → D Despesas administrativas (3.2.2.01) · C Fornecedores a Pagar (2.1.1.01), por V9.
         EventoRecebidoResponse despesa = eventoService.receber(despesa(90000));
         assertThat(despesa.getStatus()).isEqualTo("processado");
 
@@ -94,7 +91,7 @@ class EncerramentoExercicioTest {
 
     private EventoContabilRequest despesa(long valor) {
         EventoContabilRequest req = base(UUID.randomUUID().toString(), "despesa.incorrida", valor);
-        req.setContexto(Map.of());
+        req.setContexto(Map.of("contaResultado", "3.2.2.01"));   // V9: despesa por conta de resultado (D 3.2.2.01 / C Fornecedores)
         return req;
     }
 
