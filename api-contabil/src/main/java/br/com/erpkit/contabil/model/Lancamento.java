@@ -50,6 +50,10 @@ public class Lancamento {
     @Column(name = "status", nullable = false, length = 20)
     private String status = "rascunho";
 
+    /** normal | encerramento — lançamentos de encerramento de exercício ficam fora da DRE. */
+    @Column(name = "tipo", nullable = false, length = 20)
+    private String tipo = "normal";
+
     @Column(name = "lancado_em")
     private Instant lancadoEm;
 
@@ -91,6 +95,9 @@ public class Lancamento {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
 
     public Instant getLancadoEm() { return lancadoEm; }
     public void setLancadoEm(Instant lancadoEm) { this.lancadoEm = lancadoEm; }

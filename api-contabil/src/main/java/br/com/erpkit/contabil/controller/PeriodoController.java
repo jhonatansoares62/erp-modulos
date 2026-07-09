@@ -1,5 +1,6 @@
 package br.com.erpkit.contabil.controller;
 
+import br.com.erpkit.contabil.dto.EncerramentoPreviewResponse;
 import br.com.erpkit.contabil.dto.EncerramentoResponse;
 import br.com.erpkit.contabil.dto.EncerrarExercicioDTO;
 import br.com.erpkit.contabil.dto.FecharPeriodoDTO;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -35,6 +37,11 @@ public class PeriodoController {
     public ResponseEntity<PeriodoFechado> fechar(@Valid @RequestBody FecharPeriodoDTO dto) {
         PeriodoFechado p = service.fecharMensal(dto.getCompetencia(), dto.getFechadoPor());
         return ResponseEntity.status(HttpStatus.CREATED).body(p);
+    }
+
+    @GetMapping("/encerramento/preview")
+    public ResponseEntity<EncerramentoPreviewResponse> previewEncerramento(@RequestParam int ano) {
+        return ResponseEntity.ok(service.previewEncerramento(ano));
     }
 
     @PostMapping("/encerrar-exercicio")

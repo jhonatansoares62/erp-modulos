@@ -28,6 +28,23 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
             """, nativeQuery = true)
     List<Object[]> somarPorConta(@Param("de") LocalDate de, @Param("ate") LocalDate ate);
 
+    /**
+     * Igual a somarPorConta, mas exclui os lançamentos de encerramento de exercício
+     * (tipo='encerramento'). Usado pela DRE e pelo preview do encerramento, para o resultado do
+     * ano não zerar depois que o encerramento posta D receitas / C ARE. [contaId, debito, credito].
+     */
+    @Query(value = """
+            SELECT p.conta_id AS conta_id,
+                   COALESCE(SUM(CASE WHEN p.tipo = 'D' THEN p.valor_centavos ELSE 0 END), 0) AS debito,
+                   COALESCE(SUM(CASE WHEN p.tipo = 'C' THEN p.valor_centavos ELSE 0 END), 0) AS credito
+            FROM contabil.partida p
+            JOIN contabil.lancamento l ON l.id = p.lancamento_id
+            WHERE l.status <> 'rascunho' AND l.tipo <> 'encerramento'
+              AND l.data_competencia BETWEEN :de AND :ate
+            GROUP BY p.conta_id
+            """, nativeQuery = true)
+    List<Object[]> somarPorContaExcluindoEncerramento(@Param("de") LocalDate de, @Param("ate") LocalDate ate);
+
     /** Movimentos de uma conta no período, em ordem cronológica (para o razão).
      *  [data_competencia, numero, historico, tipo, valor_centavos]. */
     @Query(value = """

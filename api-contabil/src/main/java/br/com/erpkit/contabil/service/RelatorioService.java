@@ -64,7 +64,8 @@ public class RelatorioService {
         Map<Long, ContaContabil> contas = contaRepository.findAll().stream()
                 .collect(Collectors.toMap(ContaContabil::getId, c -> c));
         long receitaBruta = 0, deducoes = 0, devolucoes = 0, custos = 0, despOper = 0, despFin = 0, recFin = 0;
-        for (Object[] row : partidaRepository.somarPorConta(de, ate)) {
+        // Exclui os lançamentos de encerramento: senão a DRE do ano zera depois de encerrar o exercício.
+        for (Object[] row : partidaRepository.somarPorContaExcluindoEncerramento(de, ate)) {
             ContaContabil conta = contas.get(num(row[0]));
             if (conta == null) continue;
             long debito = num(row[1]);

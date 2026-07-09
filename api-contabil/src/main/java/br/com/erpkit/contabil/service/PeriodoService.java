@@ -1,5 +1,6 @@
 package br.com.erpkit.contabil.service;
 
+import br.com.erpkit.contabil.dto.EncerramentoPreviewResponse;
 import br.com.erpkit.contabil.dto.EncerramentoResponse;
 import br.com.erpkit.contabil.dto.PartidaSpec;
 import br.com.erpkit.contabil.model.ContaContabil;
@@ -100,8 +101,10 @@ public class PeriodoService {
         }
 
         // Snapshot dos saldos ANTES de postar o encerramento: contaId -> [debito, credito].
+        // Exclui encerramentos anteriores (idempotência já bloqueia re-encerrar, mas mantém o
+        // snapshot idêntico ao do preview, que também os exclui).
         Map<Long, long[]> movimento = new HashMap<>();
-        for (Object[] row : partidaRepository.somarPorConta(de, ate)) {
+        for (Object[] row : partidaRepository.somarPorContaExcluindoEncerramento(de, ate)) {
             movimento.put(num(row[0]), new long[]{num(row[1]), num(row[2])});
         }
 
@@ -128,7 +131,7 @@ public class PeriodoService {
         }
         if (totalReceitas > 0) {
             partidasReceita.add(new PartidaSpec(areId, "C", totalReceitas));
-            lancamentoIds.add(lancamentoService.postar(dataEnc,
+            lancamentoIds.add(lancamentoService.postarEncerramento(dataEnc,
                     "Encerramento das receitas do exercicio " + ano, partidasReceita).getId());
         }
 
@@ -147,7 +150,7 @@ public class PeriodoService {
         }
         if (totalDespesas > 0) {
             partidasDespesa.add(new PartidaSpec(areId, "D", totalDespesas));
-            lancamentoIds.add(lancamentoService.postar(dataEnc,
+            lancamentoIds.add(lancamentoService.postarEncerramento(dataEnc,
                     "Encerramento de custos e despesas do exercicio " + ano, partidasDespesa).getId());
         }
 
@@ -157,14 +160,14 @@ public class PeriodoService {
             List<PartidaSpec> apuracao = List.of(
                     new PartidaSpec(areId, "D", resultado),
                     new PartidaSpec(lucrosId, "C", resultado));
-            lancamentoIds.add(lancamentoService.postar(dataEnc,
+            lancamentoIds.add(lancamentoService.postarEncerramento(dataEnc,
                     "Apuracao do resultado do exercicio " + ano, apuracao).getId());
         } else if (resultado < 0) {
             long prejuizo = -resultado;
             List<PartidaSpec> apuracao = List.of(
                     new PartidaSpec(prejuizosId, "D", prejuizo),
                     new PartidaSpec(areId, "C", prejuizo));
-            lancamentoIds.add(lancamentoService.postar(dataEnc,
+            lancamentoIds.add(lancamentoService.postarEncerramento(dataEnc,
                     "Apuracao do resultado do exercicio " + ano, apuracao).getId());
         }
 
@@ -175,6 +178,38 @@ public class PeriodoService {
         repository.save(pf);
 
         return new EncerramentoResponse(ano, totalReceitas, totalDespesas, resultado, lancamentoIds);
+    }
+
+    /**
+     * Prévia do encerramento (sem postar): apura receitas, custos, despesas e resultado do ano
+     * com a MESMA soma do encerramento (excluindo encerramentos anteriores), para o contador
+     * conferir antes de confirmar. Também informa se o exercício já está encerrado.
+     */
+    public EncerramentoPreviewResponse previewEncerramento(int ano) {
+        LocalDate de = LocalDate.of(ano, 1, 1);
+        LocalDate ate = LocalDate.of(ano, 12, 31);
+        boolean encerrado = repository.existsByCompetenciaAndTipo(String.valueOf(ano), "exercicio");
+
+        Map<Long, String> grupoPorConta = new HashMap<>();
+        for (ContaContabil c : contaRepository.findAll()) {
+            grupoPorConta.put(c.getId(), c.getGrupo());
+        }
+
+        long receitas = 0, custos = 0, despesas = 0;
+        for (Object[] row : partidaRepository.somarPorContaExcluindoEncerramento(de, ate)) {
+            String grupo = grupoPorConta.get(num(row[0]));
+            if (grupo == null) continue;
+            long debito = num(row[1]);
+            long credito = num(row[2]);
+            switch (grupo) {
+                case "receita" -> receitas += Math.max(0, credito - debito);   // saldo credor
+                case "custo" -> custos += Math.max(0, debito - credito);        // saldo devedor
+                case "despesa" -> despesas += Math.max(0, debito - credito);    // saldo devedor
+                default -> { /* contas patrimoniais não entram na apuração */ }
+            }
+        }
+        long resultado = receitas - custos - despesas;
+        return new EncerramentoPreviewResponse(ano, encerrado, receitas, custos, despesas, resultado);
     }
 
     private static long num(Object o) {

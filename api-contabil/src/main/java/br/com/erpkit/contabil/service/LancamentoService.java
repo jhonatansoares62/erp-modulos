@@ -60,7 +60,7 @@ public class LancamentoService {
         List<PartidaSpec> specs = montarSpecs(evento, regra);
         UUID origemEventoId = evento.getEventoId() == null ? null : UUID.fromString(evento.getEventoId());
         return postarInterno(evento.getDataEvento(), renderHistorico(regra.getHistoricoTemplate(), evento),
-                specs, origemEventoId, origemDocumento(evento));
+                specs, origemEventoId, origemDocumento(evento), "normal");
     }
 
     /** Resolve as partidas (conta + valor) de um evento por um roteiro, sem postar. */
@@ -103,19 +103,28 @@ public class LancamentoService {
      */
     @Transactional
     public Lancamento postar(LocalDate dataCompetencia, String historico, List<PartidaSpec> partidas) {
-        return postarInterno(dataCompetencia, historico, partidas, null, null);
+        return postarInterno(dataCompetencia, historico, partidas, null, null, "normal");
     }
 
     /** Igual ao postar, com um documento de origem (marcador para localizar/reaplicar depois). */
     @Transactional
     public Lancamento postar(LocalDate dataCompetencia, String historico, List<PartidaSpec> partidas,
                              String origemDocumento) {
-        return postarInterno(dataCompetencia, historico, partidas, null, origemDocumento);
+        return postarInterno(dataCompetencia, historico, partidas, null, origemDocumento, "normal");
+    }
+
+    /**
+     * Posta um lançamento de ENCERRAMENTO de exercício (tipo='encerramento'). Igual ao postar,
+     * mas marca o lançamento para a DRE poder excluí-lo (senão a DRE do ano zera após encerrar).
+     */
+    @Transactional
+    public Lancamento postarEncerramento(LocalDate dataCompetencia, String historico, List<PartidaSpec> partidas) {
+        return postarInterno(dataCompetencia, historico, partidas, null, null, "encerramento");
     }
 
     /** Núcleo compartilhado: valida (F5/F2) e persiste cabeçalho + partidas imutáveis ('lancado'). */
     private Lancamento postarInterno(LocalDate dataCompetencia, String historico, List<PartidaSpec> specs,
-                                     UUID origemEventoId, String origemDocumento) {
+                                     UUID origemEventoId, String origemDocumento, String tipo) {
         List<Partida> partidas = new ArrayList<>();
         long totalDebito = 0;
         long totalCredito = 0;
@@ -155,6 +164,7 @@ public class LancamentoService {
         lanc.setOrigemEventoId(origemEventoId);
         lanc.setOrigemDocumento(origemDocumento);
         lanc.setStatus("lancado");
+        lanc.setTipo(tipo);
         lanc.setLancadoEm(Instant.now());
         Lancamento salvo = lancamentoRepository.save(lanc);
 
