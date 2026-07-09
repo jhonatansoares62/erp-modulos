@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -72,14 +73,38 @@ public class PeriodoService {
         return repository.findAllByOrderByCompetenciaDesc();
     }
 
-    /** Rejeita lançamento em período fechado: mês da competência <= último mês fechado. */
-    public void validarPeriodoAberto(LocalDate dataCompetencia) {
-        repository.findFirstByTipoOrderByCompetenciaDesc("mensal").ifPresent(ultimo -> {
-            String mesLanc = dataCompetencia.format(YM);
-            if (mesLanc.compareTo(ultimo.getCompetencia()) <= 0) {
-                throw new ModuloException("Período " + ultimo.getCompetencia()
-                        + " está fechado; não é possível lançar em " + mesLanc);
+    /**
+     * Motivo de o período estar fechado para esta competência, se estiver — sem lançar.
+     * Fonte única das DUAS travas (mês fechado e exercício encerrado): o caminho que estoura
+     * ({@link #validarPeriodoAberto}) e o caminho que pendencia (ingestão de evento do ERP)
+     * consultam o MESMO check, para nunca divergirem. {@code Optional.empty()} = período aberto.
+     */
+    public Optional<String> motivoPeriodoFechado(LocalDate dataCompetencia) {
+        String mesLanc = dataCompetencia.format(YM);
+        // Trava mensal: mês da competência <= último mês fechado.
+        Optional<PeriodoFechado> mensal = repository.findFirstByTipoOrderByCompetenciaDesc("mensal");
+        if (mensal.isPresent() && mesLanc.compareTo(mensal.get().getCompetencia()) <= 0) {
+            return Optional.of("Período " + mensal.get().getCompetencia()
+                    + " está fechado; não é possível lançar em " + mesLanc);
+        }
+        // Trava de exercício encerrado: ano da competência <= maior exercício encerrado. Necessária
+        // porque encerrarExercicio grava periodo_fechado tipo='exercicio' SEM criar fechamentos
+        // mensais — sem esta trava, um evento datado no ano encerrado passaria pela trava mensal.
+        Optional<PeriodoFechado> exercicio = repository.findFirstByTipoOrderByCompetenciaDesc("exercicio");
+        if (exercicio.isPresent()) {
+            int anoEnc = Integer.parseInt(exercicio.get().getCompetencia());
+            if (dataCompetencia.getYear() <= anoEnc) {
+                return Optional.of("Exercício " + anoEnc
+                        + " está encerrado; não é possível lançar em " + mesLanc);
             }
+        }
+        return Optional.empty();
+    }
+
+    /** Rejeita lançamento em período fechado (mês fechado OU exercício encerrado). F8: lock date. */
+    public void validarPeriodoAberto(LocalDate dataCompetencia) {
+        motivoPeriodoFechado(dataCompetencia).ifPresent(msg -> {
+            throw new ModuloException(msg);
         });
     }
 

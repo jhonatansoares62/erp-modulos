@@ -33,15 +33,18 @@ public class EventoService {
     private final EventoRecebidoRepository eventoRepository;
     private final RoteiroService roteiroService;
     private final LancamentoService lancamentoService;
+    private final PeriodoService periodoService;
     private final ObjectMapper objectMapper;
 
     public EventoService(EventoRecebidoRepository eventoRepository,
                          RoteiroService roteiroService,
                          LancamentoService lancamentoService,
+                         PeriodoService periodoService,
                          ObjectMapper objectMapper) {
         this.eventoRepository = eventoRepository;
         this.roteiroService = roteiroService;
         this.lancamentoService = lancamentoService;
+        this.periodoService = periodoService;
         this.objectMapper = objectMapper;
     }
 
@@ -71,15 +74,27 @@ public class EventoService {
         eventoRepository.saveAndFlush(evento);
 
         Optional<RegraLancamento> regra = roteiroService.casar(req.getTipo(), req.getContexto(), req.getDataEvento());
-        if (regra.isPresent()) {
-            Lancamento lanc = lancamentoService.postarDeEvento(req, regra.get());
-            evento.setStatus("processado");
-            evento.setLancamentoId(lanc.getId());
-            evento.setProcessadoEm(Instant.now());
-            log.info("Evento {} contabilizado: lançamento {}", id, lanc.getId());
-        } else {
+        if (regra.isEmpty()) {
             evento.setStatus("sem_regra");
             log.info("Evento {} sem roteiro — pendência para classificação", id);
+        } else {
+            // Período fechado (mês fechado OU exercício encerrado): NÃO posta e NÃO estoura, para não
+            // derrubar a aprovação do ERP (a excepção marcaria a transação rollback-only e perderia o
+            // evento). Vira pendência 'periodo_fechado' com o payload guardado — o contador reabre o
+            // exercício/ajusta e reprocessa. Pré-checagem (sem lançar) em vez de try/catch justamente
+            // para não envenenar a transação com rollback-only.
+            Optional<String> motivoFechado = periodoService.motivoPeriodoFechado(req.getDataEvento());
+            if (motivoFechado.isPresent()) {
+                evento.setStatus("periodo_fechado");
+                evento.setErroMensagem(motivoFechado.get());
+                log.warn("Evento {} em período fechado — pendência: {}", id, motivoFechado.get());
+            } else {
+                Lancamento lanc = lancamentoService.postarDeEvento(req, regra.get());
+                evento.setStatus("processado");
+                evento.setLancamentoId(lanc.getId());
+                evento.setProcessadoEm(Instant.now());
+                log.info("Evento {} contabilizado: lançamento {}", id, lanc.getId());
+            }
         }
 
         eventoRepository.save(evento);

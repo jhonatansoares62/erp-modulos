@@ -68,8 +68,14 @@ class EstornoEFechamentoTest extends AbstractPostgresIT {
     void periodoFechadoBloqueiaLancamento() {
         periodoService.fecharMensal("2026-07", "contador");
 
-        // venda com competência 2026-07-06 cai em período fechado.
-        assertThatThrownBy(() -> eventoService.receber(venda(20000)))
+        // venda com competência 2026-07-06 cai em período fechado. A ingestão do ERP NÃO estoura
+        // (não derruba a aprovação): o evento vira pendência 'periodo_fechado' SEM contabilizar.
+        var resp = eventoService.receber(venda(20000));
+        assertThat(resp.getStatus()).isEqualTo("periodo_fechado");
+        assertThat(resp.getLancamentoId()).isNull();
+
+        // A trava dura continua no nível do lançamento (postarDeEvento/estorno): guard rejeita.
+        assertThatThrownBy(() -> periodoService.validarPeriodoAberto(LocalDate.of(2026, 7, 6)))
                 .isInstanceOf(ModuloException.class)
                 .hasMessageContaining("fechado");
     }

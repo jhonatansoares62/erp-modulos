@@ -1,6 +1,6 @@
 package br.com.erpkit.contabil.dto;
 
-/** Resposta da ingestão de evento. status = processado | pendente | sem_regra | erro. */
+/** Resposta da ingestão de evento. status = processado | pendente | sem_regra | erro | periodo_fechado. */
 public class EventoRecebidoResponse {
 
     private String eventoId;

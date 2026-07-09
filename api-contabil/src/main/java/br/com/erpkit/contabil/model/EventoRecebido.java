@@ -40,7 +40,7 @@ public class EventoRecebido {
     @Column(name = "valor_centavos", nullable = false)
     private long valorCentavos;
 
-    /** pendente | processado | sem_regra | erro */
+    /** pendente | processado | sem_regra | erro | periodo_fechado */
     @Column(name = "status", nullable = false, length = 20)
     private String status = "pendente";
 
