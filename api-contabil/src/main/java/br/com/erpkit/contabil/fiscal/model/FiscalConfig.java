@@ -28,6 +28,10 @@ public class FiscalConfig {
     @Column(name = "data_inicio_atividade")
     private LocalDate dataInicioAtividade;
 
+    /** Corte de migração (V21): a partir desta competência a receita é escriturada; antes, é a histórica informada. */
+    @Column(name = "data_entrada_sistema")
+    private LocalDate dataEntradaSistema;
+
     @Column(name = "folha12m_centavos", nullable = false)
     private long folha12mCentavos = 0;
 
@@ -44,6 +48,8 @@ public class FiscalConfig {
     public void setAnexo(String anexo) { this.anexo = anexo; }
     public LocalDate getDataInicioAtividade() { return dataInicioAtividade; }
     public void setDataInicioAtividade(LocalDate dataInicioAtividade) { this.dataInicioAtividade = dataInicioAtividade; }
+    public LocalDate getDataEntradaSistema() { return dataEntradaSistema; }
+    public void setDataEntradaSistema(LocalDate dataEntradaSistema) { this.dataEntradaSistema = dataEntradaSistema; }
     public long getFolha12mCentavos() { return folha12mCentavos; }
     public void setFolha12mCentavos(long folha12mCentavos) { this.folha12mCentavos = folha12mCentavos; }
     public Instant getAtualizadoEm() { return atualizadoEm; }

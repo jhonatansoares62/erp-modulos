@@ -9,6 +9,7 @@ public class FiscalConfigDTO {
     private Boolean calculoAutomatico;
     private String anexo;                 // I|II|III|V|AUTO
     private LocalDate dataInicioAtividade;
+    private LocalDate dataEntradaSistema; // corte de migração fiscal (V21)
     private Long folha12mCentavos;
 
     public String getRegime() { return regime; }
@@ -19,6 +20,8 @@ public class FiscalConfigDTO {
     public void setAnexo(String anexo) { this.anexo = anexo; }
     public LocalDate getDataInicioAtividade() { return dataInicioAtividade; }
     public void setDataInicioAtividade(LocalDate dataInicioAtividade) { this.dataInicioAtividade = dataInicioAtividade; }
+    public LocalDate getDataEntradaSistema() { return dataEntradaSistema; }
+    public void setDataEntradaSistema(LocalDate dataEntradaSistema) { this.dataEntradaSistema = dataEntradaSistema; }
     public Long getFolha12mCentavos() { return folha12mCentavos; }
     public void setFolha12mCentavos(Long folha12mCentavos) { this.folha12mCentavos = folha12mCentavos; }
 }

@@ -238,7 +238,49 @@ export interface FiscalConfig {
   calculoAutomatico: boolean;
   anexo: string;                // I|II|III|V|AUTO
   dataInicioAtividade: string | null;
+  dataEntradaSistema?: string | null;   // corte de migração fiscal (V21)
   folha12mCentavos: number;
+}
+
+export interface MemoriaJanelaItem {
+  competencia: string;          // 'YYYY-MM'
+  receitaCentavos: number;
+  fonte: string;                // escriturado | informado
+}
+
+export interface MemoriaPasso {
+  ordem: number;
+  titulo: string;
+  formula: string;
+  valor: string;
+}
+
+export interface MemoriaFiscal {
+  competencia: string;
+  regime: string;
+  rbt12Centavos: number;
+  proporcionalizado: boolean;
+  mesesAtividade: number;
+  janela: MemoriaJanelaItem[];
+  folha12mCentavos: number;
+  fatorR: number;
+  fatorRLimite: number;
+  anexoConfigurado: string;
+  anexoEfetivo: string;
+  faixa: number | null;
+  rbt12FaixaDeCentavos: number;
+  rbt12FaixaAteCentavos: number;
+  aliquotaNominal: number;
+  parcelaDeduzirCentavos: number;
+  aliquotaEfetiva: number;
+  baseCalculoCentavos: number;
+  impostoCentavos: number;
+  passos: MemoriaPasso[];
+}
+
+export interface ReceitaHistoricaItem {
+  competencia: string;          // 'YYYY-MM'
+  receitaBrutaCentavos: number;
 }
 
 export interface ApuracaoFiscal {
@@ -334,6 +376,20 @@ export class ContabilidadeService {
 
   fiscalApuracao(): Observable<ApuracaoFiscal> {
     return this.http.get<ApuracaoFiscal>(`${this.base}/fiscal/apuracao`);
+  }
+
+  fiscalMemoria(competencia?: string): Observable<MemoriaFiscal> {
+    const params: Record<string, string> = {};
+    if (competencia) params['competencia'] = competencia;
+    return this.http.get<MemoriaFiscal>(`${this.base}/fiscal/memoria`, { params });
+  }
+
+  receitaHistorica(): Observable<ReceitaHistoricaItem[]> {
+    return this.http.get<ReceitaHistoricaItem[]>(`${this.base}/fiscal/receita-historica`);
+  }
+
+  salvarReceitaHistorica(itens: ReceitaHistoricaItem[]): Observable<ReceitaHistoricaItem[]> {
+    return this.http.put<ReceitaHistoricaItem[]>(`${this.base}/fiscal/receita-historica`, itens);
   }
 
   // ── Abertura ──
