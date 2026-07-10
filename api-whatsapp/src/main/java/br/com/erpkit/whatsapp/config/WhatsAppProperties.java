@@ -1,39 +1,40 @@
 package br.com.erpkit.whatsapp.config;
 
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.validation.annotation.Validated;
 
 import java.time.Duration;
 
 /**
- * Configuracao do modulo api-whatsapp. Falha rapido no boot via Bean Validation
- * se qualquer secret estiver ausente — mensagens em PT-BR identificando a env var.
+ * Configuracao do modulo api-whatsapp.
  *
- * <p>Mensagens dos {@code @NotBlank} usam "nao" sem til por consistencia com a
- * suite de testes (WhatsAppPropertiesValidationTest faz match exato da string).
+ * <p><b>Config Meta em runtime:</b> as 4 credenciais Meta (phoneNumberId,
+ * accessToken, appSecret, verifyToken) NAO sao mais obrigatorias no boot — o
+ * modulo sobe sem elas. O {@code MetaConfigService} le a linha
+ * {@code whatsapp.config_meta} (V6) no boot e sobrepoe estes campos no bean vivo;
+ * o {@code PUT /api/whatsapp/config} reaplica em runtime. A env var
+ * ({@code WHATSAPP_*}) continua sendo o seed/fallback quando o banco esta vazio.
+ * Estes 4 campos sao {@code volatile}: escritos pelo MetaConfigService e lidos por
+ * threads de request (WhatsAppCloudClient, HmacSignatureFilter, WebhookController).
+ *
+ * <p>{@code erpCallbackUrl} continua vindo do ambiente (URL do ERP co-instalado,
+ * definida pelo instalador) — nao e credencial Meta e o {@code ErpCallbackClient}
+ * a captura na construcao, portanto NAO e editavel por este fluxo de runtime.
  *
  * <p>{@link #toString()} mascara accessToken/appSecret/verifyToken — Spring pode
  * imprimir Properties em log de erro de bind, e secret em log de PROD vaza para
  * operadores e SIEM (CFG-03 / PITFALLS).
  */
 @ConfigurationProperties(prefix = "app.modulos.whatsapp")
-@Validated
 public class WhatsAppProperties {
 
-    @NotBlank(message = "WHATSAPP_PHONE_NUMBER_ID nao definida")
-    private String phoneNumberId;
+    private volatile String phoneNumberId;
 
-    @NotBlank(message = "WHATSAPP_ACCESS_TOKEN nao definida")
-    private String accessToken;
+    private volatile String accessToken;
 
-    @NotBlank(message = "WHATSAPP_APP_SECRET nao definida")
-    private String appSecret;
+    private volatile String appSecret;
 
-    @NotBlank(message = "WHATSAPP_VERIFY_TOKEN nao definida")
-    private String verifyToken;
+    private volatile String verifyToken;
 
-    @NotBlank(message = "WHATSAPP_ERP_CALLBACK_URL nao definida")
     private String erpCallbackUrl;
 
     /** Timeout do callback ao ERP (Phase 3+). Default 5s. */
@@ -96,6 +97,22 @@ public class WhatsAppProperties {
 
     public void setMetaApiBaseUrl(String metaApiBaseUrl) {
         this.metaApiBaseUrl = metaApiBaseUrl;
+    }
+
+    /**
+     * {@code true} sse as 4 credenciais Meta estao preenchidas. Enviar mensagem e
+     * responder o webhook do Meta so funcionam quando configurado; o painel de
+     * Modulos do ERP usa esse flag para sinalizar "pronto para operar".
+     */
+    public boolean isMetaConfigurado() {
+        return naoVazio(phoneNumberId)
+            && naoVazio(accessToken)
+            && naoVazio(appSecret)
+            && naoVazio(verifyToken);
+    }
+
+    private static boolean naoVazio(String v) {
+        return v != null && !v.isBlank();
     }
 
     @Override

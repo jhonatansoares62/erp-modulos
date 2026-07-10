@@ -9,18 +9,19 @@ import org.springframework.context.annotation.Configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Bean Validation fail-fast em {@link WhatsAppProperties}.
+ * Comportamento de {@link WhatsAppProperties} apos a config Meta virar runtime
+ * (WHATS-CONFIG): o boot NAO falha mais quando faltam credenciais — o modulo sobe
+ * "nao configurado" e o operador grava depois via {@code PUT /api/whatsapp/config}.
  *
- * <p>Cobertura (per RESEARCH §12.4 — 7 cenarios). O happy path (boot com 5 propriedades
- * carrega contexto Spring inteiro) fica em {@link WhatsAppPropertiesHappyPathTest} para
- * isolar @SpringBootTest do ApplicationContextRunner usado nos 5 testes de fail-fast.
+ * <p>Antes desta mudanca havia 5 testes de fail-fast (um por credencial ausente)
+ * validando {@code @NotBlank}. Eles foram REMOVIDOS junto com a validacao — a
+ * ausencia de credencial agora e estado valido (isMetaConfigurado() == false), nao
+ * erro de boot. A cobertura do carregamento/persistencia fica em MetaConfigServiceTest.
  *
- * <p>Mensagens PT-BR usam "nao" sem til — qualquer correcao automatica para "não" quebra
- * os matches de {@code .hasMessageContaining(...)}. WhatsAppProperties.java tem o mesmo padrao.
+ * <p>Mensagens/mascara continuam em "nao" sem til por consistencia com o restante.
  */
 class WhatsAppPropertiesValidationTest {
 
-    /** Configuracao auxiliar registrada via {@link ApplicationContextRunner#withUserConfiguration}. */
     @Configuration
     @EnableConfigurationProperties(WhatsAppProperties.class)
     static class TestConfig {
@@ -29,87 +30,40 @@ class WhatsAppPropertiesValidationTest {
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
             .withUserConfiguration(TestConfig.class);
 
-    // ---------------------------------------------------------------------
-    // Fail-fast: cada teste omite UM campo. Ausencia (== null) dispara
-    // ConstraintViolation com a mensagem PT-BR. ApplicationContextRunner
-    // captura a falha sem precisar try/catch manual.
-    // ---------------------------------------------------------------------
-
     @Test
-    @DisplayName("Boot sem phoneNumberId falha com 'WHATSAPP_PHONE_NUMBER_ID nao definida'")
-    void boot_sem_phoneNumberId_falha() {
-        runner.withPropertyValues(
-                // phoneNumberId omitido deliberadamente
-                "app.modulos.whatsapp.accessToken=x",
-                "app.modulos.whatsapp.appSecret=x",
-                "app.modulos.whatsapp.verifyToken=x",
-                "app.modulos.whatsapp.erpCallbackUrl=http://localhost:0/test"
-        ).run(context -> assertThat(context).hasFailed()
-                .getFailure()
-                // hasStackTraceContaining percorre toda a chain de causas — mensagem PT-BR
-                // do @NotBlank fica na BindValidationException (root cause), nao na top-level
-                // ConfigurationPropertiesBindException.
-                .hasStackTraceContaining("WHATSAPP_PHONE_NUMBER_ID nao definida"));
+    @DisplayName("Boot SEM nenhuma credencial Meta nao falha — modulo sobe 'nao configurado'")
+    void boot_sem_credenciais_nao_falha() {
+        runner.run(context -> {
+            assertThat(context).hasNotFailed();
+            WhatsAppProperties props = context.getBean(WhatsAppProperties.class);
+            assertThat(props.isMetaConfigurado()).isFalse();
+        });
     }
 
     @Test
-    @DisplayName("Boot sem accessToken falha com 'WHATSAPP_ACCESS_TOKEN nao definida'")
-    void boot_sem_accessToken_falha() {
-        runner.withPropertyValues(
-                "app.modulos.whatsapp.phoneNumberId=x",
-                // accessToken omitido deliberadamente
-                "app.modulos.whatsapp.appSecret=x",
-                "app.modulos.whatsapp.verifyToken=x",
-                "app.modulos.whatsapp.erpCallbackUrl=http://localhost:0/test"
-        ).run(context -> assertThat(context).hasFailed()
-                .getFailure()
-                .hasStackTraceContaining("WHATSAPP_ACCESS_TOKEN nao definida"));
-    }
-
-    @Test
-    @DisplayName("Boot sem appSecret falha com 'WHATSAPP_APP_SECRET nao definida'")
-    void boot_sem_appSecret_falha() {
-        runner.withPropertyValues(
-                "app.modulos.whatsapp.phoneNumberId=x",
-                "app.modulos.whatsapp.accessToken=x",
-                // appSecret omitido deliberadamente
-                "app.modulos.whatsapp.verifyToken=x",
-                "app.modulos.whatsapp.erpCallbackUrl=http://localhost:0/test"
-        ).run(context -> assertThat(context).hasFailed()
-                .getFailure()
-                .hasStackTraceContaining("WHATSAPP_APP_SECRET nao definida"));
-    }
-
-    @Test
-    @DisplayName("Boot sem verifyToken falha com 'WHATSAPP_VERIFY_TOKEN nao definida'")
-    void boot_sem_verifyToken_falha() {
-        runner.withPropertyValues(
-                "app.modulos.whatsapp.phoneNumberId=x",
-                "app.modulos.whatsapp.accessToken=x",
-                "app.modulos.whatsapp.appSecret=x",
-                // verifyToken omitido deliberadamente
-                "app.modulos.whatsapp.erpCallbackUrl=http://localhost:0/test"
-        ).run(context -> assertThat(context).hasFailed()
-                .getFailure()
-                .hasStackTraceContaining("WHATSAPP_VERIFY_TOKEN nao definida"));
-    }
-
-    @Test
-    @DisplayName("Boot sem erpCallbackUrl falha com 'WHATSAPP_ERP_CALLBACK_URL nao definida'")
-    void boot_sem_erpCallbackUrl_falha() {
+    @DisplayName("isMetaConfigurado() true somente com as 4 credenciais preenchidas")
+    void isMetaConfigurado_true_com_as_4() {
         runner.withPropertyValues(
                 "app.modulos.whatsapp.phoneNumberId=x",
                 "app.modulos.whatsapp.accessToken=x",
                 "app.modulos.whatsapp.appSecret=x",
                 "app.modulos.whatsapp.verifyToken=x"
-                // erpCallbackUrl omitido deliberadamente
-        ).run(context -> assertThat(context).hasFailed()
-                .getFailure()
-                .hasStackTraceContaining("WHATSAPP_ERP_CALLBACK_URL nao definida"));
+        ).run(context -> assertThat(context.getBean(WhatsAppProperties.class).isMetaConfigurado()).isTrue());
+    }
+
+    @Test
+    @DisplayName("isMetaConfigurado() false quando falta qualquer uma das credenciais")
+    void isMetaConfigurado_false_faltando_uma() {
+        runner.withPropertyValues(
+                "app.modulos.whatsapp.phoneNumberId=x",
+                "app.modulos.whatsapp.accessToken=x",
+                "app.modulos.whatsapp.appSecret=x"
+                // verifyToken ausente
+        ).run(context -> assertThat(context.getBean(WhatsAppProperties.class).isMetaConfigurado()).isFalse());
     }
 
     // ---------------------------------------------------------------------
-    // toString() mascara secrets (CFG-03)
+    // toString() mascara secrets (CFG-03) — inalterado
     // ---------------------------------------------------------------------
 
     @Test
@@ -124,18 +78,14 @@ class WhatsAppPropertiesValidationTest {
 
         String s = p.toString();
 
-        // Secrets NUNCA podem aparecer no toString — operador da ERPKit nao deve ver
-        // accessToken/appSecret/verifyToken em log de erro de bind do Spring.
         assertThat(s)
                 .doesNotContain("access-real-xyz")
                 .doesNotContain("secret-real-xyz")
                 .doesNotContain("verify-real-xyz");
 
-        // Mascaras explicitas — exatamente 3 ocorrencias (uma por secret).
         long redactedCount = s.split("\\[REDACTED]", -1).length - 1;
         assertThat(redactedCount).as("Esperado [REDACTED] 3x em toString()").isEqualTo(3);
 
-        // Nao-secrets podem (e devem) aparecer para ajudar debugging.
         assertThat(s).contains("phone-real").contains("http://erp/callback");
     }
 }
