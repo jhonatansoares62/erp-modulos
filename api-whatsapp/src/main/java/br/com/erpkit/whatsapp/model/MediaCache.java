@@ -17,15 +17,17 @@ import java.util.Objects;
  * {@code media_cache} — entity + repository ficam disponiveis para Phase 4 consumir
  * coesivamente.
  *
- * <p>{@code arquivoHash} e {@code CHAR(64)} (sha256 hex digest) e e a propria PK —
- * sem auto-increment.
+ * <p>{@code arquivoHash} e {@code VARCHAR(64)} (sha256 hex digest, sempre 64 chars)
+ * e e a propria PK — sem auto-increment. Era CHAR(64), mas Hibernate validate
+ * mapeia String como VARCHAR e o CHAR (bpchar no Postgres) quebrava o boot; sem
+ * {@code columnDefinition} o tipo casa com a migration V3 em H2 e Postgres.
  */
 @Entity
 @Table(schema = "whatsapp", name = "media_cache")
 public class MediaCache {
 
     @Id
-    @Column(name = "arquivo_hash", length = 64, columnDefinition = "CHAR(64)")
+    @Column(name = "arquivo_hash", length = 64)
     private String arquivoHash;
 
     @Column(name = "media_id", nullable = false, length = 255)
