@@ -3,6 +3,8 @@ package br.com.erpkit.whatsapp.client;
 import br.com.erpkit.whatsapp.client.dto.BotaoDto;
 import br.com.erpkit.whatsapp.client.dto.EnvioResponse;
 import br.com.erpkit.whatsapp.client.dto.ItemDto;
+import br.com.erpkit.whatsapp.client.dto.MetaConfigRequest;
+import br.com.erpkit.whatsapp.client.dto.MetaConfigResponse;
 import br.com.erpkit.whatsapp.client.dto.SecaoDto;
 import br.com.erpkit.whatsapp.client.dto.StatusResponse;
 import br.com.erpkit.whatsapp.client.dto.WhatsAppRespostaDto;
@@ -29,6 +31,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -158,6 +162,48 @@ class WhatsAppClientImplWireMockTest {
         assertThat(status.status()).isEqualTo("UP");
         assertThat(status.circuitBreakerState()).isEqualTo("CLOSED");
         assertThat(status.phoneNumberId()).isEqualTo("123");
+    }
+
+    @Test
+    @DisplayName("obterConfig faz GET /api/whatsapp/config e desserializa MetaConfigResponse")
+    void obterConfig_happy() {
+        wireMock.stubFor(get(urlPathEqualTo("/api/whatsapp/config"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"phoneNumberId\":\"123\",\"accessTokenConfigurado\":true,"
+                                + "\"appSecretConfigurado\":true,\"verifyTokenConfigurado\":false,"
+                                + "\"configurado\":false,\"atualizadoEm\":\"2026-07-10T12:00:00Z\"}")));
+
+        MetaConfigResponse cfg = client().obterConfig();
+
+        assertThat(cfg.phoneNumberId()).isEqualTo("123");
+        assertThat(cfg.accessTokenConfigurado()).isTrue();
+        assertThat(cfg.verifyTokenConfigurado()).isFalse();
+        assertThat(cfg.configurado()).isFalse();
+        wireMock.verify(1, getRequestedFor(urlPathEqualTo("/api/whatsapp/config")));
+    }
+
+    @Test
+    @DisplayName("salvarConfig faz PUT /api/whatsapp/config com as credenciais no body")
+    void salvarConfig_happy() {
+        wireMock.stubFor(put(urlPathEqualTo("/api/whatsapp/config"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"phoneNumberId\":\"55999\",\"accessTokenConfigurado\":true,"
+                                + "\"appSecretConfigurado\":true,\"verifyTokenConfigurado\":true,"
+                                + "\"configurado\":true,\"atualizadoEm\":\"2026-07-10T13:00:00Z\"}")));
+
+        MetaConfigResponse cfg = client().salvarConfig(
+                new MetaConfigRequest("55999", "tok", "sec", "ver"));
+
+        assertThat(cfg.configurado()).isTrue();
+        wireMock.verify(1, putRequestedFor(urlPathEqualTo("/api/whatsapp/config"))
+                .withRequestBody(matchingJsonPath("$.phoneNumberId", equalTo("55999")))
+                .withRequestBody(matchingJsonPath("$.accessToken", equalTo("tok")))
+                .withRequestBody(matchingJsonPath("$.appSecret", equalTo("sec")))
+                .withRequestBody(matchingJsonPath("$.verifyToken", equalTo("ver"))));
     }
 
     @Test

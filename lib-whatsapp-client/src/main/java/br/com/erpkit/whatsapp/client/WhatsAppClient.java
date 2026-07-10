@@ -2,6 +2,8 @@ package br.com.erpkit.whatsapp.client;
 
 import br.com.erpkit.whatsapp.client.dto.BotaoDto;
 import br.com.erpkit.whatsapp.client.dto.EnvioResponse;
+import br.com.erpkit.whatsapp.client.dto.MetaConfigRequest;
+import br.com.erpkit.whatsapp.client.dto.MetaConfigResponse;
 import br.com.erpkit.whatsapp.client.dto.SecaoDto;
 import br.com.erpkit.whatsapp.client.dto.StatusResponse;
 import br.com.erpkit.whatsapp.client.dto.WhatsAppRespostaDto;
@@ -44,6 +46,12 @@ public interface WhatsAppClient {
 
     /** Proxy do {@code GET /api/whatsapp/status}. */
     StatusResponse status();
+
+    /** Proxy do {@code GET /api/whatsapp/config} — credenciais Meta com secrets mascarados. */
+    MetaConfigResponse obterConfig();
+
+    /** Proxy do {@code PUT /api/whatsapp/config} — grava as credenciais Meta (atualizacao parcial). */
+    MetaConfigResponse salvarConfig(MetaConfigRequest req);
 
     /** Health check leve (nao lanca excecao; retorna {@code false} se offline/desabilitado). */
     boolean isOnline();

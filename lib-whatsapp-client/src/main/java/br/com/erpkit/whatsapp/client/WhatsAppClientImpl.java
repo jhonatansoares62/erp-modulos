@@ -2,6 +2,8 @@ package br.com.erpkit.whatsapp.client;
 
 import br.com.erpkit.whatsapp.client.dto.BotaoDto;
 import br.com.erpkit.whatsapp.client.dto.EnvioResponse;
+import br.com.erpkit.whatsapp.client.dto.MetaConfigRequest;
+import br.com.erpkit.whatsapp.client.dto.MetaConfigResponse;
 import br.com.erpkit.whatsapp.client.dto.SecaoDto;
 import br.com.erpkit.whatsapp.client.dto.StatusResponse;
 import br.com.erpkit.whatsapp.client.dto.WhatsAppRespostaDto;
@@ -116,6 +118,29 @@ public class WhatsAppClientImpl implements WhatsAppClient {
                 .headers(this::aplicarApiKey)
                 .retrieve()
                 .body(StatusResponse.class));
+    }
+
+    @Override
+    public MetaConfigResponse obterConfig() {
+        verificarHabilitado();
+        return execute(() -> restClient.get()
+                .uri("/api/whatsapp/config")
+                .headers(this::aplicarApiKey)
+                .retrieve()
+                .body(MetaConfigResponse.class));
+    }
+
+    @Override
+    public MetaConfigResponse salvarConfig(MetaConfigRequest req) {
+        verificarHabilitado();
+        // Upsert idempotente no api-whatsapp — seguro sob o @Retry do execute().
+        return execute(() -> restClient.put()
+                .uri("/api/whatsapp/config")
+                .contentType(MediaType.APPLICATION_JSON)
+                .headers(this::aplicarApiKey)
+                .body(req)
+                .retrieve()
+                .body(MetaConfigResponse.class));
     }
 
     @Override
