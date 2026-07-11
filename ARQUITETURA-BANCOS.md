@@ -73,9 +73,19 @@ PostgreSQL:5432  (1 instância, todos os ERPs juntos)
 └── db_erp_console
 ```
 
-> **Esta árvore é o ALVO.** Hoje: Odonto já está nesse padrão; o **Calhas** ainda usa
-> os genéricos `db_api_email`/`db_api_storage`; o **Mudas** ainda não tem bancos de
-> módulo próprios. Isolar Calhas/Mudas (renomear pra `db_<erp>_<módulo>`) é o passo pendente.
+> **Estado (2026-07-11):** Odonto e **Calhas** já estão nesse padrão. O Calhas foi
+> renomeado `db_api_email`/`db_api_storage` → `db_calhas_email`/`db_calhas_storage`.
+> Os módulos dev do Calhas sobem em **portas dedicadas: email 8510, storage 8520**
+> (via `ERP-CALHAS/scripts/dev-modulos.sh`, config em `C:\erpkit\config\erpcalhas\modulos\`),
+> **separadas dos serviços instalados** (9091/8085 → 5433) pra dev e instalado conviverem.
+> O backend dev (8081) aponta pra 8510/8520 via `application-dev.yml`; um clique no **Debug
+> do IntelliJ** (run config `ERP Calhas DEV`) sobe os módulos no before-launch + o backend.
+>
+> **Faixas de porta dev por ERP** (centena = ERP): Calhas **85xx** (email 8510, storage 8520),
+> Mudas **86xx** (alvo), Odonto **87xx** (email 8710, storage 8720, whatsapp 8730, contabil 8750).
+>
+> **Falta o Mudas:** ainda não tem módulos dev próprios — `db_mudas_*` acima é alvo;
+> hoje o Mudas dev ainda reusa o módulo instalado via HTTP.
 
 ---
 
