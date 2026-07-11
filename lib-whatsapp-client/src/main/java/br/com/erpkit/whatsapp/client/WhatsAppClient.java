@@ -1,6 +1,7 @@
 package br.com.erpkit.whatsapp.client;
 
 import br.com.erpkit.whatsapp.client.dto.BotaoDto;
+import br.com.erpkit.whatsapp.client.dto.CustoResponse;
 import br.com.erpkit.whatsapp.client.dto.EnvioResponse;
 import br.com.erpkit.whatsapp.client.dto.MetaConfigRequest;
 import br.com.erpkit.whatsapp.client.dto.MetaConfigResponse;
@@ -59,6 +60,12 @@ public interface WhatsAppClient {
      * (V7 §12). {@code de}/{@code ate} sao ISO-8601 opcionais ({@code null} = ultimos 30 dias).
      */
     ResumoUsoResponse relatorioResumo(String de, String ate);
+
+    /**
+     * Proxy do {@code GET /api/whatsapp/relatorios/custo} — custo autoritativo da Meta
+     * (pricing_analytics, §11). {@code granularity}: DAILY | HALF_HOUR | MONTHLY.
+     */
+    CustoResponse relatorioCusto(String de, String ate, String granularity);
 
     /** Health check leve (nao lanca excecao; retorna {@code false} se offline/desabilitado). */
     boolean isOnline();

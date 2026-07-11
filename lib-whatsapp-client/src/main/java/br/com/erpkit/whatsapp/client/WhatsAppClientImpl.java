@@ -1,6 +1,7 @@
 package br.com.erpkit.whatsapp.client;
 
 import br.com.erpkit.whatsapp.client.dto.BotaoDto;
+import br.com.erpkit.whatsapp.client.dto.CustoResponse;
 import br.com.erpkit.whatsapp.client.dto.EnvioResponse;
 import br.com.erpkit.whatsapp.client.dto.MetaConfigRequest;
 import br.com.erpkit.whatsapp.client.dto.MetaConfigResponse;
@@ -157,6 +158,22 @@ public class WhatsAppClientImpl implements WhatsAppClient {
                 .headers(this::aplicarApiKey)
                 .retrieve()
                 .body(ResumoUsoResponse.class));
+    }
+
+    @Override
+    public CustoResponse relatorioCusto(String de, String ate, String granularity) {
+        verificarHabilitado();
+        return execute(() -> restClient.get()
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/api/whatsapp/relatorios/custo");
+                    if (de != null && !de.isBlank()) uriBuilder.queryParam("de", de);
+                    if (ate != null && !ate.isBlank()) uriBuilder.queryParam("ate", ate);
+                    if (granularity != null && !granularity.isBlank()) uriBuilder.queryParam("granularity", granularity);
+                    return uriBuilder.build();
+                })
+                .headers(this::aplicarApiKey)
+                .retrieve()
+                .body(CustoResponse.class));
     }
 
     @Override
