@@ -63,6 +63,16 @@ Legenda: `[ ]` pendente · `[~]` em andamento · `[x]` feito
 
 ---
 
+### Fatia 5 — Endpoint de relatório `resumo` (expõe o que salvamos, uniforme p/ ERPs) 🚧
+- [x] Repo: `contarPorDirecao/Tipo/Status/Categoria` (GROUP BY em [de,ate]) + `contarFaturaveis` (padrão `api-email`)
+- [x] `RelatorioUsoService.resumo(de, ate)` → `ResumoUsoResponse` (sem PII; null→rótulos)
+- [x] `RelatorioController` `GET /api/whatsapp/relatorios/resumo?de&ate` (ISO, default 30d; ApiKey protege `/api/whatsapp/*`)
+- [x] `RelatorioUsoServiceIntegrationTest` (H2 seed: direção/tipo/status/categoria/faturáveis + range) → **suíte verde**
+- [x] commit (módulo)
+- [ ] expor em `lib-whatsapp-client` (`WhatsAppClient.relatorioResumo` + DTO) + proxy no ERP + tela
+
+---
+
 ## Adiado (precisa de mudança de contrato com o ERP — fora desta rodada)
 - [ ] **#6 (resultado):** `casou`/`resultado` (respondido/silêncio/erro) — exige o ERP devolver o desfecho no callback (`ErpCallbackClient.despachar` hoje descarta o corpo) **ou** inferir do *out* seguinte.
 - [ ] **#7 (correlação):** `responde_a_wamid` no *out* → tempo de resposta (exige o ERP propagar o wamid de origem).

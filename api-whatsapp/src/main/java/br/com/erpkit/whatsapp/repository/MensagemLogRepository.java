@@ -1,10 +1,14 @@
 package br.com.erpkit.whatsapp.repository;
 
+import br.com.erpkit.whatsapp.model.Direcao;
 import br.com.erpkit.whatsapp.model.MensagemLog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,4 +34,30 @@ public interface MensagemLogRepository extends JpaRepository<MensagemLog, Long> 
 
     /** Ultimas mensagens (in + out) para o painel de monitoramento (dev/meta). */
     List<MensagemLog> findTop200ByOrderByIdDesc();
+
+    // ── Agregacoes de relatorio (V7 §12). GROUP BY em janela [de, ate] (criado_em). ──
+    // Retornam List<Object[]>{chave, count} no padrao de api-email (contarPorStatus).
+
+    @Query("SELECT m.direcao, COUNT(m) FROM MensagemLog m "
+         + "WHERE m.criadoEm BETWEEN :de AND :ate GROUP BY m.direcao")
+    List<Object[]> contarPorDirecao(@Param("de") Instant de, @Param("ate") Instant ate);
+
+    @Query("SELECT m.tipo, COUNT(m) FROM MensagemLog m "
+         + "WHERE m.criadoEm BETWEEN :de AND :ate GROUP BY m.tipo")
+    List<Object[]> contarPorTipo(@Param("de") Instant de, @Param("ate") Instant ate);
+
+    @Query("SELECT m.status, COUNT(m) FROM MensagemLog m "
+         + "WHERE m.direcao = :direcao AND m.criadoEm BETWEEN :de AND :ate GROUP BY m.status")
+    List<Object[]> contarPorStatus(@Param("direcao") Direcao direcao,
+                                   @Param("de") Instant de, @Param("ate") Instant ate);
+
+    @Query("SELECT m.categoria, COUNT(m) FROM MensagemLog m "
+         + "WHERE m.direcao = :direcao AND m.criadoEm BETWEEN :de AND :ate GROUP BY m.categoria")
+    List<Object[]> contarPorCategoria(@Param("direcao") Direcao direcao,
+                                      @Param("de") Instant de, @Param("ate") Instant ate);
+
+    @Query("SELECT COUNT(m) FROM MensagemLog m WHERE m.direcao = :direcao "
+         + "AND m.billable = TRUE AND m.criadoEm BETWEEN :de AND :ate")
+    long contarFaturaveis(@Param("direcao") Direcao direcao,
+                          @Param("de") Instant de, @Param("ate") Instant ate);
 }
