@@ -83,4 +83,4 @@ Legenda: `[ ]` pendente · `[~]` em andamento · `[x]` feito
 - [ ] **#7 (correlação):** `responde_a_wamid` no *out* → tempo de resposta (exige o ERP propagar o wamid de origem).
 - [ ] **#8:** `phone_number_id` (multi-número futuro).
 - [ ] Endpoints de relatório (`/api/whatsapp/relatorios/*`) + exposição no `lib-whatsapp-client` + tela ERP (fase seguinte).
-- [ ] Custo via Meta `pricing_analytics` (§11) — `WABA_ID` no config + verificar escopo do token.
+- [x] **Custo via Meta `pricing_analytics` (§11) — FEITO e verificado ao vivo.** Token tem escopo `whatsapp_business_management`; sintaxe exige `metric_types([...])`+`dimensions([...])`. `WhatsAppProperties.wabaId` (`WHATSAPP_WABA_ID`), `MetaAnalyticsClient`, `GET /api/whatsapp/relatorios/custo`, lib `relatorioCusto`, proxy ERP + card "Custo (Meta)". Deployado: `/custo` responde real (27 msgs, tudo FREE_CUSTOMER_SERVICE, custo 0 — pré-out/2026). Falta só o instalador injetar `WHATSAPP_WABA_ID` (hoje setado manual no service xml).
