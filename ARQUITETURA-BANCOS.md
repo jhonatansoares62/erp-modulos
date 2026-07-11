@@ -32,13 +32,19 @@ isolada pela própria instância — não há colisão entre ERPs.
 
 ### Estado atual instalado (verificado 2026-07-11)
 
+Todas as instalações têm o **mesmo conjunto** de 4 bancos de módulo (uniformizado em 2026-07-11):
+
 | ERP | Porta | Data dir | Bancos |
 |-----|:-----:|----------|--------|
-| Calhas | 5433 | `Program Files (x86)\ERP Calhas\data\pgdata` | `db_erp_calhas` + `db_api_email`, `db_api_storage` |
-| Mudas  | 5434 | `Program Files (x86)\ERP Mudas\data\pgdata`  | `db_erp_mudas` + `db_api_email`, `db_api_storage`, `db_api_whatsapp`¹ |
+| Calhas | 5433 | `Program Files (x86)\ERP Calhas\data\pgdata` | `db_erp_calhas` + `db_api_email`, `db_api_storage`, `db_api_whatsapp`¹, `db_api_contabil`¹ |
+| Mudas  | 5434 | `Program Files (x86)\ERP Mudas\data\pgdata`  | `db_erp_mudas` + `db_api_email`, `db_api_storage`, `db_api_whatsapp`¹, `db_api_contabil`¹ |
 | Odonto | 5436 | `Program Files (x86)\ERP Odonto\data\pgdata` | `db_erp_odonto` + `db_api_email`, `db_api_storage`, `db_api_whatsapp`, `db_api_contabil` |
 
-¹ `db_api_whatsapp` do Mudas existe mas está vazio (whatsapp não usado no Mudas).
+Todos os bancos são donos da role do próprio ERP (`erp_calhas`/`erp_mudas`/`erp_odonto`), UTF8/C.
+
+¹ Banco **provisionado mas ainda vazio** — o módulo não está implantado nesse ERP.
+O schema/tabelas são criados pelo Flyway quando o JAR do módulo subir apontando pra ele.
+(Follow-up: replicar essa provisão no **instalador** pra que installs novos já criem os 4 bancos.)
 
 ---
 
