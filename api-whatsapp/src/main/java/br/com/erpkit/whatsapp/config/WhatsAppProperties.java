@@ -43,6 +43,10 @@ public class WhatsAppProperties {
     /** Base URL da Graph API do Meta (override em tests). Default v22.0. */
     private String metaApiBaseUrl = "https://graph.facebook.com/v22.0";
 
+    /** WhatsApp Business Account ID (WABA) — necessario para os analytics de custo
+     *  ({@code pricing_analytics}). Nao e credencial; vem do ambiente/instalador. */
+    private String wabaId;
+
     public String getPhoneNumberId() {
         return phoneNumberId;
     }
@@ -99,6 +103,14 @@ public class WhatsAppProperties {
         this.metaApiBaseUrl = metaApiBaseUrl;
     }
 
+    public String getWabaId() {
+        return wabaId;
+    }
+
+    public void setWabaId(String wabaId) {
+        this.wabaId = wabaId;
+    }
+
     /**
      * {@code true} sse as 4 credenciais Meta estao preenchidas. Enviar mensagem e
      * responder o webhook do Meta so funcionam quando configurado; o painel de
@@ -123,6 +135,7 @@ public class WhatsAppProperties {
                 + ", verifyToken=[REDACTED]"
                 + ", erpCallbackUrl=" + erpCallbackUrl
                 + ", callbackTimeout=" + callbackTimeout
-                + ", metaApiBaseUrl=" + metaApiBaseUrl + "}";
+                + ", metaApiBaseUrl=" + metaApiBaseUrl
+                + ", wabaId=" + wabaId + "}";
     }
 }

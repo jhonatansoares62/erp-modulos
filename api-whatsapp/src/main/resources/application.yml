@@ -92,6 +92,8 @@ app:
       erpCallbackUrl: ${WHATSAPP_ERP_CALLBACK_URL:}
       callbackTimeout: ${WHATSAPP_CALLBACK_TIMEOUT:5s}
       metaApiBaseUrl: ${WHATSAPP_META_API_BASE_URL:https://graph.facebook.com/v22.0}
+      # WABA id — necessario para os analytics de custo (pricing_analytics). Nao e segredo.
+      wabaId: ${WHATSAPP_WABA_ID:}
 
 # API key de endpoints internos do ERP (Phase 4) — webhook e publico, validado por HMAC
 modulo:

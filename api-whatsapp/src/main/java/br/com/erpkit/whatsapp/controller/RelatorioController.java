@@ -1,6 +1,8 @@
 package br.com.erpkit.whatsapp.controller;
 
+import br.com.erpkit.whatsapp.dto.CustoResponse;
 import br.com.erpkit.whatsapp.dto.ResumoUsoResponse;
+import br.com.erpkit.whatsapp.service.MetaAnalyticsClient;
 import br.com.erpkit.whatsapp.service.RelatorioUsoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,9 +26,11 @@ import java.time.temporal.ChronoUnit;
 public class RelatorioController {
 
     private final RelatorioUsoService service;
+    private final MetaAnalyticsClient metaAnalyticsClient;
 
-    public RelatorioController(RelatorioUsoService service) {
+    public RelatorioController(RelatorioUsoService service, MetaAnalyticsClient metaAnalyticsClient) {
         this.service = service;
+        this.metaAnalyticsClient = metaAnalyticsClient;
     }
 
     @GetMapping("/resumo")
@@ -36,6 +40,20 @@ public class RelatorioController {
         Instant ateI = parse(ate, Instant.now());
         Instant deI = parse(de, ateI.minus(30, ChronoUnit.DAYS));
         return ResponseEntity.ok(service.resumo(deI, ateI));
+    }
+
+    /**
+     * Custo/volume autoritativo direto do {@code pricing_analytics} da Meta (§11).
+     * {@code granularity}: DAILY (default) | HALF_HOUR | MONTHLY.
+     */
+    @GetMapping("/custo")
+    public ResponseEntity<CustoResponse> custo(
+            @RequestParam(required = false) String de,
+            @RequestParam(required = false) String ate,
+            @RequestParam(required = false, defaultValue = "DAILY") String granularity) {
+        Instant ateI = parse(ate, Instant.now());
+        Instant deI = parse(de, ateI.minus(30, ChronoUnit.DAYS));
+        return ResponseEntity.ok(metaAnalyticsClient.custo(deI, ateI, granularity));
     }
 
     private static Instant parse(String iso, Instant fallback) {
