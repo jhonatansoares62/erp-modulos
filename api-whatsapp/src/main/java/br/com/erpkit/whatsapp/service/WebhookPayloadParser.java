@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -159,10 +160,33 @@ public class WebhookPayloadParser {
     }
 
     private StatusEntranteDTO extrairStatus(StatusDTO st) {
+        StatusDTO.Conversation conv = st.getConversation();
+        StatusDTO.Pricing pricing = st.getPricing();
+        StatusDTO.Erro erro = (st.getErrors() != null && !st.getErrors().isEmpty())
+                ? st.getErrors().get(0) : null;
         return new StatusEntranteDTO(
             st.getId(),
             st.getStatus(),
-            TelefoneBR.normalizar(st.getRecipientId())
+            TelefoneBR.normalizar(st.getRecipientId()),
+            parseTimestamp(st.getTimestamp()),
+            conv != null ? conv.getId() : null,
+            conv != null && conv.getOrigin() != null ? conv.getOrigin().getType() : null,
+            pricing != null ? pricing.getCategory() : null,
+            pricing != null ? pricing.getBillable() : null,
+            erro != null ? erro.getCode() : null,
+            erro != null ? erro.getTitle() : null
         );
+    }
+
+    /** Timestamp do Meta (Unix segundos como String) -&gt; Instant. {@code null} se ausente/invalido. */
+    static Instant parseTimestamp(String ts) {
+        if (ts == null || ts.isBlank()) {
+            return null;
+        }
+        try {
+            return Instant.ofEpochSecond(Long.parseLong(ts.trim()));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

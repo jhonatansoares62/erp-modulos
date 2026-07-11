@@ -37,14 +37,14 @@ Legenda: `[ ]` pendente · `[~]` em andamento · `[x]` feito
 - [x] `FlywayMigrationTest` + suíte verde (V7 aplicada, Hibernate validate OK, suíte verde)
 - [x] commit
 
-### Fatia 2 — Captura do status webhook (para de descartar) → #1, #4, #5
-- [ ] `StatusDTO`: ligar `conversation{ id, origin.type }`, `pricing{ billable, category }`, `errors[]{ code, title }`
-- [ ] `StatusEntranteDTO`: carregar os novos campos
-- [ ] `WebhookPayloadParser.extrairStatus`: mapear
-- [ ] `StatusEntregaService.registrar(StatusEntranteDTO)`: UPDATE por `wamid` (defensivo, latest-wins com rank sent<delivered<read, failed terminal; wamid inexistente = skip)
-- [ ] `MensagemService.processarWebhook`: trocar o loop de descarte (linhas 95-99) por `registrar`
-- [ ] testes: parser (payload com pricing/conversation/errors) + service (persiste status) + rank/fora-de-ordem
-- [ ] commit
+### Fatia 2 — Captura do status webhook (para de descartar) → #1, #4, #5 ✅
+- [x] `StatusDTO`: liga `conversation{ id, origin.type }`, `pricing{ billable, category }`, `errors[]{ code, title }` (nested statics)
+- [x] `StatusEntranteDTO`: carrega os novos campos (record 10 fields)
+- [x] `WebhookPayloadParser.extrairStatus`: mapeia + `parseTimestamp` (Unix→Instant)
+- [x] `StatusEntregaService.registrar`: UPDATE por `wamid` (REQUIRES_NEW, rank null-safe sent<delivered<read, failed terminal; wamid inexistente = skip)
+- [x] `MensagemService.processarWebhook`: loop de descarte → `registrar` (defensivo, não derruba ack)
+- [x] testes: parser (fixtures sent+pricing e failed) + `StatusEntregaServiceTest` (aplica/skip/rank/failed) + `MensagemServiceTest` atualizado → **suíte verde**
+- [x] commit
 
 ### Fatia 3 — Timestamp real da Meta (`evento_em`) → #3
 - [ ] `MensagemEntranteDTO` + `MensagemPersistidaEvent` + `IdempotencyService`: threading do `MessageDTO.timestamp`

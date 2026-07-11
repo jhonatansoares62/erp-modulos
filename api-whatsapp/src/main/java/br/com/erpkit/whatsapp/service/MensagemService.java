@@ -43,13 +43,16 @@ public class MensagemService {
     private final WebhookPayloadParser parser;
     private final IdempotencyService idempotency;
     private final ApplicationEventPublisher eventPublisher;
+    private final StatusEntregaService statusEntregaService;
 
     public MensagemService(WebhookPayloadParser parser,
                            IdempotencyService idempotency,
-                           ApplicationEventPublisher eventPublisher) {
+                           ApplicationEventPublisher eventPublisher,
+                           StatusEntregaService statusEntregaService) {
         this.parser = parser;
         this.idempotency = idempotency;
         this.eventPublisher = eventPublisher;
+        this.statusEntregaService = statusEntregaService;
     }
 
     /**
@@ -61,7 +64,7 @@ public class MensagemService {
      *   <li>Para cada mensagem: idempotency tentarPersistir → se nova,
      *       publica {@link MensagemPersistidaEvent} (listener async faz o resto:
      *       media → identificar → atualizar → comando → callback ERP)</li>
-     *   <li>Statuses: log debug e ignora (Phase 3 escopo — D-06)</li>
+     *   <li>Statuses: persiste entrega + conversa/pricing/erro por wamid (V7 §12)</li>
      * </ol>
      *
      * @param rawBody bytes do body (UTF-8) do webhook do Meta
@@ -92,10 +95,16 @@ public class MensagemService {
             ));
         }
 
-        // Statuses: Phase 3 nao persiste (D-06). Apenas log para visibilidade.
+        // Statuses (V7 / observabilidade §12): persiste status de entrega + conversa/
+        // pricing/erro na saida correspondente (por wamid). Defensivo: falha de um
+        // status NUNCA derruba o ack 200 do webhook.
         for (StatusEntranteDTO s : parsed.statuses()) {
-            log.debug("Status callback ignorado em Phase 3: wamid={} status={} telefone={}",
-                      s.wamid(), s.status(), s.telefone());
+            try {
+                statusEntregaService.registrar(s);
+            } catch (RuntimeException e) {
+                log.warn("Falha ao registrar status wamid={} status={}: {}",
+                         s.wamid(), s.status(), e.getMessage());
+            }
         }
     }
 }

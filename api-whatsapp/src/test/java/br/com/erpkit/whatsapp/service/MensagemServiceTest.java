@@ -56,6 +56,7 @@ class MensagemServiceTest {
     @Mock WebhookPayloadParser parser;
     @Mock IdempotencyService idempotency;
     @Mock ApplicationEventPublisher eventPublisher;
+    @Mock StatusEntregaService statusEntregaService;
 
     @InjectMocks MensagemService service;
 
@@ -118,13 +119,16 @@ class MensagemServiceTest {
     }
 
     @Test
-    @DisplayName("Apenas status callbacks: NAO publica MensagemPersistidaEvent (Phase 3 D-06)")
-    void status_nao_publica() throws Exception {
-        StatusEntranteDTO s = new StatusEntranteDTO("wamid.status.001", "delivered", "554784178525");
+    @DisplayName("Apenas status callbacks: registra entrega (V7 §12), NAO publica event nem toca idempotency")
+    void status_registra_entrega_sem_event() throws Exception {
+        StatusEntranteDTO s = new StatusEntranteDTO(
+            "wamid.status.001", "delivered", "554784178525",
+            null, null, null, null, null, null, null);
         when(parser.extrair(any())).thenReturn(new ParsedWebhook(List.of(), List.of(s)));
 
         service.processarWebhook(new byte[0]);
 
+        verify(statusEntregaService).registrar(s);
         verifyNoInteractions(eventPublisher);
         verifyNoInteractions(idempotency);
     }

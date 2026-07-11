@@ -12,6 +12,7 @@ import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -103,6 +104,32 @@ class WebhookPayloadParserTest {
         assertThat(out.statuses().get(0).status()).isEqualTo("delivered");
         assertThat(out.statuses().get(0).wamid()).isEqualTo("wamid.HBgN.status.001");
         assertThat(out.statuses().get(0).telefone()).isEqualTo("554784178525");  // strip 9 SC
+    }
+
+    @Test
+    @DisplayName("status sent com pricing+conversation — captura categoria/billable/conversationId/origem/timestamp (V7 §12)")
+    void status_sent_pricing() throws Exception {
+        ParsedWebhook out = parser.extrair(fixture("status-sent-pricing.json"));
+        assertThat(out.statuses()).hasSize(1);
+        var s = out.statuses().get(0);
+        assertThat(s.status()).isEqualTo("sent");
+        assertThat(s.conversationId()).isEqualTo("CONV-abc-123");
+        assertThat(s.conversaOrigem()).isEqualTo("service");
+        assertThat(s.categoria()).isEqualTo("service");
+        assertThat(s.billable()).isTrue();
+        assertThat(s.timestamp()).isEqualTo(Instant.ofEpochSecond(1735689600L));
+        assertThat(s.erroCodigo()).isNull();
+    }
+
+    @Test
+    @DisplayName("status failed — captura codigo+titulo do erro (V7 §12)")
+    void status_failed() throws Exception {
+        ParsedWebhook out = parser.extrair(fixture("status-failed.json"));
+        assertThat(out.statuses()).hasSize(1);
+        var s = out.statuses().get(0);
+        assertThat(s.status()).isEqualTo("failed");
+        assertThat(s.erroCodigo()).isEqualTo(131047);
+        assertThat(s.erroTitulo()).isEqualTo("Re-engagement message");
     }
 
     // ============================================================
