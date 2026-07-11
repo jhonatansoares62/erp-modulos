@@ -79,7 +79,7 @@ Legenda: `[ ]` pendente · `[~]` em andamento · `[x]` feito
 ---
 
 ## Adiado (precisa de mudança de contrato com o ERP — fora desta rodada)
-- [ ] **#6 (resultado):** `casou`/`resultado` (respondido/silêncio/erro) — exige o ERP devolver o desfecho no callback (`ErpCallbackClient.despachar` hoje descarta o corpo) **ou** inferir do *out* seguinte.
+- [x] **#6 (resultado) — FEITO e deployado.** ERP devolve `{"resultado": respondido|nao_entendi|sem_resposta|erro}` no callback; `ErpCallbackClient` lê o corpo (String + parse defensivo; timeout na leitura reembrulhado como ResourceAccessException p/ preservar retry) e persiste `mensagens_log.resultado` (V8). Relatório resumo ganha `porResultado`; tela mostra a linha "Bot:". Deployado (V8 aplicado, `/resumo` traz porResultado). Só falta mensagem NOVA popular (histórico = pendente).
 - [ ] **#7 (correlação):** `responde_a_wamid` no *out* → tempo de resposta (exige o ERP propagar o wamid de origem).
 - [ ] **#8:** `phone_number_id` (multi-número futuro).
 - [ ] Endpoints de relatório (`/api/whatsapp/relatorios/*`) + exposição no `lib-whatsapp-client` + tela ERP (fase seguinte).
