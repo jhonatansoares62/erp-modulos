@@ -43,9 +43,11 @@ public class RelatorioUsoService {
         Map<String, Long> categoriaSaida = toMap(repository.contarPorCategoria(Direcao.out, de, ate),
                 k -> k == null ? "sem_categoria" : (String) k);
         long faturaveis = repository.contarFaturaveis(Direcao.out, de, ate);
+        Map<String, Long> porResultado = toMap(repository.contarPorResultado(Direcao.in, de, ate),
+                k -> k == null ? "pendente" : (String) k);
 
         return new ResumoUsoResponse(de, ate, entrada + saida, entrada, saida,
-                faturaveis, porTipo, statusSaida, categoriaSaida);
+                faturaveis, porTipo, statusSaida, categoriaSaida, porResultado);
     }
 
     /** Converte {@code List<Object[]>{chave, count}} em {@code Map<rotulo, Long>} preservando ordem. */

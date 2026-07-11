@@ -2,6 +2,8 @@ package br.com.erpkit.whatsapp.service;
 
 import br.com.erpkit.whatsapp.config.WhatsAppProperties;
 import br.com.erpkit.whatsapp.dto.ComandoCallbackDTO;
+import br.com.erpkit.whatsapp.dto.DesfechoCallbackDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import org.slf4j.Logger;
@@ -9,8 +11,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Map;
 
@@ -58,6 +63,7 @@ import java.util.Map;
 public class ErpCallbackClient {
 
     private static final Logger log = LoggerFactory.getLogger(ErpCallbackClient.class);
+    private static final ObjectMapper OM = new ObjectMapper();
 
     private final RestClient restClient;
 
@@ -85,15 +91,32 @@ public class ErpCallbackClient {
      */
     @CircuitBreaker(name = "erp-callback")
     @Retry(name = "erp-callback", fallbackMethod = "fallbackDespachar")
-    public void despachar(ComandoCallbackDTO payload) {
+    public DesfechoCallbackDTO despachar(ComandoCallbackDTO payload) {
         log.debug("Dispatch ERP: telefone={} comando={}", payload.telefone(), payload.comando());
-        restClient.post()
-                .uri("/api/modulos/whatsapp/comando")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(payload)
-                .retrieve()
-                .toBodilessEntity();
-        log.info("ERP callback ok: telefone={} comando={}", payload.telefone(), payload.comando());
+        // Le como String (o converter de String aceita qualquer content-type) e parseia
+        // defensivo — assim um ERP antigo que responde 200 sem corpo (octet-stream) nao vira
+        // erro. Um timeout na LEITURA do corpo vem embrulhado em RestClientException(cause=IO);
+        // reembrulhamos como ResourceAccessException (whitelist de retry) para retentar
+        // transientes. 4xx/5xx (cause=null) propagam intactos (retry decide pela whitelist).
+        String corpo;
+        try {
+            corpo = restClient.post()
+                    .uri("/api/modulos/whatsapp/comando")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .toEntity(String.class)
+                    .getBody();
+        } catch (RestClientException e) {
+            if (e.getCause() instanceof IOException io) {
+                throw new ResourceAccessException("I/O no callback ERP: " + e.getMessage(), io);
+            }
+            throw e;
+        }
+        DesfechoCallbackDTO desfecho = parseDesfecho(corpo);
+        log.info("ERP callback ok: telefone={} comando={} resultado={}",
+                payload.telefone(), payload.comando(), desfecho == null ? null : desfecho.resultado());
+        return desfecho;
     }
 
     /**
@@ -109,10 +132,24 @@ public class ErpCallbackClient {
      * </ul>
      */
     @SuppressWarnings("unused") // referenciado por fallbackMethod = "fallbackDespachar"
-    private void fallbackDespachar(ComandoCallbackDTO payload, Throwable t) {
+    private DesfechoCallbackDTO fallbackDespachar(ComandoCallbackDTO payload, Throwable t) {
         log.error("ERP callback falhou apos retry+CB: telefone={} comando={}: {}",
                 payload.telefone(), payload.comando(), t.getMessage());
-        // ack-first: ERP pode ter executado parcialmente; nao retentar.
+        // ack-first: ERP pode ter executado parcialmente; nao retentar. Desfecho desconhecido.
+        return null;
+    }
+
+    /** Corpo do callback -&gt; desfecho. Vazio / nao-JSON (ex.: ERP antigo, 200 sem body) = {@code null}. */
+    private static DesfechoCallbackDTO parseDesfecho(String corpo) {
+        if (corpo == null || corpo.isBlank()) {
+            return null;
+        }
+        try {
+            return OM.readValue(corpo, DesfechoCallbackDTO.class);
+        } catch (Exception e) {
+            log.debug("Corpo do callback nao e um desfecho JSON valido (ignorando): {}", e.getMessage());
+            return null;
+        }
     }
 
     /**

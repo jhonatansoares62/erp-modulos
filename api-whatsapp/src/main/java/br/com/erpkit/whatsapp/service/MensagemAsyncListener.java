@@ -1,6 +1,7 @@
 package br.com.erpkit.whatsapp.service;
 
 import br.com.erpkit.whatsapp.dto.ComandoCallbackDTO;
+import br.com.erpkit.whatsapp.dto.DesfechoCallbackDTO;
 import br.com.erpkit.whatsapp.dto.MetaMediaResultado;
 import br.com.erpkit.whatsapp.event.MensagemPersistidaEvent;
 import br.com.erpkit.whatsapp.model.ClienteZap;
@@ -163,7 +164,12 @@ public class MensagemAsyncListener {
             idClienteErp, mediaBase64, mediaMimeType, mediaFilename
         );
         try {
-            erpCallbackClient.despachar(payload);
+            DesfechoCallbackDTO desfecho = erpCallbackClient.despachar(payload);
+            // §12 #6: persiste o desfecho do bot (respondido/nao_entendi/sem_resposta/erro).
+            // desfecho null = callback falhou (fallback Resilience4j) -> deixa sem resultado.
+            if (desfecho != null && desfecho.resultado() != null) {
+                mensagemLogService.registrarDesfecho(event.wamid(), desfecho.resultado());
+            }
         } catch (Exception e) {
             // Resilience4j fallbackMethod ja capturou e logou. Catch-all defensivo
             // para qualquer excecao que escape (ex: bug, OOM em base64).

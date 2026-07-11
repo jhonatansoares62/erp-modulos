@@ -1,6 +1,7 @@
 package br.com.erpkit.whatsapp.service;
 
 import br.com.erpkit.whatsapp.dto.ComandoCallbackDTO;
+import br.com.erpkit.whatsapp.dto.DesfechoCallbackDTO;
 import br.com.erpkit.whatsapp.dto.MetaMediaResultado;
 import br.com.erpkit.whatsapp.event.MensagemPersistidaEvent;
 import br.com.erpkit.whatsapp.model.ClienteZap;
@@ -228,5 +229,17 @@ class MensagemAsyncListenerTest {
         assertThatNoException().isThrownBy(() -> listener.aoMensagemPersistida(eventoText()));
 
         verify(erpCallbackClient).despachar(any());
+    }
+
+    @Test
+    @DisplayName("desfecho do callback: persiste resultado via mensagemLogService (§12 #6)")
+    void desfecho_persistido() {
+        when(clienteZapService.identificar(any())).thenReturn(clienteMock(42L));
+        when(comandoExtractor.extrair(any(), any())).thenReturn("oi");
+        when(erpCallbackClient.despachar(any())).thenReturn(new DesfechoCallbackDTO("respondido"));
+
+        listener.aoMensagemPersistida(eventoText());
+
+        verify(mensagemLogService).registrarDesfecho("wamid.001", "respondido");
     }
 }

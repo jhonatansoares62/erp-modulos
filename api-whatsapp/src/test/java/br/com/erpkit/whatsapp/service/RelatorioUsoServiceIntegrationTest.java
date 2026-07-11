@@ -44,7 +44,9 @@ class RelatorioUsoServiceIntegrationTest {
     @Test
     @DisplayName("resumo agrega direcao/tipo/status/categoria + conta faturaveis")
     void resumo_agrega() {
-        repository.save(msg("in.1", Direcao.in, "text"));
+        MensagemLog in1 = msg("in.1", Direcao.in, "text");
+        in1.setResultado("respondido");
+        repository.save(in1);
 
         MensagemLog s1 = msg("out.1", Direcao.out, "text");
         s1.setStatus("delivered"); s1.setCategoria("service"); s1.setBillable(true);
@@ -70,6 +72,7 @@ class RelatorioUsoServiceIntegrationTest {
             .containsEntry("delivered", 1L).containsEntry("read", 1L).containsEntry("failed", 1L);
         assertThat(r.categoriaSaida())
             .containsEntry("service", 2L).containsEntry("sem_categoria", 1L);
+        assertThat(r.porResultado()).containsEntry("respondido", 1L);
     }
 
     @Test

@@ -70,4 +70,24 @@ class MensagemLogServiceTest {
         service.enriquecerEntrada("wamid.x", 42L, "orcamento", null);
         verify(repository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("registrarDesfecho: grava resultado e salva")
+    void registra_desfecho() {
+        MensagemLog alvo = entrada("wamid.d.1");
+        when(repository.findByWamid("wamid.d.1")).thenReturn(Optional.of(alvo));
+
+        service.registrarDesfecho("wamid.d.1", "nao_entendi");
+
+        assertThat(alvo.getResultado()).isEqualTo("nao_entendi");
+        verify(repository).save(alvo);
+    }
+
+    @Test
+    @DisplayName("registrarDesfecho: wamid desconhecido = no-op")
+    void desfecho_wamid_desconhecido() {
+        when(repository.findByWamid("x")).thenReturn(Optional.empty());
+        service.registrarDesfecho("x", "respondido");
+        verify(repository, never()).save(any());
+    }
 }

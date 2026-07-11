@@ -106,6 +106,10 @@ public class MensagemLog {
     @Column(name = "comando", length = 255)
     private String comando;
 
+    // V8 (§12 #6): desfecho do bot na entrada — respondido/nao_entendi/sem_resposta/erro.
+    @Column(name = "resultado", length = 20)
+    private String resultado;
+
     public MensagemLog() {
         // JPA exige construtor padrao
     }
@@ -178,6 +182,9 @@ public class MensagemLog {
 
     public String getComando() { return comando; }
     public void setComando(String comando) { this.comando = comando; }
+
+    public String getResultado() { return resultado; }
+    public void setResultado(String resultado) { this.resultado = resultado; }
 
     @Override
     public boolean equals(Object o) {

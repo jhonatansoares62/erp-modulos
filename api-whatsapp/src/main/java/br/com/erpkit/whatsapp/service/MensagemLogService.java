@@ -45,4 +45,17 @@ public class MensagemLogService {
             log.debug("Entrada enriquecida: wamid={} idClienteErp={} comando={}", wamid, idClienteErp, comando);
         }, () -> log.debug("Enriquecimento p/ wamid desconhecido — skip: {}", wamid));
     }
+
+    /** Grava o desfecho do bot na entrada (§12 #6): respondido/nao_entendi/sem_resposta/erro. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void registrarDesfecho(String wamid, String resultado) {
+        if (wamid == null || resultado == null) {
+            return;
+        }
+        repository.findByWamid(wamid).ifPresent(m -> {
+            m.setResultado(resultado);
+            repository.save(m);
+            log.debug("Desfecho registrado: wamid={} resultado={}", wamid, resultado);
+        });
+    }
 }

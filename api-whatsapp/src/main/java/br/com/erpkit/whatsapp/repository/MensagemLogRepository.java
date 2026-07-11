@@ -60,4 +60,9 @@ public interface MensagemLogRepository extends JpaRepository<MensagemLog, Long> 
          + "AND m.billable = TRUE AND m.criadoEm BETWEEN :de AND :ate")
     long contarFaturaveis(@Param("direcao") Direcao direcao,
                           @Param("de") Instant de, @Param("ate") Instant ate);
+
+    @Query("SELECT m.resultado, COUNT(m) FROM MensagemLog m "
+         + "WHERE m.direcao = :direcao AND m.criadoEm BETWEEN :de AND :ate GROUP BY m.resultado")
+    List<Object[]> contarPorResultado(@Param("direcao") Direcao direcao,
+                                      @Param("de") Instant de, @Param("ate") Instant ate);
 }

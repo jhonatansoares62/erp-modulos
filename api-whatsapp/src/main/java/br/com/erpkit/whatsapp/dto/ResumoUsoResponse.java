@@ -21,6 +21,7 @@ import java.util.Map;
  * @param porTipo        contagem por tipo Meta (text, interactive_list, ...)
  * @param statusSaida    contagem de saidas por status de entrega (sent/delivered/read/failed/pendente)
  * @param categoriaSaida contagem de saidas por categoria faturavel (service/utility/.../sem_categoria)
+ * @param porResultado   desfecho do bot nas entradas (respondido/nao_entendi/sem_resposta/erro/pendente)
  */
 public record ResumoUsoResponse(
     Instant de,
@@ -31,5 +32,6 @@ public record ResumoUsoResponse(
     long faturaveis,
     Map<String, Long> porTipo,
     Map<String, Long> statusSaida,
-    Map<String, Long> categoriaSaida
+    Map<String, Long> categoriaSaida,
+    Map<String, Long> porResultado
 ) { }

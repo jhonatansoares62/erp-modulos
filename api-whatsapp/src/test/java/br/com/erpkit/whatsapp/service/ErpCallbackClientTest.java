@@ -104,6 +104,20 @@ class ErpCallbackClientTest {
     }
 
     @Test
+    @DisplayName("Desfecho: 200 com JSON {resultado} — despachar retorna o desfecho parseado (§12 #6)")
+    void desfecho_parseado() {
+        wireMock.stubFor(post(urlEqualTo("/api/modulos/whatsapp/comando"))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"resultado\":\"respondido\"}")));
+
+        var desfecho = client.despachar(payload());
+
+        assertThat(desfecho).isNotNull();
+        assertThat(desfecho.resultado()).isEqualTo("respondido");
+    }
+
+    @Test
     @DisplayName("5xx recupera: 500, 500, 200 — counter == 3 (PROVA Risk A6: AOP funcionando)")
     void cinquecentos_recupera_counter_3() {
         // Scenario state: 1a request -> 500, 2a -> 500, 3a -> 200
