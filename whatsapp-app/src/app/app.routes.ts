@@ -14,7 +14,7 @@ export const routes: Routes = [
       {
         path: 'conversas',
         loadComponent: () =>
-          import('./features/home/home.component').then((m) => m.HomeComponent),
+          import('./features/conversas/conversas.component').then((m) => m.ConversasComponent),
       },
       {
         path: 'metricas',

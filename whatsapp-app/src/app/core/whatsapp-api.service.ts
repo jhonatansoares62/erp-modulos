@@ -111,6 +111,68 @@ export interface Diagnostico {
   erp: DiagnosticoCheck;
 }
 
+// ── Conversas ──
+export type Direcao = 'ENTRADA' | 'SAIDA';
+
+// Envelope de página do Spring Data (default, sem PageResponse próprio no módulo).
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+  numberOfElements: number;
+  empty: boolean;
+}
+
+// GET /api/whatsapp/conversas → Page<ConversaResumoResponse> (ordenado por última atividade DESC)
+export interface ConversaResumo {
+  telefone: string;
+  nome: string | null; // sempre null hoje — usar telefone como título fallback
+  ultimaMensagemPreview: string | null;
+  ultimaMensagemEm: string; // ISO
+  ultimaDirecao: Direcao | null;
+  totalMensagens: number;
+  janelaAberta: boolean;
+  janelaExpiraEm: string | null; // ISO
+}
+
+// GET /api/whatsapp/conversas/{telefone}/mensagens → Page<MensagemResponse> (ordem cronológica ASC)
+export interface Mensagem {
+  id: number;
+  direcao: Direcao;
+  tipo: string;
+  conteudo: string | null;
+  preview: string | null;
+  timestamp: string; // ISO
+  status: string | null; // só SAÍDA: sent/delivered/read/failed
+  resultado: string | null; // só ENTRADA
+  wamid: string | null;
+}
+
+// GET /api/whatsapp/conversas/{telefone} → detalhe do contato + janela 24h (404 se não existe)
+export interface ConversaDetalhe {
+  telefone: string;
+  nome: string | null;
+  idClienteErp: number | null;
+  ultimaMensagemEm: string | null; // ISO
+  totalMensagens: number;
+  janelaAberta: boolean;
+  janelaExpiraEm: string | null; // ISO
+}
+
+// POST /api/whatsapp/enviar-texto (EnviarTextoRequest) → EnvioResponse
+export interface EnviarTextoRequest {
+  telefone: string; // ^\d{10,15}$ (E.164 sem +)
+  texto: string; // max 4096
+}
+
+export interface EnvioResponse {
+  wamid: string;
+}
+
 /**
  * Cliente HTTP único das telas Métricas/Configuração/Testes. Os paths sob
  * {@code /api/whatsapp/*} recebem o Bearer JWT automaticamente (authInterceptor);
@@ -161,6 +223,31 @@ export class WhatsAppApiService {
 
   diagnostico(): Observable<Diagnostico> {
     return this.http.get<Diagnostico>(`${API_BASE}/monitor/diagnostico`);
+  }
+
+  // ── Conversas (Inbox/Chat) ──
+  listarConversas(page = 0, size = 30): Observable<Page<ConversaResumo>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<ConversaResumo>>(`${API_BASE}/api/whatsapp/conversas`, { params });
+  }
+
+  listarMensagens(telefone: string, page = 0, size = 30): Observable<Page<Mensagem>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<Mensagem>>(
+      `${API_BASE}/api/whatsapp/conversas/${encodeURIComponent(telefone)}/mensagens`,
+      { params },
+    );
+  }
+
+  detalheConversa(telefone: string): Observable<ConversaDetalhe> {
+    return this.http.get<ConversaDetalhe>(
+      `${API_BASE}/api/whatsapp/conversas/${encodeURIComponent(telefone)}`,
+    );
+  }
+
+  enviarTexto(telefone: string, texto: string): Observable<EnvioResponse> {
+    const body: EnviarTextoRequest = { telefone, texto };
+    return this.http.post<EnvioResponse>(`${API_BASE}/api/whatsapp/enviar-texto`, body);
   }
 
   private periodo(de?: string, ate?: string): HttpParams {
