@@ -56,6 +56,7 @@ class MensagemAsyncListenerTest {
     @Mock ClienteZapService clienteZapService;
     @Mock ComandoExtractor comandoExtractor;
     @Mock ErpCallbackClient erpCallbackClient;
+    @Mock MensagemLogService mensagemLogService;
 
     @InjectMocks MensagemAsyncListener listener;
 
@@ -96,6 +97,8 @@ class MensagemAsyncListenerTest {
         order.verify(comandoExtractor).extrair(TipoMensagem.TEXT, "orcamento 1234");
         order.verify(erpCallbackClient).despachar(any(ComandoCallbackDTO.class));
         verifyNoInteractions(metaMediaClient);
+        // V7 §12: linha de entrada enriquecida com id_cliente_erp + comando
+        verify(mensagemLogService).enriquecerEntrada("wamid.001", 42L, "orcamento", null);
     }
 
     @Test
@@ -178,6 +181,8 @@ class MensagemAsyncListenerTest {
         verify(clienteZapService).identificar(any());
         verify(clienteZapService).atualizarUltimaMensagemEm(any());
         verifyNoInteractions(erpCallbackClient);
+        // V7 §12: enriquece mesmo sem comando (comando=null nao apaga)
+        verify(mensagemLogService).enriquecerEntrada("wamid.001", 42L, null, null);
     }
 
     @Test

@@ -46,17 +46,19 @@ Legenda: `[ ]` pendente · `[~]` em andamento · `[x]` feito
 - [x] testes: parser (fixtures sent+pricing e failed) + `StatusEntregaServiceTest` (aplica/skip/rank/failed) + `MensagemServiceTest` atualizado → **suíte verde**
 - [x] commit
 
-### Fatia 3 — Timestamp real da Meta (`evento_em`) → #3
-- [ ] `MensagemEntranteDTO` + `MensagemPersistidaEvent` + `IdempotencyService`: threading do `MessageDTO.timestamp`
-- [ ] inbound: setar `evento_em` no insert
-- [ ] outbound: `WhatsAppCloudClient` seta `evento_em = now` no save
-- [ ] testes atualizados (construtores dos records)
-- [ ] commit
+### Fatia 3a — `id_cliente_erp` + `comando` na linha de entrada → #2, #6 ✅
+- [x] `MensagemLogService.enriquecerEntrada(wamid, idClienteErp, comando, eventoEm)` (find+set+save, REQUIRES_NEW, COALESCE manual, wamid inexistente = no-op) — mesmo padrão do `StatusEntregaService`
+- [x] `MensagemAsyncListener`: injeta + chama após extrair comando (roda mesmo sem comando; defensivo)
+- [x] testes: `MensagemLogServiceTest` (enriquece/null-não-apaga/skip) + `MensagemAsyncListenerTest` (verify enriquecerEntrada, inclusive sem comando) → **suíte verde**
+- [x] commit
 
-### Fatia 4 — `id_cliente_erp` + `comando` na linha de entrada → #2, #6
-- [ ] `MensagemAsyncListener`: após resolver id + extrair comando, `UPDATE mensagens_log SET id_cliente_erp=?, comando=? WHERE wamid=?`
-- [ ] repo: método de enriquecimento por wamid
-- [ ] testes do listener
+### Fatia 3b — Timestamp real da Meta (`evento_em`) → #3
+- [ ] `MessageDTO.timestamp` já é parseado; threading via `MensagemEntranteDTO` + `MensagemPersistidaEvent`
+- [ ] `WebhookPayloadParser.extrairMensagem`: setar timestamp (reusa `parseTimestamp`)
+- [ ] `MensagemService`: passar `m.timestamp()` no event
+- [ ] `MensagemAsyncListener`: passar `event.timestamp()` no `enriquecerEntrada` (serviço já aceita)
+- [ ] inbound = ts Meta; outbound continua com `criado_em`/`status_em` (evita churn no WhatsAppCloudClient crítico)
+- [ ] testes atualizados (construtores dos records) + suíte verde
 - [ ] commit
 
 ---

@@ -54,15 +54,18 @@ public class MensagemAsyncListener {
     private final ClienteZapService clienteZapService;
     private final ComandoExtractor comandoExtractor;
     private final ErpCallbackClient erpCallbackClient;
+    private final MensagemLogService mensagemLogService;
 
     public MensagemAsyncListener(MetaMediaClient metaMediaClient,
                                  ClienteZapService clienteZapService,
                                  ComandoExtractor comandoExtractor,
-                                 ErpCallbackClient erpCallbackClient) {
+                                 ErpCallbackClient erpCallbackClient,
+                                 MensagemLogService mensagemLogService) {
         this.metaMediaClient = metaMediaClient;
         this.clienteZapService = clienteZapService;
         this.comandoExtractor = comandoExtractor;
         this.erpCallbackClient = erpCallbackClient;
+        this.mensagemLogService = mensagemLogService;
     }
 
     /**
@@ -137,6 +140,15 @@ public class MensagemAsyncListener {
 
         // [4] extrair comando
         String comando = comandoExtractor.extrair(event.tipo(), event.conteudo());
+
+        // [4.1] enriquecer a linha de entrada (V7 §12): id_cliente_erp + comando (evento_em
+        // vem na fatia 3b). Roda mesmo sem comando. Best-effort — nao interrompe o dispatch.
+        try {
+            mensagemLogService.enriquecerEntrada(event.wamid(), idClienteErp, comando, null);
+        } catch (Exception e) {
+            log.warn("Falha ao enriquecer entrada wamid={}: {}", event.wamid(), e.getMessage());
+        }
+
         if (comando == null) {
             log.debug("Sem comando para tipo={} — skip dispatch ERP", event.tipo());
             return;
