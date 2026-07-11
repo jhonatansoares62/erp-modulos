@@ -63,8 +63,7 @@ PostgreSQL:5432  (1 instância, todos os ERPs juntos)
 │   └── db_calhas_storage
 ├── db_erp_mudas
 │   ├── db_mudas_email
-│   ├── db_mudas_storage
-│   └── db_mudas_whatsapp
+│   └── db_mudas_storage
 ├── db_erp_odonto
 │   ├── db_odonto_email
 │   ├── db_odonto_storage
@@ -73,19 +72,20 @@ PostgreSQL:5432  (1 instância, todos os ERPs juntos)
 └── db_erp_console
 ```
 
-> **Estado (2026-07-11):** Odonto e **Calhas** já estão nesse padrão. O Calhas foi
-> renomeado `db_api_email`/`db_api_storage` → `db_calhas_email`/`db_calhas_storage`.
-> Os módulos dev do Calhas sobem em **portas dedicadas: email 8510, storage 8520**
-> (via `ERP-CALHAS/scripts/dev-modulos.sh`, config em `C:\erpkit\config\erpcalhas\modulos\`),
-> **separadas dos serviços instalados** (9091/8085 → 5433) pra dev e instalado conviverem.
-> O backend dev (8081) aponta pra 8510/8520 via `application-dev.yml`; um clique no **Debug
-> do IntelliJ** (run config `ERP Calhas DEV`) sobe os módulos no before-launch + o backend.
+> **Estado (2026-07-11): os 3 ERPs isolados no 5432 + one-click no IntelliJ.**
+> Cada ERP roda seus módulos dev em **portas dedicadas** apontando pro 5432, separadas
+> dos serviços instalados (que ficam em 90xx/81xx/91xx → PG instalado de cada ERP), pra
+> dev e instalado conviverem na mesma máquina. Cada `application-dev.yml` aponta o backend
+> dev pras portas dev, e há um run config `.run/ERP <Nome> DEV` que, no **Debug**, roda o
+> before-launch "Dev Modulos" + "Dev Frontend" (sobe módulos + Angular) e então o backend.
 >
-> **Faixas de porta dev por ERP** (centena = ERP): Calhas **85xx** (email 8510, storage 8520),
-> Mudas **86xx** (alvo), Odonto **87xx** (email 8710, storage 8720, whatsapp 8730, contabil 8750).
+> **Faixas de porta dev por ERP** (centena = ERP):
+> - **Calhas 85xx** — email 8510, storage 8520 · backend 8081 · frontend 4500
+> - **Mudas 86xx** — email 8610, storage 8620 · backend 8091 · frontend 4600
+> - **Odonto 87xx** — email 8710, storage 8720, whatsapp 8730, contabil 8750 · backend 8701 · frontend 4700
 >
-> **Falta o Mudas:** ainda não tem módulos dev próprios — `db_mudas_*` acima é alvo;
-> hoje o Mudas dev ainda reusa o módulo instalado via HTTP.
+> Módulos dev sobem por `<ERP>/scripts/dev-modulos.sh` (config em `C:\erpkit\config\<erp>\modulos\`).
+> `consultas` é stateless (9192, compartilhado, sem banco).
 
 ---
 
