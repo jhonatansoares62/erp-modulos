@@ -69,6 +69,43 @@ public class MensagemLog {
     @Column(name = "criado_em", nullable = false, insertable = false, updatable = false)
     private Instant criadoEm;
 
+    // ── V7 (observabilidade §12): dados antes descartados. Todos nullable. ──
+    // Entrada: idClienteErp (quando resolve), eventoEm (ts Meta), comando (intencao).
+    // Saida:   eventoEm (envio) + status/status_em/erro_*/conversationId/categoria/
+    //          billable/conversaOrigem chegam via status webhook (UPDATE por wamid).
+    @Column(name = "id_cliente_erp")
+    private Long idClienteErp;
+
+    @Column(name = "evento_em")
+    private Instant eventoEm;
+
+    @Column(name = "status", length = 12)
+    private String status;
+
+    @Column(name = "status_em")
+    private Instant statusEm;
+
+    @Column(name = "erro_codigo", length = 20)
+    private String erroCodigo;
+
+    @Column(name = "erro_titulo", length = 255)
+    private String erroTitulo;
+
+    @Column(name = "conversation_id", length = 80)
+    private String conversationId;
+
+    @Column(name = "categoria", length = 30)
+    private String categoria;
+
+    @Column(name = "billable")
+    private Boolean billable;
+
+    @Column(name = "conversa_origem", length = 30)
+    private String conversaOrigem;
+
+    @Column(name = "comando", length = 255)
+    private String comando;
+
     public MensagemLog() {
         // JPA exige construtor padrao
     }
@@ -108,6 +145,39 @@ public class MensagemLog {
 
     public Instant getCriadoEm() { return criadoEm; }
     // sem setter — campo gerenciado pelo banco
+
+    public Long getIdClienteErp() { return idClienteErp; }
+    public void setIdClienteErp(Long idClienteErp) { this.idClienteErp = idClienteErp; }
+
+    public Instant getEventoEm() { return eventoEm; }
+    public void setEventoEm(Instant eventoEm) { this.eventoEm = eventoEm; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public Instant getStatusEm() { return statusEm; }
+    public void setStatusEm(Instant statusEm) { this.statusEm = statusEm; }
+
+    public String getErroCodigo() { return erroCodigo; }
+    public void setErroCodigo(String erroCodigo) { this.erroCodigo = erroCodigo; }
+
+    public String getErroTitulo() { return erroTitulo; }
+    public void setErroTitulo(String erroTitulo) { this.erroTitulo = erroTitulo; }
+
+    public String getConversationId() { return conversationId; }
+    public void setConversationId(String conversationId) { this.conversationId = conversationId; }
+
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
+
+    public Boolean getBillable() { return billable; }
+    public void setBillable(Boolean billable) { this.billable = billable; }
+
+    public String getConversaOrigem() { return conversaOrigem; }
+    public void setConversaOrigem(String conversaOrigem) { this.conversaOrigem = conversaOrigem; }
+
+    public String getComando() { return comando; }
+    public void setComando(String comando) { this.comando = comando; }
 
     @Override
     public boolean equals(Object o) {
