@@ -19,17 +19,17 @@ export const routes: Routes = [
       {
         path: 'metricas',
         loadComponent: () =>
-          import('./features/home/home.component').then((m) => m.HomeComponent),
+          import('./features/metricas/metricas.component').then((m) => m.MetricasComponent),
       },
       {
         path: 'configuracao',
         loadComponent: () =>
-          import('./features/home/home.component').then((m) => m.HomeComponent),
+          import('./features/configuracao/configuracao.component').then((m) => m.ConfiguracaoComponent),
       },
       {
         path: 'testes',
         loadComponent: () =>
-          import('./features/home/home.component').then((m) => m.HomeComponent),
+          import('./features/testes/testes.component').then((m) => m.TestesComponent),
       },
       { path: '', pathMatch: 'full', redirectTo: 'conversas' },
     ],
