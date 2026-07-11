@@ -19,5 +19,6 @@ public record ResumoUsoResponse(
     long faturaveis,
     Map<String, Long> porTipo,
     Map<String, Long> statusSaida,
-    Map<String, Long> categoriaSaida
+    Map<String, Long> categoriaSaida,
+    Map<String, Long> porResultado
 ) { }
