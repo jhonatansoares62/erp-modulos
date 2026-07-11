@@ -1,6 +1,7 @@
 package br.com.erpkit.whatsapp.config;
 
-import br.com.erpkit.shared.security.ApiKeyFilter;
+import br.com.erpkit.whatsapp.security.JwtService;
+import br.com.erpkit.whatsapp.security.WhatsappAuthFilter;
 import br.com.erpkit.whatsapp.service.HmacValidator;
 import br.com.erpkit.whatsapp.web.HmacSignatureFilter;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,8 +9,6 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
-
-import java.util.Set;
 
 /**
  * Registra os 2 filters de seguranca do api-whatsapp:
@@ -19,21 +18,23 @@ import java.util.Set;
  *       restrito a {@code /webhook/*}. Valida HMAC-SHA256 do header
  *       {@code X-Hub-Signature-256} antes de qualquer processamento Spring MVC
  *       (PITFALLS C-02 — gate mais cedo possivel).</li>
- *   <li>{@link ApiKeyFilter} (lib-shared) — ordem {@code HIGHEST_PRECEDENCE + 10},
- *       aplicado a {@code /*}. Construido com {@code Set.of("/webhook")} como
- *       {@code additionalPublicPaths} (D-02 do CONTEXT.md) — webhook e publico
- *       de API key, validado pelo HMAC.</li>
+ *   <li>{@link WhatsappAuthFilter} — ordem {@code HIGHEST_PRECEDENCE + 10}, aplicado
+ *       a {@code /*}. SUBSTITUI o antigo {@code ApiKeyFilter} puro da lib-shared:
+ *       para {@code /api/whatsapp/**} aceita X-API-Key (ERP) OU Bearer JWT (atendente),
+ *       preservando a semantica de X-API-Key para nao quebrar os endpoints internos do
+ *       ERP, e libera webhook/monitor/health/swagger/estaticos como antes.</li>
  * </ol>
  *
  * <p>Comportamento esperado em runtime:
  * <ul>
- *   <li>POST {@code /webhook/whatsapp} → HMAC valida ou rejeita → ApiKey libera (path publico)
+ *   <li>POST {@code /webhook/whatsapp} → HMAC valida ou rejeita → Auth libera (nao e /api/whatsapp/)
  *       → Controller</li>
- *   <li>GET {@code /webhook/whatsapp} → HMAC pula (nao e POST) → ApiKey libera
+ *   <li>GET {@code /webhook/whatsapp} → HMAC pula (nao e POST) → Auth libera
  *       → Controller (que valida verifyToken)</li>
- *   <li>GET {@code /api/whatsapp/...} (futuro Phase 4) → HMAC pula (URL pattern nao casa)
- *       → ApiKey exige X-API-Key → Controller</li>
- *   <li>GET {@code /health} → HMAC pula → ApiKey libera (DEFAULT_PUBLIC_PATHS) → HealthController</li>
+ *   <li>{@code /api/whatsapp/enviar-*} (ERP) → HMAC pula → Auth exige X-API-Key OU Bearer → Controller</li>
+ *   <li>{@code POST /api/whatsapp/auth/login} → HMAC pula → Auth libera (login publico) → AuthController</li>
+ *   <li>{@code GET /api/whatsapp/auth/me} (atendente) → HMAC pula → Auth exige Bearer → AuthController</li>
+ *   <li>GET {@code /health} → HMAC pula → Auth libera → HealthController</li>
  * </ul>
  */
 @Configuration
@@ -41,8 +42,7 @@ public class SecurityConfig {
 
     /**
      * HMAC filter — ordem {@link Ordered#HIGHEST_PRECEDENCE}, so aplicado a
-     * {@code /webhook/*}. Endpoints internos do ERP (Phase 4) nao precisam HMAC,
-     * so API key.
+     * {@code /webhook/*}. Endpoints internos do ERP nao precisam HMAC, so a auth abaixo.
      */
     @Bean
     public FilterRegistrationBean<HmacSignatureFilter> hmacSignatureFilter(
@@ -55,16 +55,16 @@ public class SecurityConfig {
     }
 
     /**
-     * API Key filter (lib-shared) — depois do HMAC filter. Construtor de 2 args
-     * (PLAN-01) recebe {@code Set.of("/webhook")} como path publico extra:
-     * webhook e validado por HMAC, nao por API key.
+     * Auth filter do modulo — depois do HMAC filter. Substitui o {@code ApiKeyFilter} puro:
+     * guarda apenas {@code /api/whatsapp/**} (menos o login), aceitando X-API-Key (ERP) OU
+     * Bearer JWT (atendente). Webhook, monitor, health, swagger e estaticos passam livres —
+     * mesma cobertura publica que o ApiKeyFilter dava, agora dentro do proprio filtro.
      */
     @Bean
-    public FilterRegistrationBean<ApiKeyFilter> apiKeyFilter(@Value("${modulo.api-key:}") String apiKey) {
-        FilterRegistrationBean<ApiKeyFilter> registration = new FilterRegistrationBean<>();
-        // /webhook: publico via HMAC. /monitor: painel dev/meta (MonitorController so
-        // existe nesses profiles; em prod o path fica liberado mas sem endpoint).
-        registration.setFilter(new ApiKeyFilter(apiKey, Set.of("/webhook", "/monitor")));
+    public FilterRegistrationBean<WhatsappAuthFilter> whatsappAuthFilter(
+            @Value("${modulo.api-key:}") String apiKey, JwtService jwtService) {
+        FilterRegistrationBean<WhatsappAuthFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new WhatsappAuthFilter(apiKey, jwtService));
         registration.addUrlPatterns("/*");
         // HIGHEST_PRECEDENCE + 10 — depois do HmacSignatureFilter, antes de
         // qualquer outro filter custom que apareca em phases futuras.

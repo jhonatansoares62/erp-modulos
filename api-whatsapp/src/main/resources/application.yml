@@ -105,6 +105,19 @@ modulo:
   versao: 1.0.0
   api-key: ${API_KEY:}
 
+# Auth propria do modulo (atendente) — app WhatsApp standalone servido pelo proprio jar.
+# ADITIVA ao X-API-Key (ERP) e ao HMAC (webhook): so guarda /api/whatsapp/** via Bearer JWT
+# OU X-API-Key. jwt-secret DEVE ter >= 32 chars (fail-fast no boot). Todos os valores tem
+# default de dev e sao sobrescritos por env var (instalador WinSW) em producao.
+whatsapp:
+  auth:
+    jwt-secret: ${WHATSAPP_JWT_SECRET:dev-whatsapp-secret-troque-em-producao-0123456789}
+    jwt-expiration-hours: ${WHATSAPP_JWT_EXP_HOURS:12}
+    seed-email: ${WHATSAPP_SEED_EMAIL:atendente@erpkit.local}
+    seed-password: ${WHATSAPP_SEED_PASSWORD:Whats@2026}
+    seed-nome: ${WHATSAPP_SEED_NOME:Atendente}
+    empresa-nome: ${WHATSAPP_EMPRESA_NOME:ERP}
+
 # OpenAPI / Swagger UI
 springdoc:
   api-docs:
