@@ -104,7 +104,8 @@ public class WebhookPayloadParser {
         String tipo = mapTipo(msg);
         String conteudo = extrairConteudo(msg, tipo);
         String mediaId = extrairMediaId(msg);
-        return new MensagemEntranteDTO(wamid, telefone, telefoneWaId, tipo, conteudo, mediaId);
+        return new MensagemEntranteDTO(wamid, telefone, telefoneWaId, tipo, conteudo, mediaId,
+                parseTimestamp(msg.getTimestamp()));
     }
 
     /** Mapa {@code msg.type} -> constants {@link TipoMensagem}. Desconhecidos viram DESCONHECIDO. */

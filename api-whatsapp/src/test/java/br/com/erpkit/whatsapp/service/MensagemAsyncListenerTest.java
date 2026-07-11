@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,16 +65,17 @@ class MensagemAsyncListenerTest {
     // telefoneWaId = wa_id EXATO do Meta (com 9o digito) usado no callback/resposta.
     private static final String TEL_NORMALIZADO = "554784178525";
     private static final String TEL_WA_ID = "5547984178525";
+    private static final Instant TS = Instant.ofEpochSecond(1735689600L);
 
     private MensagemPersistidaEvent eventoText() {
         return new MensagemPersistidaEvent(
-            "wamid.001", TEL_NORMALIZADO, TEL_WA_ID, TipoMensagem.TEXT, "orcamento 1234", null, null);
+            "wamid.001", TEL_NORMALIZADO, TEL_WA_ID, TipoMensagem.TEXT, "orcamento 1234", null, null, TS);
     }
 
     private MensagemPersistidaEvent eventoDocumento() {
         return new MensagemPersistidaEvent(
             "wamid.002", TEL_NORMALIZADO, TEL_WA_ID, TipoMensagem.DOCUMENT, "fatura.pdf",
-            "MEDIA-ID-001", null);
+            "MEDIA-ID-001", null, TS);
     }
 
     private ClienteZap clienteMock(Long idClienteErp) {
@@ -97,8 +99,8 @@ class MensagemAsyncListenerTest {
         order.verify(comandoExtractor).extrair(TipoMensagem.TEXT, "orcamento 1234");
         order.verify(erpCallbackClient).despachar(any(ComandoCallbackDTO.class));
         verifyNoInteractions(metaMediaClient);
-        // V7 §12: linha de entrada enriquecida com id_cliente_erp + comando
-        verify(mensagemLogService).enriquecerEntrada("wamid.001", 42L, "orcamento", null);
+        // V7 §12: linha de entrada enriquecida com id_cliente_erp + comando + evento_em
+        verify(mensagemLogService).enriquecerEntrada("wamid.001", 42L, "orcamento", TS);
     }
 
     @Test
@@ -181,8 +183,8 @@ class MensagemAsyncListenerTest {
         verify(clienteZapService).identificar(any());
         verify(clienteZapService).atualizarUltimaMensagemEm(any());
         verifyNoInteractions(erpCallbackClient);
-        // V7 §12: enriquece mesmo sem comando (comando=null nao apaga)
-        verify(mensagemLogService).enriquecerEntrada("wamid.001", 42L, null, null);
+        // V7 §12: enriquece mesmo sem comando (comando=null nao apaga; evento_em segue)
+        verify(mensagemLogService).enriquecerEntrada("wamid.001", 42L, null, TS);
     }
 
     @Test

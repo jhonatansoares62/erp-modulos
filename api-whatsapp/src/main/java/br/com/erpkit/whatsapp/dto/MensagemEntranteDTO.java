@@ -1,5 +1,7 @@
 package br.com.erpkit.whatsapp.dto;
 
+import java.time.Instant;
+
 /**
  * Mensagem ja extraida e normalizada pelo parser — pronta para
  * {@link br.com.erpkit.whatsapp.service.MensagemService} processar (Plan 06).
@@ -18,6 +20,7 @@ package br.com.erpkit.whatsapp.dto;
  * @param conteudo     conteudo extraido (texto, button_reply.id+title,
  *                     filename, etc.) ou {@code null} para tipos sem texto
  * @param mediaId      ID do media no Meta para document/image/audio, ou {@code null}
+ * @param timestamp    instante do evento na Meta ({@code message.timestamp}) ou {@code null}
  */
 public record MensagemEntranteDTO(
     String wamid,
@@ -25,5 +28,6 @@ public record MensagemEntranteDTO(
     String telefoneWaId,
     String tipo,
     String conteudo,
-    String mediaId
+    String mediaId,
+    Instant timestamp
 ) { }

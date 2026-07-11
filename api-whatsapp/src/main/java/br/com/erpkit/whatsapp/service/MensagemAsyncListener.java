@@ -141,10 +141,10 @@ public class MensagemAsyncListener {
         // [4] extrair comando
         String comando = comandoExtractor.extrair(event.tipo(), event.conteudo());
 
-        // [4.1] enriquecer a linha de entrada (V7 §12): id_cliente_erp + comando (evento_em
-        // vem na fatia 3b). Roda mesmo sem comando. Best-effort — nao interrompe o dispatch.
+        // [4.1] enriquecer a linha de entrada (V7 §12): id_cliente_erp + comando + evento_em
+        // (ts real da Meta). Roda mesmo sem comando. Best-effort — nao interrompe o dispatch.
         try {
-            mensagemLogService.enriquecerEntrada(event.wamid(), idClienteErp, comando, null);
+            mensagemLogService.enriquecerEntrada(event.wamid(), idClienteErp, comando, event.timestamp());
         } catch (Exception e) {
             log.warn("Falha ao enriquecer entrada wamid={}: {}", event.wamid(), e.getMessage());
         }

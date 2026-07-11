@@ -52,14 +52,14 @@ Legenda: `[ ]` pendente · `[~]` em andamento · `[x]` feito
 - [x] testes: `MensagemLogServiceTest` (enriquece/null-não-apaga/skip) + `MensagemAsyncListenerTest` (verify enriquecerEntrada, inclusive sem comando) → **suíte verde**
 - [x] commit
 
-### Fatia 3b — Timestamp real da Meta (`evento_em`) → #3
-- [ ] `MessageDTO.timestamp` já é parseado; threading via `MensagemEntranteDTO` + `MensagemPersistidaEvent`
-- [ ] `WebhookPayloadParser.extrairMensagem`: setar timestamp (reusa `parseTimestamp`)
-- [ ] `MensagemService`: passar `m.timestamp()` no event
-- [ ] `MensagemAsyncListener`: passar `event.timestamp()` no `enriquecerEntrada` (serviço já aceita)
-- [ ] inbound = ts Meta; outbound continua com `criado_em`/`status_em` (evita churn no WhatsAppCloudClient crítico)
-- [ ] testes atualizados (construtores dos records) + suíte verde
-- [ ] commit
+### Fatia 3b — Timestamp real da Meta (`evento_em`) → #3 ✅
+- [x] threading via `MensagemEntranteDTO` + `MensagemPersistidaEvent` (novo campo `timestamp`)
+- [x] `WebhookPayloadParser.extrairMensagem`: `parseTimestamp(msg.getTimestamp())`
+- [x] `MensagemService`: passa `m.timestamp()` no event
+- [x] `MensagemAsyncListener`: passa `event.timestamp()` no `enriquecerEntrada`
+- [x] inbound = ts Meta; outbound segue com `criado_em`/`status_em` (sem churn no WhatsAppCloudClient crítico)
+- [x] testes atualizados (records) + suíte verde
+- [x] commit
 
 ---
 

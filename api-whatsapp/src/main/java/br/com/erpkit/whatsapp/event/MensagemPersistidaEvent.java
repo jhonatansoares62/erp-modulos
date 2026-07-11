@@ -18,6 +18,7 @@ package br.com.erpkit.whatsapp.event;
  * @param conteudo     payload extraido (texto cru, "id|title", filename) — pode ser {@code null}
  * @param mediaId      id Meta para media (document/image/audio) — {@code null} se sem media
  * @param idClienteErp campo reservado, sempre {@code null} neste evento — listener busca via {@code ClienteZapService}
+ * @param timestamp    instante do evento na Meta (para gravar {@code evento_em}) ou {@code null}
  */
 public record MensagemPersistidaEvent(
     String wamid,
@@ -26,5 +27,6 @@ public record MensagemPersistidaEvent(
     String tipo,
     String conteudo,
     String mediaId,
-    Long idClienteErp
+    Long idClienteErp,
+    java.time.Instant timestamp
 ) { }
