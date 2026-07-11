@@ -69,7 +69,9 @@ Legenda: `[ ]` pendente · `[~]` em andamento · `[x]` feito
 - [x] `RelatorioController` `GET /api/whatsapp/relatorios/resumo?de&ate` (ISO, default 30d; ApiKey protege `/api/whatsapp/*`)
 - [x] `RelatorioUsoServiceIntegrationTest` (H2 seed: direção/tipo/status/categoria/faturáveis + range) → **suíte verde**
 - [x] commit (módulo)
-- [ ] expor em `lib-whatsapp-client` (`WhatsAppClient.relatorioResumo` + DTO) + proxy no ERP + tela
+- [x] `lib-whatsapp-client`: `WhatsAppClient.relatorioResumo(de, ate)` + `ResumoUsoResponse` (DTO, datas ISO String) + `WhatsAppClientImplWireMockTest` → verde
+- [ ] proxy no ERP (`ModulosController` → `GET /api/modulos/whatsapp/relatorios/resumo`) + tela de "Uso" em Configurações → Módulos → WhatsApp (repo do ERP)
+- [ ] `mvn install` do lib-whatsapp-client p/ os ERPs consumirem o método novo
 
 ---
 

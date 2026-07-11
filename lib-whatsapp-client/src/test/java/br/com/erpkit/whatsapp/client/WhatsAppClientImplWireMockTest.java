@@ -5,6 +5,7 @@ import br.com.erpkit.whatsapp.client.dto.EnvioResponse;
 import br.com.erpkit.whatsapp.client.dto.ItemDto;
 import br.com.erpkit.whatsapp.client.dto.MetaConfigRequest;
 import br.com.erpkit.whatsapp.client.dto.MetaConfigResponse;
+import br.com.erpkit.whatsapp.client.dto.ResumoUsoResponse;
 import br.com.erpkit.whatsapp.client.dto.SecaoDto;
 import br.com.erpkit.whatsapp.client.dto.StatusResponse;
 import br.com.erpkit.whatsapp.client.dto.WhatsAppRespostaDto;
@@ -182,6 +183,33 @@ class WhatsAppClientImplWireMockTest {
         assertThat(cfg.verifyTokenConfigurado()).isFalse();
         assertThat(cfg.configurado()).isFalse();
         wireMock.verify(1, getRequestedFor(urlPathEqualTo("/api/whatsapp/config")));
+    }
+
+    @Test
+    @DisplayName("relatorioResumo faz GET /relatorios/resumo com de/ate e desserializa ResumoUsoResponse")
+    void relatorioResumo_happy() {
+        wireMock.stubFor(get(urlPathEqualTo("/api/whatsapp/relatorios/resumo"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"de\":\"2026-07-01T00:00:00Z\",\"ate\":\"2026-07-31T00:00:00Z\","
+                                + "\"total\":4,\"entrada\":1,\"saida\":3,\"faturaveis\":2,"
+                                + "\"porTipo\":{\"text\":3,\"interactive_list\":1},"
+                                + "\"statusSaida\":{\"delivered\":1,\"read\":1,\"failed\":1},"
+                                + "\"categoriaSaida\":{\"service\":2,\"sem_categoria\":1}}")));
+
+        ResumoUsoResponse r = client().relatorioResumo("2026-07-01T00:00:00Z", "2026-07-31T00:00:00Z");
+
+        assertThat(r.total()).isEqualTo(4);
+        assertThat(r.entrada()).isEqualTo(1);
+        assertThat(r.saida()).isEqualTo(3);
+        assertThat(r.faturaveis()).isEqualTo(2);
+        assertThat(r.porTipo()).containsEntry("text", 3L).containsEntry("interactive_list", 1L);
+        assertThat(r.statusSaida()).containsEntry("failed", 1L);
+        assertThat(r.categoriaSaida()).containsEntry("service", 2L).containsEntry("sem_categoria", 1L);
+        wireMock.verify(1, getRequestedFor(urlPathEqualTo("/api/whatsapp/relatorios/resumo"))
+                .withQueryParam("de", equalTo("2026-07-01T00:00:00Z"))
+                .withQueryParam("ate", equalTo("2026-07-31T00:00:00Z")));
     }
 
     @Test

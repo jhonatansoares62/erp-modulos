@@ -4,6 +4,7 @@ import br.com.erpkit.whatsapp.client.dto.BotaoDto;
 import br.com.erpkit.whatsapp.client.dto.EnvioResponse;
 import br.com.erpkit.whatsapp.client.dto.MetaConfigRequest;
 import br.com.erpkit.whatsapp.client.dto.MetaConfigResponse;
+import br.com.erpkit.whatsapp.client.dto.ResumoUsoResponse;
 import br.com.erpkit.whatsapp.client.dto.SecaoDto;
 import br.com.erpkit.whatsapp.client.dto.StatusResponse;
 import br.com.erpkit.whatsapp.client.dto.WhatsAppRespostaDto;
@@ -52,6 +53,12 @@ public interface WhatsAppClient {
 
     /** Proxy do {@code PUT /api/whatsapp/config} — grava as credenciais Meta (atualizacao parcial). */
     MetaConfigResponse salvarConfig(MetaConfigRequest req);
+
+    /**
+     * Proxy do {@code GET /api/whatsapp/relatorios/resumo} — resumo de uso do periodo
+     * (V7 §12). {@code de}/{@code ate} sao ISO-8601 opcionais ({@code null} = ultimos 30 dias).
+     */
+    ResumoUsoResponse relatorioResumo(String de, String ate);
 
     /** Health check leve (nao lanca excecao; retorna {@code false} se offline/desabilitado). */
     boolean isOnline();

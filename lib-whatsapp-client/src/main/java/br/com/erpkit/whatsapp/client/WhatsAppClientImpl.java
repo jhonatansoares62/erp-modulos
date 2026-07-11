@@ -4,6 +4,7 @@ import br.com.erpkit.whatsapp.client.dto.BotaoDto;
 import br.com.erpkit.whatsapp.client.dto.EnvioResponse;
 import br.com.erpkit.whatsapp.client.dto.MetaConfigRequest;
 import br.com.erpkit.whatsapp.client.dto.MetaConfigResponse;
+import br.com.erpkit.whatsapp.client.dto.ResumoUsoResponse;
 import br.com.erpkit.whatsapp.client.dto.SecaoDto;
 import br.com.erpkit.whatsapp.client.dto.StatusResponse;
 import br.com.erpkit.whatsapp.client.dto.WhatsAppRespostaDto;
@@ -141,6 +142,21 @@ public class WhatsAppClientImpl implements WhatsAppClient {
                 .body(req)
                 .retrieve()
                 .body(MetaConfigResponse.class));
+    }
+
+    @Override
+    public ResumoUsoResponse relatorioResumo(String de, String ate) {
+        verificarHabilitado();
+        return execute(() -> restClient.get()
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/api/whatsapp/relatorios/resumo");
+                    if (de != null && !de.isBlank()) uriBuilder.queryParam("de", de);
+                    if (ate != null && !ate.isBlank()) uriBuilder.queryParam("ate", ate);
+                    return uriBuilder.build();
+                })
+                .headers(this::aplicarApiKey)
+                .retrieve()
+                .body(ResumoUsoResponse.class));
     }
 
     @Override
