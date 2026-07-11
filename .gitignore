@@ -37,6 +37,13 @@ api-storage/uploads/
 ### Build do contabil-app empacotado no jar da api-contabil (gerado por `ng build`) ###
 api-contabil/src/main/resources/static/
 
+### Build do whatsapp-app empacotado no jar da api-whatsapp (gerado por `ng build`) ###
+### Ignora só os artefatos do build; monitor.html (dev/meta) fica versionado na raiz do static ###
+api-whatsapp/src/main/resources/static/browser/
+api-whatsapp/src/main/resources/static/3rdpartylicenses.txt
+api-whatsapp/src/main/resources/static/prerendered-routes.json
+!api-whatsapp/src/main/resources/static/monitor.html
+
 ### Secrets locais (Meta Cloud API tokens, etc) ###
 .secrets/*.env
 !.secrets/*.env.example
