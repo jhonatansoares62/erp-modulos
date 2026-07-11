@@ -73,7 +73,8 @@ Legenda: `[ ]` pendente · `[~]` em andamento · `[x]` feito
 - [x] `mvn install` do lib-whatsapp-client (SNAPSHOT no .m2)
 - [x] proxy no ERP-ODONTO (`ModulosController` → `GET /api/modulos/whatsapp/relatorios/resumo`) — compila
 - [x] tela "Uso (últimos 30 dias)" em Configurações → Módulos → WhatsApp (enviadas/recebidas/faturáveis + chips por status/tipo) — frontend build verde
-- [ ] **deploy p/ ver ao vivo:** rebuild `api-whatsapp.jar` (V7) + swap no serviço `ERP-Odonto-WhatsApp` (aplica V7, liga `/relatorios`) + jar swap do ERP-Odonto (tela nova). Sem isso, o instalado (V6) não tem o endpoint → tela mostra "sem dados".
+- [x] **deploy feito e verificado ao vivo:** `api-whatsapp.jar` (V7) no `ERP-Odonto-WhatsApp` (Flyway V7 aplicado, 11 colunas novas, `/relatorios` responde 200 com dados reais: total 48) + jar swap do ERP-Odonto (tela). Proxy do ERP exige login (401 sem sessão, correto).
+  - Nota: linhas históricas (pré-V7) saem como `status=pendente` / `categoria=sem_categoria` / `faturaveis=0` — só mensagens NOVAS populam status/categoria/billable/evento_em.
 
 ---
 
