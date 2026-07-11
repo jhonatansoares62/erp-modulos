@@ -35,6 +35,43 @@ public interface MensagemLogRepository extends JpaRepository<MensagemLog, Long> 
     /** Ultimas mensagens (in + out) para o painel de monitoramento (dev/meta). */
     List<MensagemLog> findTop200ByOrderByIdDesc();
 
+    // ── Inbox/Chat do atendente (leitura). ──
+
+    /**
+     * Historico de um telefone em ordem CRONOLOGICA (ASC) — natural para renderizar
+     * um chat de cima para baixo. Paginado.
+     */
+    Page<MensagemLog> findByTelefoneOrderByCriadoEmAsc(String telefone, Pageable pageable);
+
+    /**
+     * Ultima mensagem (qualquer direcao) de um telefone — usada para o preview,
+     * direcao e tipo do card de conversa na lista de Inbox.
+     */
+    Optional<MensagemLog> findFirstByTelefoneOrderByCriadoEmDesc(String telefone);
+
+    /** Total de mensagens (in + out) de um telefone. */
+    long countByTelefone(String telefone);
+
+    /** Existe ao menos uma mensagem para o telefone? (decide 404 no detalhe). */
+    boolean existsByTelefone(String telefone);
+
+    /**
+     * Pagina de conversas (uma linha por telefone) ordenada por ULTIMA ATIVIDADE
+     * (max criado_em de qualquer direcao) DESC. Retorna {@code Object[]{telefone,
+     * ultimaAtividade, total}}. A projecao evita carregar todas as mensagens; o
+     * preview/direcao da ultima mensagem e resolvido depois por telefone da pagina
+     * ({@link #findFirstByTelefoneOrderByCriadoEmDesc}) — N limitado ao tamanho da pagina.
+     *
+     * <p>{@code countQuery} conta telefones DISTINTOS (nao linhas de mensagem), para
+     * o total de paginas bater com a granularidade "por conversa".
+     */
+    @Query(value =
+        "SELECT m.telefone, MAX(m.criadoEm), COUNT(m) FROM MensagemLog m "
+      + "GROUP BY m.telefone ORDER BY MAX(m.criadoEm) DESC",
+        countQuery =
+        "SELECT COUNT(DISTINCT m.telefone) FROM MensagemLog m")
+    Page<Object[]> listarConversas(Pageable pageable);
+
     // ── Agregacoes de relatorio (V7 §12). GROUP BY em janela [de, ate] (criado_em). ──
     // Retornam List<Object[]>{chave, count} no padrao de api-email (contarPorStatus).
 
