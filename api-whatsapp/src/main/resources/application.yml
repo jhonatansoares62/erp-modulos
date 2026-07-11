@@ -28,16 +28,21 @@ spring:
   application:
     name: api-whatsapp
 
-  # Datasource: PostgreSQL 15 local (porta 5433, schema 'whatsapp').
-  # currentSchema=whatsapp no JDBC URL e defesa em profundidade — caso
-  # spring.jpa.properties.hibernate.default_schema nao se aplicar a
-  # alguma query nativa, o search_path do PostgreSQL resolve para 'whatsapp'.
-  # Defaults erp_mudas/erp_mudas_dev sao pra DEV LOCAL apenas — em producao
-  # o instalador WinSW define WHATSAPP_DB_USERNAME/WHATSAPP_DB_PASSWORD via env vars.
+  # Datasource: PostgreSQL local, schema 'whatsapp'. Modulo ERP-agnostico —
+  # NAO embute banco/credenciais de nenhum ERP no jar. Cada deployment fornece
+  # WHATSAPP_DB_URL/USERNAME/PASSWORD via env var (instalador WinSW) ou
+  # --spring.config.additional-location (C:/erpkit/config/<erp>/modulos/whatsapp.properties).
+  # Placeholders vazios (${VAR:}) => fail-fast no boot se nao configurado, mesmo padrao
+  # dos 5 secrets em app.modulos.whatsapp abaixo. Impede que uma instancia sem override
+  # caia silenciosamente no banco de outro ERP.
+  # A URL fornecida DEVE incluir ?currentSchema=whatsapp (defesa em profundidade para
+  # queries nativas sem prefixo). Ex. (instalador Odonto):
+  #   jdbc:postgresql://localhost:5433/db_api_whatsapp?currentSchema=whatsapp
+  # Dev local usa H2 (profiles 'dev'/'meta'), nao este bloco.
   datasource:
-    url: ${WHATSAPP_DB_URL:jdbc:postgresql://localhost:5433/erp_mudas?currentSchema=whatsapp}
-    username: ${WHATSAPP_DB_USERNAME:erp_mudas}
-    password: ${WHATSAPP_DB_PASSWORD:erp_mudas_dev}
+    url: ${WHATSAPP_DB_URL:}
+    username: ${WHATSAPP_DB_USERNAME:}
+    password: ${WHATSAPP_DB_PASSWORD:}
 
   # JPA: ddl-auto: validate (NAO update/create) — schema vem 100% do Flyway.
   # open-in-view: false — anti-pattern em producao (PITFALLS / convencao do monorepo).
@@ -48,9 +53,9 @@ spring:
   # internamente; com default_schema setado, o prefixo gera
   # "whatsapp.information_schema.sequences" que nao existe em H2 nem em PG. As
   # 3 entities ja declaram @Table(schema = "whatsapp", name = "...") explicitamente,
-  # portanto cada query JPA prefixa corretamente. O currentSchema=whatsapp no
-  # JDBC URL acima fica como defesa em profundidade para queries nativas que
-  # nao tenham prefixo (busca search_path do PostgreSQL).
+  # portanto cada query JPA prefixa corretamente. O currentSchema=whatsapp na
+  # WHATSAPP_DB_URL (fornecida via env/config) fica como defesa em profundidade para
+  # queries nativas que nao tenham prefixo (busca search_path do PostgreSQL).
   jpa:
     hibernate:
       ddl-auto: validate

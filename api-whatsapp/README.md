@@ -39,8 +39,8 @@ Documentação interativa: **Swagger UI** em `/swagger-ui.html` · OpenAPI JSON 
 | `WHATSAPP_APP_SECRET` | ✅ | — | App Secret (valida HMAC do webhook) |
 | `WHATSAPP_VERIFY_TOKEN` | ✅ | — | Token do handshake `hub.verify_token` |
 | `WHATSAPP_ERP_CALLBACK_URL` | ✅ | — | Base URL do ERP para callback de comandos |
-| `WHATSAPP_DB_URL` | — | `jdbc:postgresql://localhost:5433/erp_mudas?currentSchema=whatsapp` | JDBC do PostgreSQL local |
-| `WHATSAPP_DB_USERNAME` / `WHATSAPP_DB_PASSWORD` | — | `erp_mudas` / `erp_mudas_dev` | Credenciais (dev) |
+| `WHATSAPP_DB_URL` | ✅ | — | JDBC do PostgreSQL local — deve incluir `?currentSchema=whatsapp` (ex.: `jdbc:postgresql://localhost:5433/db_api_whatsapp?currentSchema=whatsapp`) |
+| `WHATSAPP_DB_USERNAME` / `WHATSAPP_DB_PASSWORD` | ✅ | — | Credenciais do banco (fornecidas por deployment; sem default embutido) |
 | `WHATSAPP_CALLBACK_TIMEOUT` | — | `5s` | Timeout do callback ao ERP |
 | `WHATSAPP_META_API_BASE_URL` | — | `https://graph.facebook.com/v22.0` | Base do Graph API (override em testes) |
 | `API_KEY` | — | *(vazio)* | Chave dos endpoints internos (`X-API-Key`) |
