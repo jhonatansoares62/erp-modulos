@@ -4,6 +4,7 @@ import br.com.erpkit.whatsapp.config.WhatsAppProperties;
 import br.com.erpkit.whatsapp.dto.EnvioResponse;
 import br.com.erpkit.whatsapp.exception.JanelaConversaFechadaException;
 import br.com.erpkit.whatsapp.exception.MetaApiException;
+import br.com.erpkit.whatsapp.service.MonitorService;
 import br.com.erpkit.whatsapp.service.WhatsAppCloudClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -53,6 +54,7 @@ class WhatsAppControllerTest {
     @MockBean WhatsAppCloudClient cloudClient;
     @MockBean WhatsAppProperties properties;
     @MockBean CircuitBreakerRegistry cbRegistry;
+    @MockBean MonitorService monitorService;
 
     @BeforeEach
     void setupDefaults() {
