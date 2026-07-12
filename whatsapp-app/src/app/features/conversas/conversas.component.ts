@@ -281,6 +281,9 @@ export class ConversasComponent implements OnInit {
 
   // true = usuário está (ou queremos manter) no fim do histórico → auto-scroll ao chegar msg nova.
   private grudadoNoFim = true;
+  // Enquanto ancoramos no fim, o scrollTo dispara o elementScrolled; sem suprimir, o
+  // medirGrude marcaria grudadoNoFim=false no meio da ancoragem e mataria a re-tentativa.
+  private ancorando = false;
 
   readonly selecionadoResumo = computed(() =>
     this.conversas().find((c) => c.telefone === this.selecionado()) ?? null,
@@ -366,8 +369,8 @@ export class ConversasComponent implements OnInit {
 
   private medirGrude(): void {
     const vp = this.viewport;
-    if (!vp) {
-      return;
+    if (!vp || this.ancorando) {
+      return; // durante a auto-ancoragem no fim, ignora os scrolls que nós mesmos disparamos
     }
     // "Grudado" se está a menos de ~60px do fim — tolerância pra não desgrudar por arredondamento.
     this.grudadoNoFim = vp.measureScrollOffset('bottom') < 60;
@@ -424,20 +427,32 @@ export class ConversasComponent implements OnInit {
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   }
 
-  private rolarParaFim(): void {
+  private rolarParaFim(tentativas = 12): void {
     this.grudadoNoFim = true;
-    // Duas passadas: o autosize só mede a altura real das bolhas recém-renderizadas depois do
-    // primeiro ciclo, então um único scrollTo pode "parar curto". A 2ª passada (macrotask)
-    // reancora no fim já com as alturas medidas.
-    const ancorar = () => {
+    this.ancorando = true;
+    // Agenda cada passada (setTimeout): dá tempo do Angular renderizar o viewport (que vive
+    // num @if e pode não existir no instante da chamada) e do autosize medir mais itens.
+    setTimeout(() => {
       const vp = this.viewport;
+      const n = this.mensagens().length;
+      if (!n) {
+        this.ancorando = false;
+        return;
+      }
       if (!vp) {
+        // viewport ainda não renderizou — re-tenta enquanto houver fôlego
+        if (tentativas > 0) { this.rolarParaFim(tentativas - 1); } else { this.ancorando = false; }
         return;
       }
       vp.checkViewportSize();
-      vp.scrollTo({ bottom: 0, behavior: 'auto' });
-    };
-    queueMicrotask(ancorar);
-    setTimeout(ancorar, 0);
+      vp.scrollToIndex(n - 1, 'auto'); // vai pro último item (autosize reancora as alturas)
+      vp.scrollTo({ bottom: 0 });      // ajuste fino no fim
+      // Ainda longe do fim (autosize mediu mais)? re-tenta. Senão, encerra a ancoragem.
+      if (tentativas > 0 && vp.measureScrollOffset('bottom') > 8) {
+        this.rolarParaFim(tentativas - 1);
+      } else {
+        this.ancorando = false;
+      }
+    }, 60);
   }
 }
