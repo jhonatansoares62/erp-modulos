@@ -5,8 +5,8 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
-import { Observable, finalize, interval, of, switchMap } from 'rxjs';
-import { ConversaResumo, Mensagem, Page, WhatsAppApiService } from '../../core/whatsapp-api.service';
+import { Observable, finalize, interval, map, of, switchMap } from 'rxjs';
+import { ConversaResumo, Mensagem, WhatsAppApiService } from '../../core/whatsapp-api.service';
 
 const POLL_LISTA_MS = 5000;
 const POLL_CHAT_MS = 4000;
@@ -325,11 +325,11 @@ export class ConversasComponent implements OnInit {
       takeUntilDestroyed(this.destroyRef),
       finalize(() => { if (comLoading) this.carregandoChat.set(false); }),
     ).subscribe({
-      next: (pg) => {
+      next: (msgs) => {
         if (tel !== this.selecionado()) {
           return; // trocou de conversa durante a requisição — descarta resposta obsoleta
         }
-        const novas = pg.content ?? [];
+        const novas = msgs ?? [];
         const anterior = this.mensagens();
         const cresceu = novas.length > anterior.length
           || (novas.length > 0 && anterior.length > 0 && novas[novas.length - 1].id !== anterior[anterior.length - 1].id);
@@ -348,19 +348,34 @@ export class ConversasComponent implements OnInit {
   }
 
   /**
-   * Busca a ÚLTIMA página de mensagens (as mais recentes). A API pagina em ordem
-   * cronológica ASC e ignora sort: a página 0 traz as mais ANTIGAS. Então pedimos a
-   * page 0 só pra ler totalPages e, havendo mais de uma, refazemos na última página —
-   * assim o fim do scroll é a mensagem mais recente real. (Carregar mais antigas ao
-   * rolar pra cima fica pra depois.)
+   * Monta as mensagens MAIS RECENTES pra exibir. A API pagina em ordem cronológica ASC e
+   * ignora sort: a página 0 traz as mais ANTIGAS. Pedimos page 0 só pra ler totalPages e,
+   * havendo mais de uma, buscamos a ÚLTIMA. Se a última vier PARCIAL (< PAGE_MENSAGENS) e
+   * existir anterior, buscamos também a anterior e concatenamos (anterior primeiro, mantendo
+   * ASC) — senão o histórico colapsaria pro resto (N mod 100) ao cruzar cada múltiplo de 100
+   * (ex.: 101 msgs mostraria 1 balão só). Resultado: sempre entre 100 e ~200 mensagens, com a
+   * mais recente no fim. (Carregar mais antigas ao rolar pra cima fica pra depois.)
    */
-  private buscarUltimaPagina(tel: string): Observable<Page<Mensagem>> {
+  private buscarUltimaPagina(tel: string): Observable<Mensagem[]> {
     return this.api.listarMensagens(tel, 0, PAGE_MENSAGENS).pipe(
-      switchMap((pg) =>
-        pg.totalPages > 1
-          ? this.api.listarMensagens(tel, pg.totalPages - 1, PAGE_MENSAGENS)
-          : of(pg),
-      ),
+      switchMap((primeira) => {
+        if (primeira.totalPages <= 1) {
+          return of(primeira.content ?? []);
+        }
+        const ultimaIdx = primeira.totalPages - 1;
+        return this.api.listarMensagens(tel, ultimaIdx, PAGE_MENSAGENS).pipe(
+          switchMap((ultima) => {
+            const recentes = ultima.content ?? [];
+            // Última parcial + existe anterior → traz a anterior e concatena (anterior primeiro).
+            if (recentes.length < PAGE_MENSAGENS && ultimaIdx >= 1) {
+              return this.api.listarMensagens(tel, ultimaIdx - 1, PAGE_MENSAGENS).pipe(
+                map((anterior) => [...(anterior.content ?? []), ...recentes]),
+              );
+            }
+            return of(recentes);
+          }),
+        );
+      }),
     );
   }
 
