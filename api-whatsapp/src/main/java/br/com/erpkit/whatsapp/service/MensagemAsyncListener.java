@@ -59,6 +59,7 @@ public class MensagemAsyncListener {
     private final MensagemLogService mensagemLogService;
     private final AssistenteService assistenteService;
     private final EstadoConversaService estadoConversaService;
+    private final WhatsAppCloudClient cloudClient;
 
     public MensagemAsyncListener(MetaMediaClient metaMediaClient,
                                  ClienteZapService clienteZapService,
@@ -66,7 +67,8 @@ public class MensagemAsyncListener {
                                  ErpCallbackClient erpCallbackClient,
                                  MensagemLogService mensagemLogService,
                                  AssistenteService assistenteService,
-                                 EstadoConversaService estadoConversaService) {
+                                 EstadoConversaService estadoConversaService,
+                                 WhatsAppCloudClient cloudClient) {
         this.metaMediaClient = metaMediaClient;
         this.clienteZapService = clienteZapService;
         this.comandoExtractor = comandoExtractor;
@@ -74,6 +76,7 @@ public class MensagemAsyncListener {
         this.mensagemLogService = mensagemLogService;
         this.assistenteService = assistenteService;
         this.estadoConversaService = estadoConversaService;
+        this.cloudClient = cloudClient;
     }
 
     /**
@@ -142,6 +145,19 @@ public class MensagemAsyncListener {
             log.warn("Falha ao checar estado de atendimento (seguindo com o bot): {}", e.getMessage());
         }
 
+        // [3.6] FORA DO HORARIO: se configurado e a mensagem chega fora do expediente, responde
+        // o aviso da persona e NAO processa o bot. A clinica define o horario na tela Assistente;
+        // horario vazio = atende 24h (nunca bloqueia).
+        try {
+            if (assistenteService.estaForaDoHorario()) {
+                enviarSeguro(event.telefoneWaId(), assistenteService.mensagemForaHorario());
+                log.info("Fora do horario de atendimento — aviso enviado: telefone={}", event.telefone());
+                return;
+            }
+        } catch (Exception e) {
+            log.warn("Falha no check de horario (seguindo com o bot): {}", e.getMessage());
+        }
+
         // [3.1] resolver id_cliente_erp no ERP se ainda NULL (D-07). Best-effort: falha
         // aqui NAO interrompe o fluxo — o callback segue com id NULL (comportamento atual).
         Long idClienteErp = cliente.getIdClienteErp();
@@ -196,12 +212,29 @@ public class MensagemAsyncListener {
             // desfecho null = callback falhou (fallback Resilience4j) -> deixa sem resultado.
             if (desfecho != null && desfecho.resultado() != null) {
                 mensagemLogService.registrarDesfecho(event.wamid(), desfecho.resultado());
+                // Fallback "nao entendi": nenhum handler do ERP casou o comando -> a persona
+                // responde a mensagem generica (senao o bot ficaria mudo p/ texto livre).
+                if ("nao_entendi".equals(desfecho.resultado())) {
+                    enviarSeguro(event.telefoneWaId(), assistenteService.mensagemNaoEntendi());
+                }
             }
         } catch (Exception e) {
             // Resilience4j fallbackMethod ja capturou e logou. Catch-all defensivo
             // para qualquer excecao que escape (ex: bug, OOM em base64).
             log.error("Falha definitiva no callback ERP: wamid={} comando={}: {}",
                       event.wamid(), comando, e.getMessage(), e);
+        }
+    }
+
+    /** Envia um texto ao paciente sem propagar falha (best-effort; respeita a janela 24h). */
+    private void enviarSeguro(String telefoneWaId, String texto) {
+        if (texto == null || texto.isBlank()) {
+            return;
+        }
+        try {
+            cloudClient.enviarTexto(telefoneWaId, texto);
+        } catch (Exception e) {
+            log.warn("Falha ao enviar mensagem automatica (telefone={}): {}", telefoneWaId, e.getMessage());
         }
     }
 }
