@@ -118,13 +118,13 @@ public class WhatsAppCloudClient {
         Map<String, Object> body = Map.of(
                 "messaging_product", "whatsapp",
                 "recipient_type", "individual",
-                "to", TelefoneBR.paraEnvio(telefone),
+                "to", TelefoneBR.normalizar(telefone),
                 "type", "text",
                 "text", Map.of("body", texto)
         );
         Map response = postMessages(body);
         String wamid = extrairWamid(response);
-        mensagemLogRepository.save(new MensagemLog(wamid, telefone, Direcao.out, "text", texto, null));
+        mensagemLogRepository.save(new MensagemLog(wamid, TelefoneBR.normalizar(telefone), Direcao.out, "text", texto, null));
         log.info("WhatsApp Cloud enviarTexto ok: telefone={} wamid={}", telefone, wamid);
         return new EnvioResponse(wamid);
     }
@@ -153,13 +153,13 @@ public class WhatsAppCloudClient {
         Map<String, Object> body = Map.of(
                 "messaging_product", "whatsapp",
                 "recipient_type", "individual",
-                "to", TelefoneBR.paraEnvio(telefone),
+                "to", TelefoneBR.normalizar(telefone),
                 "type", "document",
                 "document", documento
         );
         Map response = postMessages(body);
         String wamid = extrairWamid(response);
-        mensagemLogRepository.save(new MensagemLog(wamid, telefone, Direcao.out, "document", caption, mediaId));
+        mensagemLogRepository.save(new MensagemLog(wamid, TelefoneBR.normalizar(telefone), Direcao.out, "document", caption, mediaId));
         log.info("WhatsApp Cloud enviarDocumento ok: telefone={} wamid={} mediaId={}", telefone, wamid, mediaId);
         return new EnvioResponse(wamid);
     }
@@ -180,13 +180,13 @@ public class WhatsAppCloudClient {
         Map<String, Object> body = Map.of(
                 "messaging_product", "whatsapp",
                 "recipient_type", "individual",
-                "to", TelefoneBR.paraEnvio(telefone),
+                "to", TelefoneBR.normalizar(telefone),
                 "type", "interactive",
                 "interactive", interactive
         );
         Map response = postMessages(body);
         String wamid = extrairWamid(response);
-        mensagemLogRepository.save(new MensagemLog(wamid, telefone, Direcao.out, "interactive_button", texto, null));
+        mensagemLogRepository.save(new MensagemLog(wamid, TelefoneBR.normalizar(telefone), Direcao.out, "interactive_button", texto, null));
         log.info("WhatsApp Cloud enviarBotoes ok: telefone={} wamid={} qtd_botoes={}", telefone, wamid, botoes.size());
         return new EnvioResponse(wamid);
     }
@@ -217,13 +217,13 @@ public class WhatsAppCloudClient {
         Map<String, Object> body = Map.of(
                 "messaging_product", "whatsapp",
                 "recipient_type", "individual",
-                "to", TelefoneBR.paraEnvio(telefone),
+                "to", TelefoneBR.normalizar(telefone),
                 "type", "interactive",
                 "interactive", interactive
         );
         Map response = postMessages(body);
         String wamid = extrairWamid(response);
-        mensagemLogRepository.save(new MensagemLog(wamid, telefone, Direcao.out, "interactive_list", texto, null));
+        mensagemLogRepository.save(new MensagemLog(wamid, TelefoneBR.normalizar(telefone), Direcao.out, "interactive_list", texto, null));
         log.info("WhatsApp Cloud enviarLista ok: telefone={} wamid={} secoes={}", telefone, wamid, secoes.size());
         return new EnvioResponse(wamid);
     }

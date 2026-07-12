@@ -45,13 +45,13 @@ class WebhookPayloadParserTest {
     // ============================================================
 
     @Test
-    @DisplayName("text portugues — extrai conteudo + telefone normalizado (DDD 47 SC strip 9)")
+    @DisplayName("text portugues — extrai conteudo + telefone canonico (DDD 47 SC com o 9)")
     void text_portugues() throws Exception {
         ParsedWebhook out = parser.extrair(fixture("text-portugues.json"));
         assertThat(out.mensagens()).hasSize(1);
         MensagemEntranteDTO m = out.mensagens().get(0);
         assertThat(m.wamid()).isEqualTo("wamid.HBgN.text.001");
-        assertThat(m.telefone()).isEqualTo("554784178525");  // strip 9 (DDD 47)
+        assertThat(m.telefone()).isEqualTo("5547984178525");  // canonico com o 9 (DDD 47)
         assertThat(m.tipo()).isEqualTo(TipoMensagem.TEXT);
         assertThat(m.conteudo()).isEqualTo("Olá, gostaria de um orçamento");
         assertThat(m.mediaId()).isNull();
@@ -80,7 +80,7 @@ class WebhookPayloadParserTest {
     }
 
     @Test
-    @DisplayName("document — extrai filename + mediaId (DDD 31 MG strip 9)")
+    @DisplayName("document — extrai filename + mediaId (DDD 31 MG com o 9)")
     void document() throws Exception {
         ParsedWebhook out = parser.extrair(fixture("document-pdf.json"));
         assertThat(out.mensagens()).hasSize(1);
@@ -88,7 +88,7 @@ class WebhookPayloadParserTest {
         assertThat(m.tipo()).isEqualTo(TipoMensagem.DOCUMENT);
         assertThat(m.conteudo()).isEqualTo("comprovante.pdf");
         assertThat(m.mediaId()).isEqualTo("media-id-12345");
-        assertThat(m.telefone()).isEqualTo("553187654321");  // MG — strip 9
+        assertThat(m.telefone()).isEqualTo("5531987654321");  // MG — canonico com o 9
     }
 
     // ============================================================
@@ -103,7 +103,7 @@ class WebhookPayloadParserTest {
         assertThat(out.statuses()).hasSize(1);
         assertThat(out.statuses().get(0).status()).isEqualTo("delivered");
         assertThat(out.statuses().get(0).wamid()).isEqualTo("wamid.HBgN.status.001");
-        assertThat(out.statuses().get(0).telefone()).isEqualTo("554784178525");  // strip 9 SC
+        assertThat(out.statuses().get(0).telefone()).isEqualTo("5547984178525");  // canonico com o 9 SC
     }
 
     @Test

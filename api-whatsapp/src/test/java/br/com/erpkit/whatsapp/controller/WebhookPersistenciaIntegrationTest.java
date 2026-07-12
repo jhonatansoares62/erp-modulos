@@ -365,57 +365,52 @@ class WebhookPersistenciaIntegrationTest {
     }
 
     // =========================================================================
-    // ROADMAP Phase 2 SC-3 — Telefone normalizado (DDDs SP/RJ/ES preservam 9; demais strip)
+    // ROADMAP Phase 2 SC-3 — Telefone canonico (todo celular BR com o 9o digito)
     // =========================================================================
 
     @Test
-    @DisplayName("SC-3a: DDD 47 SC (5547984178525, 13 digitos com 9) → strip 9 → 554784178525 (12 digitos)")
-    void sc3a_telefone_DDD47_e_normalizado_strip_9() throws Exception {
+    @DisplayName("SC-3a: DDD 47 SC → canonico com o 9 → 5547984178525 (13 digitos)")
+    void sc3a_telefone_DDD47_e_normalizado_com_9() throws Exception {
         postFixture("text-portugues.json");
 
         // Filtrar por wamid+telefone — outros tests do mesmo SpringContext (sc1,
         // sc2a, sc2f, multiple-messages) podem ter inserido o mesmo telefone
-        // 554784178525 (text-portugues.json e multiple-messages.json compartilham
-        // from=5547984178525). Wamid garante que a assertion mede o efeito DESTE
-        // POST, nao do total da tabela. Padrao de isolamento canonico do Plan 02-06
-        // SUMMARY.
+        // 5547984178525 (text-portugues.json e multiple-messages.json compartilham
+        // from). Wamid garante que a assertion mede o efeito DESTE POST, nao do
+        // total da tabela. Padrao de isolamento canonico do Plan 02-06 SUMMARY.
         Integer countWamid = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM whatsapp.mensagens_log WHERE wamid = ? AND telefone = ?",
-                Integer.class, "wamid.HBgN.text.001", "554784178525"
+                Integer.class, "wamid.HBgN.text.001", "5547984178525"
         );
         assertThat(countWamid)
-                .as("DDD 47 (Santa Catarina) NAO esta em DDDS_COM_NONO_DIGITO → strip 9 do local "
-                        + "(PITFALLS C-13 + PER-05). Filter por wamid garante que medimos efeito "
-                        + "DESTE POST.")
+                .as("Canonico = celular BR com o 9o digito (a Cloud API exige o 9 — 131026 sem ele). "
+                        + "Filter por wamid garante que medimos efeito DESTE POST.")
                 .isEqualTo(1);
 
-        // E NAO deve existir nenhuma row em todo o histograma com o telefone
-        // nao-normalizado de 13 digitos — INSERT sempre normaliza antes de gravar.
-        // Esta assertion e global (sem filter por wamid) porque NUNCA deve aparecer
-        // o formato cru, independentemente de quantos POSTs ja rodaram.
-        Integer countOriginal = jdbc.queryForObject(
+        // E NAO deve existir nenhuma row com o formato antigo de 12 digitos (sem o 9)
+        // — o INSERT sempre canonicaliza com o 9 antes de gravar. Assertion global.
+        Integer countSemNove = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM whatsapp.mensagens_log WHERE telefone = ?",
-                Integer.class, "5547984178525"
+                Integer.class, "554784178525"
         );
-        assertThat(countOriginal)
-                .as("Telefone NAO deve aparecer em formato cru de 13 digitos — sempre normalizado no INSERT")
+        assertThat(countSemNove)
+                .as("Telefone NAO deve aparecer em formato de 12 digitos (sem o 9) — sempre canonico no INSERT")
                 .isEqualTo(0);
     }
 
     @Test
-    @DisplayName("SC-3b: DDD 11 SP (5511987654321, 13 digitos com 9) → preserva 9 → 5511987654321 inalterado")
+    @DisplayName("SC-3b: DDD 11 SP (5511987654321, 13 digitos com 9) → canonico inalterado")
     void sc3b_telefone_DDD11_SP_mantem_9_digito() throws Exception {
         postFixture("button-reply.json");
 
-        // Telefone esperado em mensagens_log: 13 digitos com 9o digito preservado.
-        // DDD 11 esta em DDDS_COM_NONO_DIGITO → TelefoneBR retorna inalterado.
+        // Telefone esperado em mensagens_log: 13 digitos com o 9o digito.
+        // Ja vem com o 9 → canonico retorna inalterado.
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM whatsapp.mensagens_log WHERE telefone = ?",
                 Integer.class, "5511987654321"
         );
         assertThat(count)
-                .as("DDD 11 (Sao Paulo) ESTA em DDDS_COM_NONO_DIGITO → preserva 9o digito "
-                        + "(PITFALLS C-13)")
+                .as("Celular BR com o 9 → canonico preserva o 9o digito")
                 .isEqualTo(1);
     }
 
@@ -464,12 +459,11 @@ class WebhookPersistenciaIntegrationTest {
         long antesEpochSec = System.currentTimeMillis() / 1000L - 5L;
 
         postFixture("document-pdf.json");
-        // document-pdf usa from=5531987654321 (DDD 31 MG, sem 9o digito preservado)
-        // → strip 9 → 553187654321 (12 digitos)
+        // document-pdf usa from DDD 31 MG → canonico com o 9 → 5531987654321 (13 digitos)
 
         Timestamp tsRaw = jdbc.queryForObject(
                 "SELECT ultima_mensagem_em FROM whatsapp.clientes_zap WHERE telefone = ?",
-                Timestamp.class, "553187654321"
+                Timestamp.class, "5531987654321"
         );
         long depoisEpochSec = System.currentTimeMillis() / 1000L + 5L;
 

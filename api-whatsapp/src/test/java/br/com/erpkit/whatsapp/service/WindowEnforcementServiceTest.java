@@ -62,10 +62,10 @@ class WindowEnforcementServiceTest {
         Instant ha23h = Instant.now().minus(23, ChronoUnit.HOURS);
         jdbc.update(
             "INSERT INTO whatsapp.clientes_zap (telefone, ultima_mensagem_em) VALUES (?, ?)",
-            "554784178525", Timestamp.from(ha23h));
+            "5547984178525", Timestamp.from(ha23h));
 
         // Sem excecao = janela aberta. Telefone passa em formato comum (com +,
-        // espacos, parenteses) — service normaliza antes de comparar.
+        // espacos, parenteses) e SEM o 9 — service canonicaliza (garante o 9) antes de comparar.
         assertThatCode(() -> service.verificarJanela("+55 (47) 8417-8525"))
             .doesNotThrowAnyException();
     }
@@ -76,14 +76,14 @@ class WindowEnforcementServiceTest {
         Instant ha25h = Instant.now().minus(25, ChronoUnit.HOURS);
         jdbc.update(
             "INSERT INTO whatsapp.clientes_zap (telefone, ultima_mensagem_em) VALUES (?, ?)",
-            "554784178525", Timestamp.from(ha25h));
+            "5547984178525", Timestamp.from(ha25h));
 
-        assertThatThrownBy(() -> service.verificarJanela("554784178525"))
+        assertThatThrownBy(() -> service.verificarJanela("5547984178525"))
             .isInstanceOf(JanelaConversaFechadaException.class)
             .satisfies(t -> {
                 JanelaConversaFechadaException ex = (JanelaConversaFechadaException) t;
                 assertThat(ex.getCodigo()).isEqualTo("JANELA_24H_FECHADA");
-                assertThat(ex.getTelefone()).isEqualTo("554784178525");
+                assertThat(ex.getTelefone()).isEqualTo("5547984178525");
                 assertThat(ex.getUltimaMensagemEm()).isNotNull();
                 // Instant lido do banco deve estar proximo do que inserimos (25h atras)
                 assertThat(ex.getUltimaMensagemEm())
@@ -94,11 +94,10 @@ class WindowEnforcementServiceTest {
     @Test
     @DisplayName("cliente inexistente em clientes_zap lanca JanelaConversaFechadaException com ultimaMensagemEm null")
     void cliente_inexistente_lanca() {
-        // SEM insert — cliente nao existe em clientes_zap. Telefone normalizado
-        // pelo service: "+55 (99) 99988-7766" -> "5599988777666" -> DDD 99 NAO em
-        // DDDS_COM_NONO_DIGITO + numero local 9-digit comecando com 9 -> strip 9 ->
-        // "559988777666". Nao precisa garantir o exato output normalizado aqui;
-        // basta que o service lance pois nao havera row no DB.
+        // SEM insert — cliente nao existe em clientes_zap. Telefone canonicalizado
+        // pelo service: "+5599988777666" -> ja com o 9 (13 digitos) -> "5599988777666".
+        // Nao precisa garantir o exato output aqui; basta que o service lance pois
+        // nao havera row no DB.
         assertThatThrownBy(() -> service.verificarJanela("+5599988777666"))
             .isInstanceOf(JanelaConversaFechadaException.class)
             .satisfies(t -> {

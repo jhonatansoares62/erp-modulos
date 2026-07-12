@@ -65,14 +65,14 @@ class ClienteZapServiceTest {
     }
 
     @Test
-    @DisplayName("identificar normaliza antes de buscar — DDD 47 SC strip 9")
+    @DisplayName("identificar normaliza antes de buscar — DDD 47 SC canonico com o 9")
     void identificar_normaliza_antes_de_buscar() {
-        ClienteZap criado = service.identificar("+5547984178525");  // 13 digitos
-        assertThat(criado.getTelefone()).isEqualTo("554784178525");  // 12 digitos (sem 9)
+        ClienteZap criado = service.identificar("+554784178525");  // 12 digitos (sem o 9)
+        assertThat(criado.getTelefone()).isEqualTo("5547984178525");  // 13 digitos (com o 9)
 
         // Lookup subsequente com formato diferente (mas mesmo numero BR completo)
         // recupera a mesma row. NOTA: prefixo "55" e obrigatorio para o
-        // TelefoneBR.normalizar reconhecer como BR e aplicar strip do 9o digito;
+        // TelefoneBR.normalizar reconhecer como BR e garantir o 9o digito;
         // input sem "55" e tratado como nao-BR (early return) e geraria outra row.
         ClienteZap rebusca = service.identificar("+55 (47) 98417-8525");
         assertThat(rebusca.getId()).isEqualTo(criado.getId());
@@ -107,12 +107,10 @@ class ClienteZapServiceTest {
             executor.shutdown();
             assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
-            // "+5599988777666" → 13 digitos: 55-99-988777666 → DDD 99 NAO em
-            // DDDS_COM_NONO_DIGITO + numero local 988777666 comeca com 9 →
-            // strip 9 do numero local → 559988777666 (12 digitos)
+            // "+5599988777666" → 13 digitos (ja com o 9): canonico preserva → 5599988777666
             Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM whatsapp.clientes_zap WHERE telefone = ?",
-                Integer.class, "559988777666"
+                Integer.class, "5599988777666"
             );
             assertThat(count).isEqualTo(1);
         } finally {
