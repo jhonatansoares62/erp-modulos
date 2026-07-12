@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
+import { ScrollingModule as ScrollingExperimentalModule } from '@angular/cdk-experimental/scrolling';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
@@ -31,7 +33,7 @@ const PAGE_MENSAGENS = 100;
 @Component({
   selector: 'app-conversas',
   standalone: true,
-  imports: [FormsModule, ButtonModule, TagModule, TextareaModule],
+  imports: [FormsModule, ButtonModule, TagModule, TextareaModule, ScrollingModule, ScrollingExperimentalModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="inbox">
@@ -94,9 +96,10 @@ const PAGE_MENSAGENS = 100;
             }
           </header>
 
-          <div #scroll class="mensagens" (scroll)="aoRolar()">
-            @if (mensagens().length) {
-              @for (m of mensagens(); track m.id) {
+          @if (mensagens().length) {
+            <cdk-virtual-scroll-viewport autosize class="mensagens">
+              <div class="linha" *cdkVirtualFor="let m of mensagens(); trackBy: trackMsgId"
+                   [class.saida]="m.direcao === 'SAIDA'" [class.entrada]="m.direcao === 'ENTRADA'">
                 <div class="bolha" [class.saida]="m.direcao === 'SAIDA'" [class.entrada]="m.direcao === 'ENTRADA'">
                   <div class="texto" [class.vazio]="!(m.preview || m.conteudo)">
                     {{ m.preview || m.conteudo || '(sem texto)' }}
@@ -114,13 +117,13 @@ const PAGE_MENSAGENS = 100;
                     }
                   </div>
                 </div>
-              }
-            } @else if (carregandoChat()) {
-              <p class="chat-vazio">Carregando mensagens…</p>
-            } @else {
-              <p class="chat-vazio">Nenhuma mensagem nesta conversa.</p>
-            }
-          </div>
+              </div>
+            </cdk-virtual-scroll-viewport>
+          } @else if (carregandoChat()) {
+            <div class="mensagens vazio"><p class="chat-vazio">Carregando mensagens…</p></div>
+          } @else {
+            <div class="mensagens vazio"><p class="chat-vazio">Nenhuma mensagem nesta conversa.</p></div>
+          }
 
           <footer class="envio">
             @if (!janelaAberta()) {
@@ -193,12 +196,23 @@ const PAGE_MENSAGENS = 100;
     .chat-head .quem-txt strong { font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chat-head .quem-txt span { font-size: .75rem; color: var(--text-color-secondary); }
 
-    .mensagens { flex: 1; overflow-y: auto; padding: 1.25rem; display: flex; flex-direction: column; gap: .5rem; }
+    /* Viewport do CDK virtual scroll: precisa ser bloco com altura própria e overflow.
+       O CDK posiciona o conteúdo num wrapper absoluto, então o espaçamento entre bolhas
+       vem do padding vertical de cada .linha (não dá pra usar flex gap aqui). */
+    .mensagens { flex: 1; min-height: 0; overflow-y: auto; contain: strict; }
+    cdk-virtual-scroll-viewport.mensagens { display: block; }
+    .mensagens ::ng-deep .cdk-virtual-scroll-content-wrapper { padding: 1.25rem; }
+    /* .linha = faixa 100% da largura que empurra a bolha p/ esquerda (entrada) ou direita (saída);
+       garante o alinhamento independente do wrapper que o CDK insere. */
+    .linha { display: flex; padding-block: .25rem; }
+    .linha.entrada { justify-content: flex-start; }
+    .linha.saida { justify-content: flex-end; }
+    .mensagens.vazio { display: flex; padding: 1.25rem; }
     .chat-vazio { margin: auto; color: var(--text-color-secondary); font-size: .9rem; }
     .bolha { max-width: 68%; padding: .5rem .75rem; border-radius: 12px; box-shadow: 0 1px 1px rgba(0,0,0,.06); }
-    .bolha.entrada { align-self: flex-start; background: var(--surface-card);
+    .bolha.entrada { background: var(--surface-card);
       border: 1px solid var(--surface-border); border-top-left-radius: 3px; }
-    .bolha.saida { align-self: flex-end; border-top-right-radius: 3px;
+    .bolha.saida { border-top-right-radius: 3px;
       background: var(--p-primary-100, #d1fae5); border: 1px solid var(--p-primary-200, #a7f3d0); }
     .bolha .texto { font-size: .92rem; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
     .bolha .texto.vazio { font-style: italic; color: var(--text-color-secondary); }
@@ -218,7 +232,11 @@ const PAGE_MENSAGENS = 100;
       border: 1px solid color-mix(in srgb, var(--color-warn, #f59e0b) 35%, transparent);
       border-radius: 8px; padding: .5rem .75rem; margin-bottom: .6rem; }
     .barra { display: flex; align-items: flex-end; gap: .6rem; }
-    .barra textarea { flex: 1; resize: none; max-height: 8rem; }
+    /* Textarea de 1 linha casa a altura do p-button rounded (2.75rem/44px); com autoResize
+       cresce e, por align-items:flex-end, o botão fica ancorado embaixo. */
+    .barra textarea { flex: 1; resize: none; min-height: 2.75rem; max-height: 8rem;
+      padding-block: .55rem; line-height: 1.5; border-radius: 1.35rem; }
+    .barra p-button { flex: none; }
 
     .chat-placeholder { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: .6rem; color: var(--text-color-secondary); }
@@ -231,7 +249,25 @@ export class ConversasComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private msg = inject(MessageService);
 
-  @ViewChild('scroll') private scrollRef?: ElementRef<HTMLDivElement>;
+  private viewport?: CdkVirtualScrollViewport;
+  // Assinatura do scroll do viewport atual — refeita a cada vez que o viewport (re)aparece.
+  private scrollSub?: { unsubscribe(): void };
+
+  // O viewport vive dentro de um @if (só existe quando há mensagens); o setter religa o
+  // listener de scroll toda vez que ele (re)aparece e mede a posição pra manter grudadoNoFim.
+  @ViewChild(CdkVirtualScrollViewport)
+  private set viewportRef(vp: CdkVirtualScrollViewport | undefined) {
+    if (vp === this.viewport) {
+      return;
+    }
+    this.scrollSub?.unsubscribe();
+    this.viewport = vp;
+    if (vp) {
+      this.scrollSub = vp.elementScrolled()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.medirGrude());
+    }
+  }
 
   conversas = signal<ConversaResumo[]>([]);
   carregandoLista = signal(false);
@@ -326,13 +362,15 @@ export class ConversasComponent implements OnInit {
     });
   }
 
-  aoRolar(): void {
-    const el = this.scrollRef?.nativeElement;
-    if (!el) {
+  trackMsgId = (_: number, m: Mensagem): number | string => m.id;
+
+  private medirGrude(): void {
+    const vp = this.viewport;
+    if (!vp) {
       return;
     }
-    // "Grudado" se está a menos de ~60px do fim — tolerância pra não desgrudar por causa de arredondamento.
-    this.grudadoNoFim = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    // "Grudado" se está a menos de ~60px do fim — tolerância pra não desgrudar por arredondamento.
+    this.grudadoNoFim = vp.measureScrollOffset('bottom') < 60;
   }
 
   aoEnter(ev: Event): void {
@@ -387,13 +425,19 @@ export class ConversasComponent implements OnInit {
   }
 
   private rolarParaFim(): void {
-    // Espera o DOM pintar as bolhas antes de medir a altura.
-    queueMicrotask(() => {
-      const el = this.scrollRef?.nativeElement;
-      if (el) {
-        el.scrollTop = el.scrollHeight;
-        this.grudadoNoFim = true;
+    this.grudadoNoFim = true;
+    // Duas passadas: o autosize só mede a altura real das bolhas recém-renderizadas depois do
+    // primeiro ciclo, então um único scrollTo pode "parar curto". A 2ª passada (macrotask)
+    // reancora no fim já com as alturas medidas.
+    const ancorar = () => {
+      const vp = this.viewport;
+      if (!vp) {
+        return;
       }
-    });
+      vp.checkViewportSize();
+      vp.scrollTo({ bottom: 0, behavior: 'auto' });
+    };
+    queueMicrotask(ancorar);
+    setTimeout(ancorar, 0);
   }
 }
