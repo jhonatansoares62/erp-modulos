@@ -2,12 +2,15 @@ package br.com.erpkit.whatsapp.controller;
 
 import br.com.erpkit.shared.exception.ModuloException;
 import br.com.erpkit.whatsapp.config.WhatsAppProperties;
+import br.com.erpkit.whatsapp.dto.DiagnosticoResponse;
 import br.com.erpkit.whatsapp.dto.EnviarBotoesRequest;
 import br.com.erpkit.whatsapp.dto.EnviarDocumentoRequest;
 import br.com.erpkit.whatsapp.dto.EnviarListaRequest;
 import br.com.erpkit.whatsapp.dto.EnviarTextoRequest;
 import br.com.erpkit.whatsapp.dto.EnvioResponse;
+import br.com.erpkit.whatsapp.dto.FeedRecentesResponse;
 import br.com.erpkit.whatsapp.dto.StatusResponse;
+import br.com.erpkit.whatsapp.service.MonitorService;
 import br.com.erpkit.whatsapp.service.WhatsAppCloudClient;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import jakarta.validation.Valid;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Base64;
@@ -43,6 +47,14 @@ import java.util.Base64;
  * <p><b>Status endpoint minimal (D-04):</b> retorna {@code phoneNumberId} (sanity
  * check vs env var) + {@code circuitBreakerState} (operador diagnostica circuit
  * aberto). Sem subscribed_apps validation — Phase 6 territory (PITFALLS C-12).
+ *
+ * <p><b>Suporte a tela de Testes (autenticado):</b> {@code GET /mensagens/recentes}
+ * (feed das ultimas N mensagens) e {@code GET /diagnostico} expoem, sob
+ * {@code /api/whatsapp/**} (protegido pelo {@code WhatsappAuthFilter} — Bearer do
+ * atendente), a MESMA logica do painel {@code /monitor/*} de dev/meta, delegando ao
+ * {@link MonitorService}. Assim a tela funciona em PRODUCAO, onde o {@code MonitorController}
+ * ({@code @Profile dev/meta}) nao existe. O envio de teste reusa os endpoints ja
+ * existentes {@code /enviar-texto} e {@code /enviar-botoes}.
  */
 @RestController
 @RequestMapping("/api/whatsapp")
@@ -51,13 +63,16 @@ public class WhatsAppController {
     private final WhatsAppCloudClient cloudClient;
     private final WhatsAppProperties properties;
     private final CircuitBreakerRegistry cbRegistry;
+    private final MonitorService monitorService;
 
     public WhatsAppController(WhatsAppCloudClient cloudClient,
                               WhatsAppProperties properties,
-                              CircuitBreakerRegistry cbRegistry) {
+                              CircuitBreakerRegistry cbRegistry,
+                              MonitorService monitorService) {
         this.cloudClient = cloudClient;
         this.properties = properties;
         this.cbRegistry = cbRegistry;
+        this.monitorService = monitorService;
     }
 
     @PostMapping("/enviar-texto")
@@ -94,5 +109,26 @@ public class WhatsAppController {
                 .map(cb -> cb.getState().name())
                 .orElse("UNKNOWN");
         return ResponseEntity.ok(new StatusResponse("UP", state, properties.getPhoneNumberId()));
+    }
+
+    /**
+     * Feed das ultimas mensagens (entrada + saida) para a tela de Testes. Equivalente
+     * autenticado de {@code GET /monitor/feed} (dev/meta) — mesma logica via
+     * {@link MonitorService}. O {@code limit} e opcional (default/teto no service).
+     */
+    @GetMapping("/mensagens/recentes")
+    public ResponseEntity<FeedRecentesResponse> mensagensRecentes(
+            @RequestParam(name = "limit", required = false) Integer limit) {
+        return ResponseEntity.ok(monitorService.feed(limit));
+    }
+
+    /**
+     * Diagnostico do modulo (token Meta + alcancabilidade do ERP + circuit breaker) para
+     * a tela de Testes. Equivalente autenticado de {@code GET /monitor/diagnostico}
+     * (dev/meta) — mesma logica via {@link MonitorService}.
+     */
+    @GetMapping("/diagnostico")
+    public ResponseEntity<DiagnosticoResponse> diagnostico() {
+        return ResponseEntity.ok(monitorService.diagnostico());
     }
 }

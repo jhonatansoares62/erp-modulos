@@ -1,4 +1,5 @@
 import { DecimalPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -13,8 +14,7 @@ import { interval } from 'rxjs';
 import {
   Botao,
   Diagnostico,
-  EnviarTeste,
-  MonitorMensagem,
+  MensagemRecente,
   WhatsAppApiService,
 } from '../../core/whatsapp-api.service';
 
@@ -25,10 +25,10 @@ interface BotaoForm {
 
 /**
  * Console de Testes — porta do protótipo /monitor.html. Feed ao vivo (polling 2s),
- * enviar teste (texto/botões) e diagnóstico. O status geral vem de
- * GET /api/whatsapp/status (Bearer); feed/enviar/diagnóstico usam /monitor/* — hoje
- * a tela DEPENDE desses endpoints de dev/meta (candidatos a migrar pra /api/whatsapp/*).
- * Nada quebra se um endpoint responder vazio (ex.: /monitor ausente em produção).
+ * enviar teste (texto/botões) e diagnóstico. Tudo via endpoints AUTENTICADOS sob
+ * /api/whatsapp/* (Bearer do atendente): status, GET /mensagens/recentes,
+ * GET /diagnostico e POST /enviar-texto | /enviar-botoes. Válido em produção, onde
+ * o painel /monitor/* (só dev/meta) não existe.
  */
 @Component({
   selector: 'app-testes',
@@ -201,7 +201,7 @@ export class TestesComponent implements OnInit {
 
   private feedOk = signal(false);
   private feedCarregou = signal(false);
-  mensagens = signal<MonitorMensagem[]>([]);
+  mensagens = signal<MensagemRecente[]>([]);
   phoneNumberId = signal('');
   circuitBreaker = signal('UNKNOWN');
   total = signal(0);
@@ -217,7 +217,7 @@ export class TestesComponent implements OnInit {
 
   private buscarStatus(): void {
     // Status geral vem do endpoint oficial /api/whatsapp/status (Bearer). Best-effort:
-    // se falhar, o feed do /monitor ainda popula número/circuit.
+    // se falhar, o feed (/api/whatsapp/mensagens/recentes) ainda popula número/circuit.
     this.api.status().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (s) => {
         if (s.phoneNumberId) this.phoneNumberId.set(s.phoneNumberId);
@@ -244,7 +244,7 @@ export class TestesComponent implements OnInit {
     });
   }
 
-  responder(m: MonitorMensagem): void {
+  responder(m: MensagemRecente): void {
     if (m.telefone) {
       this.telefone = m.telefone;
     }
@@ -268,7 +268,11 @@ export class TestesComponent implements OnInit {
       this.msg.add({ severity: 'warn', summary: 'Enviar teste', detail: 'Informe o telefone.' });
       return;
     }
-    const body: EnviarTeste = { telefone, tipo: this.tipo, texto: this.texto };
+
+    // Endpoints reais: /enviar-texto {telefone, texto} e /enviar-botoes {telefone, texto, botoes}.
+    // Sucesso = EnvioResponse {wamid}; falha = HttpErrorResponse com ErrorResponse
+    // {codigo, metaErrorCode, mensagem} no corpo (GlobalExceptionHandler / lib-shared).
+    let envio;
     if (this.tipo === 'botoes') {
       const botoes: Botao[] = this.botoes
         .map((b) => ({ id: b.id.trim(), title: b.title.trim() }))
@@ -277,25 +281,25 @@ export class TestesComponent implements OnInit {
         this.msg.add({ severity: 'warn', summary: 'Enviar teste', detail: 'Informe ao menos um botão (id e título).' });
         return;
       }
-      body.botoes = botoes;
+      envio = this.api.enviarBotoes(telefone, this.texto, botoes);
+    } else {
+      envio = this.api.enviarTexto(telefone, this.texto);
     }
 
     this.enviando.set(true);
-    this.api.enviarTeste(body).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    envio.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (r) => {
         this.enviando.set(false);
-        if (r.ok) {
-          this.msg.add({ severity: 'success', summary: 'Enviado', detail: `wamid: ${r.wamid ?? '—'}` });
-          this.tick();
-        } else {
-          const codigo = r.codigo ? `${r.codigo}` : 'Falha';
-          const meta = r.metaErrorCode != null ? ` (Meta ${r.metaErrorCode})` : '';
-          this.msg.add({ severity: 'error', summary: `${codigo}${meta}`, detail: r.mensagem ?? 'Não foi possível enviar.' });
-        }
+        this.msg.add({ severity: 'success', summary: 'Enviado', detail: `wamid: ${r.wamid ?? '—'}` });
+        this.tick();
       },
-      error: () => {
+      error: (err: HttpErrorResponse) => {
         this.enviando.set(false);
-        this.msg.add({ severity: 'error', summary: 'Enviar teste', detail: 'Endpoint de envio indisponível (/monitor).' });
+        const corpo = err?.error ?? {};
+        const codigo = corpo.codigo ? `${corpo.codigo}` : 'Falha';
+        const meta = corpo.metaErrorCode != null ? ` (Meta ${corpo.metaErrorCode})` : '';
+        const detalhe = corpo.mensagem ?? 'Não foi possível enviar.';
+        this.msg.add({ severity: 'error', summary: `${codigo}${meta}`, detail: detalhe });
       },
     });
   }
@@ -310,7 +314,7 @@ export class TestesComponent implements OnInit {
       error: () => {
         this.diagnosticando.set(false);
         this.diagnostico.set(null);
-        this.msg.add({ severity: 'error', summary: 'Diagnóstico', detail: 'Endpoint de diagnóstico indisponível (/monitor).' });
+        this.msg.add({ severity: 'error', summary: 'Diagnóstico', detail: 'Não foi possível rodar o diagnóstico.' });
       },
     });
   }

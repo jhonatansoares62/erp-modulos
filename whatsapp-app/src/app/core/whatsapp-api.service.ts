@@ -55,8 +55,8 @@ export interface Status {
   phoneNumberId: string;
 }
 
-// ── Testes: GET /monitor/feed (MonitorController.MonitorFeed) ──
-export interface MonitorMensagem {
+// ── Testes: GET /api/whatsapp/mensagens/recentes (FeedRecentesResponse) ──
+export interface MensagemRecente {
   id: number;
   direcao: string | null; // "in" | "out"
   telefone: string | null;
@@ -65,11 +65,11 @@ export interface MonitorMensagem {
   criadoEm: number | null; // epoch millis
 }
 
-export interface MonitorFeed {
+export interface FeedRecentes {
   phoneNumberId: string;
   circuitBreakerState: string;
   total: number;
-  mensagens: MonitorMensagem[];
+  mensagens: MensagemRecente[];
 }
 
 // ── Testes: botão reply (BotaoDto) ──
@@ -78,24 +78,7 @@ export interface Botao {
   title: string;
 }
 
-// ── Testes: corpo do POST /monitor/enviar (MonitorController.EnviarTeste) ──
-export interface EnviarTeste {
-  telefone: string;
-  tipo: string; // "texto" | "botoes"
-  texto: string;
-  botoes?: Botao[];
-}
-
-// ── Testes: resposta do POST /monitor/enviar (MonitorController.EnvioResultado) ──
-export interface EnvioResultado {
-  ok: boolean;
-  wamid: string | null;
-  codigo: string | null;
-  metaErrorCode: number | null;
-  mensagem: string | null;
-}
-
-// ── Testes: GET /monitor/diagnostico (MonitorController.Diagnostico) ──
+// ── Testes: GET /api/whatsapp/diagnostico (DiagnosticoResponse.DiagnosticoCheck) ──
 export interface DiagnosticoCheck {
   ok: boolean;
   detalhe: string;
@@ -169,16 +152,22 @@ export interface EnviarTextoRequest {
   texto: string; // max 4096
 }
 
+// POST /api/whatsapp/enviar-botoes (EnviarBotoesRequest) → EnvioResponse
+export interface EnviarBotoesRequest {
+  telefone: string; // ^\d{10,15}$ (E.164 sem +)
+  texto: string; // max 1024
+  botoes: Botao[]; // 1..3 (id max 256, title max 20)
+}
+
 export interface EnvioResponse {
   wamid: string;
 }
 
 /**
- * Cliente HTTP único das telas Métricas/Configuração/Testes. Os paths sob
- * {@code /api/whatsapp/*} recebem o Bearer JWT automaticamente (authInterceptor);
- * já {@code /monitor/*} (feed/enviar/diagnóstico) são endpoints de dev/meta
- * públicos — hoje a tela Testes depende deles (candidato a migrar pra
- * {@code /api/whatsapp/*} numa próxima).
+ * Cliente HTTP único das telas Métricas/Configuração/Testes. Todos os paths ficam
+ * sob {@code /api/whatsapp/*} e recebem o Bearer JWT automaticamente (authInterceptor)
+ * — inclusive a tela de Testes (feed/diagnóstico/envio), que agora usa endpoints
+ * autenticados válidos em produção, no lugar do painel {@code /monitor/*} (só dev/meta).
  */
 @Injectable({ providedIn: 'root' })
 export class WhatsAppApiService {
@@ -208,21 +197,21 @@ export class WhatsAppApiService {
     return this.http.put<MetaConfig>(`${API_BASE}/api/whatsapp/config`, body);
   }
 
-  // ── Testes ──
+  // ── Testes (endpoints autenticados sob /api/whatsapp/*, válidos em produção) ──
   status(): Observable<Status> {
     return this.http.get<Status>(`${API_BASE}/api/whatsapp/status`);
   }
 
-  feed(): Observable<MonitorFeed> {
-    return this.http.get<MonitorFeed>(`${API_BASE}/monitor/feed`);
-  }
-
-  enviarTeste(body: EnviarTeste): Observable<EnvioResultado> {
-    return this.http.post<EnvioResultado>(`${API_BASE}/monitor/enviar`, body);
+  feed(limit?: number): Observable<FeedRecentes> {
+    let params = new HttpParams();
+    if (limit != null) {
+      params = params.set('limit', limit);
+    }
+    return this.http.get<FeedRecentes>(`${API_BASE}/api/whatsapp/mensagens/recentes`, { params });
   }
 
   diagnostico(): Observable<Diagnostico> {
-    return this.http.get<Diagnostico>(`${API_BASE}/monitor/diagnostico`);
+    return this.http.get<Diagnostico>(`${API_BASE}/api/whatsapp/diagnostico`);
   }
 
   // ── Conversas (Inbox/Chat) ──
@@ -248,6 +237,11 @@ export class WhatsAppApiService {
   enviarTexto(telefone: string, texto: string): Observable<EnvioResponse> {
     const body: EnviarTextoRequest = { telefone, texto };
     return this.http.post<EnvioResponse>(`${API_BASE}/api/whatsapp/enviar-texto`, body);
+  }
+
+  enviarBotoes(telefone: string, texto: string, botoes: Botao[]): Observable<EnvioResponse> {
+    const body: EnviarBotoesRequest = { telefone, texto, botoes };
+    return this.http.post<EnvioResponse>(`${API_BASE}/api/whatsapp/enviar-botoes`, body);
   }
 
   private periodo(de?: string, ate?: string): HttpParams {
