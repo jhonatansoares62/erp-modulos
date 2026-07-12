@@ -37,8 +37,11 @@ import { AuthService } from '../../core/auth.service';
     </main>
   `,
   styles: [`
-    :host { display: block; min-height: 100vh; background: var(--surface-ground); }
-    .topbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center;
+    :host { display: flex; flex-direction: column; min-height: 100vh; background: var(--surface-ground); }
+    /* Só a aba Conversas trava a altura na viewport (chat rola por dentro). As demais abas
+       ficam em min-height:100vh e crescem com o conteúdo → rolagem normal da página + topbar sticky. */
+    :host:has(app-conversas) { height: 100vh; height: 100dvh; }
+    .topbar { flex: none; position: sticky; top: 0; z-index: 10; display: flex; align-items: center;
       justify-content: space-between; height: 4rem; padding: 0 1.5rem;
       background: var(--color-slate); color: #fff; box-shadow: 0 1px 0 rgba(0,0,0,.15); }
     .brand { display: flex; align-items: center; gap: .7rem; }
@@ -50,7 +53,7 @@ import { AuthService } from '../../core/auth.service';
     .quem { font-size: .85rem; opacity: .9; display: inline-flex; align-items: center; gap: .35rem; }
     :host ::ng-deep .user .p-button.p-button-text { color: #fff; }
 
-    .tabs { display: flex; flex-wrap: wrap; gap: .25rem; padding: 0 1.5rem; background: var(--color-slate-mid);
+    .tabs { flex: none; display: flex; flex-wrap: wrap; gap: .25rem; padding: 0 1.5rem; background: var(--color-slate-mid);
       box-shadow: inset 0 -1px 0 rgba(255,255,255,.08); }
     .tabs-sep { width: 1px; align-self: center; height: 1.3rem; background: rgba(255,255,255,.18); margin: 0 .5rem; }
     .tabs a { display: inline-flex; align-items: center; gap: .45rem; padding: .8rem 1rem;
@@ -60,7 +63,13 @@ import { AuthService } from '../../core/auth.service';
     .tabs a.ativo { color: #fff; border-bottom-color: var(--primary-color); }
     .tabs a i { font-size: .95rem; }
 
-    .conteudo { max-width: 1100px; margin: 0 auto; padding: 1.75rem 1.5rem 3rem; }
+    /* width:100% pra preencher até 1100px (como bloco) — sem isso, como flex-item de coluna com
+       margin auto, encolhe pro tamanho do conteúdo. O :has(app-conversas) abaixo tira o teto. */
+    .conteudo { flex: 1; min-height: 0; width: 100%; max-width: 1100px; margin: 0 auto; padding: 1.75rem 1.5rem 3rem; }
+    /* Full-bleed só na aba Conversas (chat ocupa a tela toda); as demais seguem em 1100px centrado.
+       display:flex faz o app-conversas preencher a altura via flex (sem depender de % — a coluna
+       do shell é min-height, logo não é "altura definida" pra resolver height:100%). */
+    .conteudo:has(app-conversas) { max-width: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
   `],
 })
 export class ShellComponent {

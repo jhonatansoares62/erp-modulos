@@ -34,7 +34,7 @@ const PAGE_MENSAGENS = 100;
   imports: [FormsModule, ButtonModule, TagModule, TextareaModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="inbox">
+    <div class="inbox" [class.com-chat]="!!selecionado()">
       <!-- ── Coluna esquerda: lista de conversas ── -->
       <aside class="lista">
         <header class="lista-head">
@@ -80,6 +80,9 @@ const PAGE_MENSAGENS = 100;
       <section class="chat">
         @if (selecionado(); as tel) {
           <header class="chat-head">
+            <button type="button" class="voltar" (click)="voltar()" aria-label="Voltar para a lista">
+              <i class="pi pi-arrow-left"></i>
+            </button>
             <div class="quem">
               <i class="pi pi-user"></i>
               <div class="quem-txt">
@@ -152,12 +155,12 @@ const PAGE_MENSAGENS = 100;
     </div>
   `,
   styles: [`
-    /* Quebra o padding/max-width do shell (.conteudo) para ocupar a área toda como um app de chat. */
-    :host { display: block; margin: -1.75rem -1.5rem -3rem; }
+    /* Preenche o .conteudo (full-bleed flex column no shell) via flex — robusto sem % de altura. */
+    :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     /* grid-template-rows: minmax(0,1fr) dá altura DEFINIDA às colunas (sem isso a linha
        implícita é 'auto' e cresce com o conteúdo → o chat estoura em vez de rolar por dentro). */
     .inbox { display: grid; grid-template-columns: 340px 1fr; grid-template-rows: minmax(0, 1fr);
-      height: calc(100vh - 4rem - 3.05rem);
+      flex: 1; min-height: 0;
       background: var(--surface-ground); border-top: 1px solid var(--surface-border); }
     @media (max-width: 820px) { .inbox { grid-template-columns: 240px 1fr; } }
 
@@ -192,6 +195,11 @@ const PAGE_MENSAGENS = 100;
     .chat { display: flex; flex-direction: column; min-width: 0; }
     .chat-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem;
       padding: .75rem 1.25rem; background: var(--surface-card); border-bottom: 1px solid var(--surface-border); }
+    /* Voltar: só no mobile (o @media (max-width:720px) troca pra inline-flex). */
+    .chat-head .voltar { display: none; align-items: center; justify-content: center; flex: none;
+      background: none; border: none; cursor: pointer; color: var(--text-color); font-size: 1.15rem;
+      padding: .3rem; border-radius: 50%; margin-right: -.25rem; }
+    .chat-head .voltar:hover { background: var(--surface-ground); }
     .chat-head .quem { display: flex; align-items: center; gap: .7rem; min-width: 0; }
     .chat-head .quem i { font-size: 1.1rem; color: var(--primary-color);
       background: var(--surface-ground); border-radius: 50%; padding: .5rem; }
@@ -242,6 +250,17 @@ const PAGE_MENSAGENS = 100;
       gap: .6rem; color: var(--text-color-secondary); }
     .chat-placeholder i { font-size: 2.75rem; color: var(--primary-color); opacity: .55; }
     .chat-placeholder p { font-size: 1rem; }
+
+    /* Mobile: uma coluna. Mostra a lista; ao selecionar (.com-chat) o chat vira tela cheia.
+       Fica NO FIM do bloco de propósito: media query não soma especificidade, então precisa
+       vir depois das regras-base de .chat/.lista/.voltar pra sobrescrevê-las. */
+    @media (max-width: 720px) {
+      .inbox { grid-template-columns: 1fr; }
+      .chat { display: none; }
+      .inbox.com-chat .lista { display: none; }
+      .inbox.com-chat .chat { display: flex; }
+      .chat-head .voltar { display: inline-flex; }
+    }
   `],
 })
 export class ConversasComponent implements OnInit {
@@ -293,6 +312,12 @@ export class ConversasComponent implements OnInit {
     this.rascunho = '';
     this.grudadoNoFim = true;
     this.carregarMensagens(true);
+  }
+
+  /** Mobile: volta da tela cheia do chat para a lista de conversas. */
+  voltar(): void {
+    this.selecionado.set(null);
+    this.mensagens.set([]);
   }
 
   private carregarLista(comLoading: boolean): void {
