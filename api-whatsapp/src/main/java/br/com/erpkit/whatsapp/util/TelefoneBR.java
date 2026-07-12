@@ -116,4 +116,31 @@ public final class TelefoneBR {
         // Ja sem 9o digito (8 digitos), ou numero estranho — retorna como veio
         return digitos;
     }
+
+    /**
+     * Numero para ENVIO na Cloud API: GARANTE o 9o digito de celular BR.
+     *
+     * <p>A regra ANATEL 2010 (em {@link #normalizar}) removia o 9 de DDDs fora de SP/RJ/ES,
+     * mas na pratica a Cloud API HOJE so ENTREGA para celular BR COM o 9 — enviar sem o 9
+     * retorna erro <b>131026 "Message undeliverable"</b> (empirico 2026-07-12: DDD 46 sem o 9
+     * = 131026; com o 9 = read). Como o contato pode ter sido salvo/normalizado sem o 9,
+     * re-inserimos aqui, no unico ponto de saida pra Meta.
+     *
+     * <p>{@code 55 + DDD(2) + 8 digitos} (celular sem o 9) → {@code 55 + DDD + 9 + 8 digitos}.
+     * Numeros ja com 13 digitos (com 9) ou nao-BR passam sem mudanca.
+     *
+     * @param telefone numero em qualquer formato
+     * @return numero pronto pra Cloud API (so digitos, com o 9), ou o input sanitizado se nao-BR
+     */
+    public static String paraEnvio(String telefone) {
+        String d = sanitizar(telefone);
+        if (d == null || d.isEmpty()) {
+            return d;
+        }
+        // BR (55) com 12 digitos = 55 + DDD(2) + 8 (celular sem o 9) → insere o 9 apos o DDD
+        if (d.startsWith("55") && d.length() == 12) {
+            return "55" + d.substring(2, 4) + "9" + d.substring(4);
+        }
+        return d;
+    }
 }

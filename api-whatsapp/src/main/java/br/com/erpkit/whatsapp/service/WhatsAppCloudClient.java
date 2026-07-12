@@ -10,6 +10,7 @@ import br.com.erpkit.whatsapp.exception.MetaApiException.Tipo;
 import br.com.erpkit.whatsapp.model.Direcao;
 import br.com.erpkit.whatsapp.model.MensagemLog;
 import br.com.erpkit.whatsapp.repository.MensagemLogRepository;
+import br.com.erpkit.whatsapp.util.TelefoneBR;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
@@ -117,7 +118,7 @@ public class WhatsAppCloudClient {
         Map<String, Object> body = Map.of(
                 "messaging_product", "whatsapp",
                 "recipient_type", "individual",
-                "to", telefone,
+                "to", TelefoneBR.paraEnvio(telefone),
                 "type", "text",
                 "text", Map.of("body", texto)
         );
@@ -152,7 +153,7 @@ public class WhatsAppCloudClient {
         Map<String, Object> body = Map.of(
                 "messaging_product", "whatsapp",
                 "recipient_type", "individual",
-                "to", telefone,
+                "to", TelefoneBR.paraEnvio(telefone),
                 "type", "document",
                 "document", documento
         );
@@ -179,7 +180,7 @@ public class WhatsAppCloudClient {
         Map<String, Object> body = Map.of(
                 "messaging_product", "whatsapp",
                 "recipient_type", "individual",
-                "to", telefone,
+                "to", TelefoneBR.paraEnvio(telefone),
                 "type", "interactive",
                 "interactive", interactive
         );
@@ -216,7 +217,7 @@ public class WhatsAppCloudClient {
         Map<String, Object> body = Map.of(
                 "messaging_product", "whatsapp",
                 "recipient_type", "individual",
-                "to", telefone,
+                "to", TelefoneBR.paraEnvio(telefone),
                 "type", "interactive",
                 "interactive", interactive
         );
