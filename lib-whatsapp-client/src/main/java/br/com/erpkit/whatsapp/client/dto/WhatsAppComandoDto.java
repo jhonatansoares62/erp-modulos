@@ -15,6 +15,8 @@ package br.com.erpkit.whatsapp.client.dto;
  * @param mediaBase64   bytes da media em base64 — {@code null} se sem media
  * @param mediaMimeType MIME do arquivo — {@code null} se sem media
  * @param mediaFilename nome original do arquivo — {@code null} se sem media
+ * @param assistente    persona do assistente (nome/emoji/tom/saudacao) — bloco opcional/aditivo,
+ *                      {@code null} quando o modulo nao envia
  */
 public record WhatsAppComandoDto(
         String telefone,
@@ -23,6 +25,15 @@ public record WhatsAppComandoDto(
         Long idCliente,
         String mediaBase64,
         String mediaMimeType,
-        String mediaFilename
+        String mediaFilename,
+        AssistentePersonaDto assistente
 ) {
+    /**
+     * Construtor de compatibilidade (7 args, sem persona) — mantem os call sites e testes
+     * anteriores ao bloco {@code assistente} compilando ({@code assistente = null}).
+     */
+    public WhatsAppComandoDto(String telefone, String comando, String payload, Long idCliente,
+                              String mediaBase64, String mediaMimeType, String mediaFilename) {
+        this(telefone, comando, payload, idCliente, mediaBase64, mediaMimeType, mediaFilename, null);
+    }
 }
