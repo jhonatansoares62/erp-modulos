@@ -1,5 +1,6 @@
 package br.com.erpkit.whatsapp.service;
 
+import br.com.erpkit.whatsapp.dto.AssistentePersonaDTO;
 import br.com.erpkit.whatsapp.dto.ComandoCallbackDTO;
 import br.com.erpkit.whatsapp.dto.DesfechoCallbackDTO;
 import br.com.erpkit.whatsapp.dto.MetaMediaResultado;
@@ -56,17 +57,20 @@ public class MensagemAsyncListener {
     private final ComandoExtractor comandoExtractor;
     private final ErpCallbackClient erpCallbackClient;
     private final MensagemLogService mensagemLogService;
+    private final AssistenteService assistenteService;
 
     public MensagemAsyncListener(MetaMediaClient metaMediaClient,
                                  ClienteZapService clienteZapService,
                                  ComandoExtractor comandoExtractor,
                                  ErpCallbackClient erpCallbackClient,
-                                 MensagemLogService mensagemLogService) {
+                                 MensagemLogService mensagemLogService,
+                                 AssistenteService assistenteService) {
         this.metaMediaClient = metaMediaClient;
         this.clienteZapService = clienteZapService;
         this.comandoExtractor = comandoExtractor;
         this.erpCallbackClient = erpCallbackClient;
         this.mensagemLogService = mensagemLogService;
+        this.assistenteService = assistenteService;
     }
 
     /**
@@ -155,13 +159,22 @@ public class MensagemAsyncListener {
             return;
         }
 
+        // [4.2] persona do assistente para o bloco aditivo do callback — best-effort
+        // (o dispatch nao pode falhar por causa da persona; ERP recebe null e usa defaults).
+        AssistentePersonaDTO assistente = null;
+        try {
+            assistente = assistenteService.personaParaCallback();
+        } catch (Exception e) {
+            log.warn("Falha ao carregar persona do assistente (dispatch sem ela): {}", e.getMessage());
+        }
+
         // [5] dispatch ERP (Resilience4j cuida de retry+CB+fallback).
         // telefone = wa_id EXATO do Meta (event.telefoneWaId), NAO o normalizado — o ERP
         // usa este numero para RESPONDER, e a Cloud API exige o mesmo wa_id do inbound
         // (a versao com strip do 9o digito falha no envio — validado no teste real).
         ComandoCallbackDTO payload = new ComandoCallbackDTO(
             event.telefoneWaId(), comando, event.conteudo(),
-            idClienteErp, mediaBase64, mediaMimeType, mediaFilename
+            idClienteErp, mediaBase64, mediaMimeType, mediaFilename, assistente
         );
         try {
             DesfechoCallbackDTO desfecho = erpCallbackClient.despachar(payload);

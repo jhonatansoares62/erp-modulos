@@ -48,6 +48,33 @@ export interface MetaConfigUpdate {
   verifyToken?: string;
 }
 
+// ── Assistente: GET/PUT /api/whatsapp/assistente (AssistenteResponse) — persona genérica ──
+export interface AssistenteConfig {
+  nome: string;
+  emoji: string | null;
+  tom: string;
+  saudacao: string | null;
+  mensagemNaoEntendi: string | null;
+  mensagemForaHorario: string | null;
+  horarioInicio: string | null;
+  horarioFim: string | null;
+  diasAtendimento: string | null;
+  atualizadoEm: string | null;
+}
+
+// ── Assistente: corpo do PUT (AssistenteRequest) — substituição total ──
+export interface AssistenteUpdate {
+  nome: string;
+  emoji?: string;
+  tom: string;
+  saudacao?: string;
+  mensagemNaoEntendi?: string;
+  mensagemForaHorario?: string;
+  horarioInicio?: string;
+  horarioFim?: string;
+  diasAtendimento?: string;
+}
+
 // ── Testes: GET /api/whatsapp/status (StatusResponse) ──
 export interface Status {
   status: string;
@@ -195,6 +222,15 @@ export class WhatsAppApiService {
 
   salvarConfig(body: MetaConfigUpdate): Observable<MetaConfig> {
     return this.http.put<MetaConfig>(`${API_BASE}/api/whatsapp/config`, body);
+  }
+
+  // ── Assistente (persona genérica) ──
+  obterAssistente(): Observable<AssistenteConfig> {
+    return this.http.get<AssistenteConfig>(`${API_BASE}/api/whatsapp/assistente`);
+  }
+
+  salvarAssistente(body: AssistenteUpdate): Observable<AssistenteConfig> {
+    return this.http.put<AssistenteConfig>(`${API_BASE}/api/whatsapp/assistente`, body);
   }
 
   // ── Testes (endpoints autenticados sob /api/whatsapp/*, válidos em produção) ──

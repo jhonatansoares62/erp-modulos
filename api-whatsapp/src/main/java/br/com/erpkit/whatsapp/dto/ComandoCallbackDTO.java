@@ -19,6 +19,9 @@ package br.com.erpkit.whatsapp.dto;
  * @param mediaBase64     bytes da media em base64 — {@code null} se sem media ou URL Meta expirou
  * @param mediaMimeType   MIME do arquivo — {@code null} se sem media
  * @param mediaFilename   nome original — {@code null} se sem media
+ * @param assistente      persona do assistente (nome/emoji/tom/saudacao) — bloco ADITIVO/opcional
+ *                        que o ERP usa para renderizar as respostas; ERP antigo ignora. {@code null}
+ *                        quando indisponivel
  */
 public record ComandoCallbackDTO(
     String telefone,
@@ -27,5 +30,15 @@ public record ComandoCallbackDTO(
     Long idCliente,
     String mediaBase64,
     String mediaMimeType,
-    String mediaFilename
-) { }
+    String mediaFilename,
+    AssistentePersonaDTO assistente
+) {
+    /**
+     * Construtor de compatibilidade (7 args, sem persona) — mantem os call sites
+     * anteriores ao bloco {@code assistente} compilando ({@code assistente = null}).
+     */
+    public ComandoCallbackDTO(String telefone, String comando, String payload, Long idCliente,
+                              String mediaBase64, String mediaMimeType, String mediaFilename) {
+        this(telefone, comando, payload, idCliente, mediaBase64, mediaMimeType, mediaFilename, null);
+    }
+}
