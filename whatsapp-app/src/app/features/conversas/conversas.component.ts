@@ -1,14 +1,12 @@
-import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
-import { ScrollingModule as ScrollingExperimentalModule } from '@angular/cdk-experimental/scrolling';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, Injector, OnInit, afterNextRender, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
-import { finalize, interval } from 'rxjs';
-import { ConversaResumo, Mensagem, WhatsAppApiService } from '../../core/whatsapp-api.service';
+import { Observable, finalize, interval, of, switchMap } from 'rxjs';
+import { ConversaResumo, Mensagem, Page, WhatsAppApiService } from '../../core/whatsapp-api.service';
 
 const POLL_LISTA_MS = 5000;
 const POLL_CHAT_MS = 4000;
@@ -33,7 +31,7 @@ const PAGE_MENSAGENS = 100;
 @Component({
   selector: 'app-conversas',
   standalone: true,
-  imports: [FormsModule, ButtonModule, TagModule, TextareaModule, ScrollingModule, ScrollingExperimentalModule],
+  imports: [FormsModule, ButtonModule, TagModule, TextareaModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="inbox">
@@ -97,28 +95,30 @@ const PAGE_MENSAGENS = 100;
           </header>
 
           @if (mensagens().length) {
-            <cdk-virtual-scroll-viewport autosize class="mensagens">
-              <div class="linha" *cdkVirtualFor="let m of mensagens(); trackBy: trackMsgId"
-                   [class.saida]="m.direcao === 'SAIDA'" [class.entrada]="m.direcao === 'ENTRADA'">
-                <div class="bolha" [class.saida]="m.direcao === 'SAIDA'" [class.entrada]="m.direcao === 'ENTRADA'">
-                  <div class="texto" [class.vazio]="!(m.preview || m.conteudo)">
-                    {{ m.preview || m.conteudo || '(sem texto)' }}
-                  </div>
-                  <div class="rodape">
-                    <span class="hora">{{ horaCurta(m.timestamp) }}</span>
-                    @if (m.direcao === 'SAIDA' && m.status) {
-                      <span class="status" [class]="'st-' + m.status">
-                        <i class="pi" [class.pi-check]="m.status === 'sent'"
-                           [class.pi-check-circle]="m.status === 'delivered'"
-                           [class.pi-eye]="m.status === 'read'"
-                           [class.pi-exclamation-circle]="m.status === 'failed'"></i>
-                        {{ m.status }}
-                      </span>
-                    }
+            <div #painel class="mensagens" (scroll)="medirGrude()">
+              @for (m of mensagens(); track m.id) {
+                <div class="linha"
+                     [class.saida]="m.direcao === 'SAIDA'" [class.entrada]="m.direcao === 'ENTRADA'">
+                  <div class="bolha" [class.saida]="m.direcao === 'SAIDA'" [class.entrada]="m.direcao === 'ENTRADA'">
+                    <div class="texto" [class.vazio]="!(m.preview || m.conteudo)">
+                      {{ m.preview || m.conteudo || '(sem texto)' }}
+                    </div>
+                    <div class="rodape">
+                      <span class="hora">{{ horaCurta(m.timestamp) }}</span>
+                      @if (m.direcao === 'SAIDA' && m.status) {
+                        <span class="status" [class]="'st-' + m.status">
+                          <i class="pi" [class.pi-check]="m.status === 'sent'"
+                             [class.pi-check-circle]="m.status === 'delivered'"
+                             [class.pi-eye]="m.status === 'read'"
+                             [class.pi-exclamation-circle]="m.status === 'failed'"></i>
+                          {{ m.status }}
+                        </span>
+                      }
+                    </div>
                   </div>
                 </div>
-              </div>
-            </cdk-virtual-scroll-viewport>
+              }
+            </div>
           } @else if (carregandoChat()) {
             <div class="mensagens vazio"><p class="chat-vazio">Carregando mensagens…</p></div>
           } @else {
@@ -196,18 +196,15 @@ const PAGE_MENSAGENS = 100;
     .chat-head .quem-txt strong { font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chat-head .quem-txt span { font-size: .75rem; color: var(--text-color-secondary); }
 
-    /* Viewport do CDK virtual scroll: precisa ser bloco com altura própria e overflow.
-       O CDK posiciona o conteúdo num wrapper absoluto, então o espaçamento entre bolhas
-       vem do padding vertical de cada .linha (não dá pra usar flex gap aqui). */
-    .mensagens { flex: 1; min-height: 0; overflow-y: auto; contain: strict; }
-    cdk-virtual-scroll-viewport.mensagens { display: block; }
-    .mensagens ::ng-deep .cdk-virtual-scroll-content-wrapper { padding: 1.25rem; }
-    /* .linha = faixa 100% da largura que empurra a bolha p/ esquerda (entrada) ou direita (saída);
-       garante o alinhamento independente do wrapper que o CDK insere. */
+    /* Painel do chat: coluna rolável. gap separa as bolhas; cada .linha alinha a bolha
+       à esquerda (entrada) ou à direita (saída). */
+    .mensagens { flex: 1; min-height: 0; overflow-y: auto; padding: 1.25rem;
+      display: flex; flex-direction: column; gap: .5rem; }
+    /* .linha = faixa 100% da largura que empurra a bolha p/ esquerda (entrada) ou direita (saída). */
     .linha { display: flex; padding-block: .25rem; }
     .linha.entrada { justify-content: flex-start; }
     .linha.saida { justify-content: flex-end; }
-    .mensagens.vazio { display: flex; padding: 1.25rem; }
+    .mensagens.vazio { align-items: center; justify-content: center; }
     .chat-vazio { margin: auto; color: var(--text-color-secondary); font-size: .9rem; }
     .bolha { max-width: 68%; padding: .5rem .75rem; border-radius: 12px; box-shadow: 0 1px 1px rgba(0,0,0,.06); }
     .bolha.entrada { background: var(--surface-card);
@@ -248,26 +245,11 @@ export class ConversasComponent implements OnInit {
   private api = inject(WhatsAppApiService);
   private destroyRef = inject(DestroyRef);
   private msg = inject(MessageService);
+  private injector = inject(Injector);
 
-  private viewport?: CdkVirtualScrollViewport;
-  // Assinatura do scroll do viewport atual — refeita a cada vez que o viewport (re)aparece.
-  private scrollSub?: { unsubscribe(): void };
-
-  // O viewport vive dentro de um @if (só existe quando há mensagens); o setter religa o
-  // listener de scroll toda vez que ele (re)aparece e mede a posição pra manter grudadoNoFim.
-  @ViewChild(CdkVirtualScrollViewport)
-  private set viewportRef(vp: CdkVirtualScrollViewport | undefined) {
-    if (vp === this.viewport) {
-      return;
-    }
-    this.scrollSub?.unsubscribe();
-    this.viewport = vp;
-    if (vp) {
-      this.scrollSub = vp.elementScrolled()
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(() => this.medirGrude());
-    }
-  }
+  // Div rolável do chat (#painel). Vive dentro de um @if — o signal fica undefined
+  // enquanto não há mensagens e volta a resolver quando o painel reaparece.
+  private readonly painel = viewChild<ElementRef<HTMLElement>>('painel');
 
   conversas = signal<ConversaResumo[]>([]);
   carregandoLista = signal(false);
@@ -281,9 +263,6 @@ export class ConversasComponent implements OnInit {
 
   // true = usuário está (ou queremos manter) no fim do histórico → auto-scroll ao chegar msg nova.
   private grudadoNoFim = true;
-  // Enquanto ancoramos no fim, o scrollTo dispara o elementScrolled; sem suprimir, o
-  // medirGrude marcaria grudadoNoFim=false no meio da ancoragem e mataria a re-tentativa.
-  private ancorando = false;
 
   readonly selecionadoResumo = computed(() =>
     this.conversas().find((c) => c.telefone === this.selecionado()) ?? null,
@@ -339,7 +318,7 @@ export class ConversasComponent implements OnInit {
     if (comLoading) {
       this.carregandoChat.set(true);
     }
-    this.api.listarMensagens(tel, 0, PAGE_MENSAGENS).pipe(
+    this.buscarUltimaPagina(tel).pipe(
       takeUntilDestroyed(this.destroyRef),
       finalize(() => { if (comLoading) this.carregandoChat.set(false); }),
     ).subscribe({
@@ -365,15 +344,30 @@ export class ConversasComponent implements OnInit {
     });
   }
 
-  trackMsgId = (_: number, m: Mensagem): number | string => m.id;
+  /**
+   * Busca a ÚLTIMA página de mensagens (as mais recentes). A API pagina em ordem
+   * cronológica ASC e ignora sort: a página 0 traz as mais ANTIGAS. Então pedimos a
+   * page 0 só pra ler totalPages e, havendo mais de uma, refazemos na última página —
+   * assim o fim do scroll é a mensagem mais recente real. (Carregar mais antigas ao
+   * rolar pra cima fica pra depois.)
+   */
+  private buscarUltimaPagina(tel: string): Observable<Page<Mensagem>> {
+    return this.api.listarMensagens(tel, 0, PAGE_MENSAGENS).pipe(
+      switchMap((pg) =>
+        pg.totalPages > 1
+          ? this.api.listarMensagens(tel, pg.totalPages - 1, PAGE_MENSAGENS)
+          : of(pg),
+      ),
+    );
+  }
 
-  private medirGrude(): void {
-    const vp = this.viewport;
-    if (!vp || this.ancorando) {
-      return; // durante a auto-ancoragem no fim, ignora os scrolls que nós mesmos disparamos
+  medirGrude(): void {
+    const el = this.painel()?.nativeElement;
+    if (!el) {
+      return;
     }
-    // "Grudado" se está a menos de ~60px do fim — tolerância pra não desgrudar por arredondamento.
-    this.grudadoNoFim = vp.measureScrollOffset('bottom') < 60;
+    // "Grudado" se está a menos de ~60px do fim — auto-rola só quem já estava no fim.
+    this.grudadoNoFim = (el.scrollHeight - el.scrollTop - el.clientHeight) < 60;
   }
 
   aoEnter(ev: Event): void {
@@ -427,32 +421,22 @@ export class ConversasComponent implements OnInit {
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   }
 
-  private rolarParaFim(tentativas = 12): void {
+  private rolarParaFim(): void {
     this.grudadoNoFim = true;
-    this.ancorando = true;
-    // Agenda cada passada (setTimeout): dá tempo do Angular renderizar o viewport (que vive
-    // num @if e pode não existir no instante da chamada) e do autosize medir mais itens.
-    setTimeout(() => {
-      const vp = this.viewport;
-      const n = this.mensagens().length;
-      if (!n) {
-        this.ancorando = false;
+    // Ancora no fim após o próximo render (o @for já refletiu mensagens()). Um único ajuste
+    // extra via rAF cobre reflow tardio (autoResize do textarea, carregamento de fontes).
+    afterNextRender(() => {
+      const el = this.painel()?.nativeElement;
+      if (!el) {
         return;
       }
-      if (!vp) {
-        // viewport ainda não renderizou — re-tenta enquanto houver fôlego
-        if (tentativas > 0) { this.rolarParaFim(tentativas - 1); } else { this.ancorando = false; }
-        return;
-      }
-      vp.checkViewportSize();
-      vp.scrollToIndex(n - 1, 'auto'); // vai pro último item (autosize reancora as alturas)
-      vp.scrollTo({ bottom: 0 });      // ajuste fino no fim
-      // Ainda longe do fim (autosize mediu mais)? re-tenta. Senão, encerra a ancoragem.
-      if (tentativas > 0 && vp.measureScrollOffset('bottom') > 8) {
-        this.rolarParaFim(tentativas - 1);
-      } else {
-        this.ancorando = false;
-      }
-    }, 60);
+      el.scrollTop = el.scrollHeight;
+      requestAnimationFrame(() => {
+        const alvo = this.painel()?.nativeElement;
+        if (alvo) {
+          alvo.scrollTop = alvo.scrollHeight;
+        }
+      });
+    }, { injector: this.injector });
   }
 }
