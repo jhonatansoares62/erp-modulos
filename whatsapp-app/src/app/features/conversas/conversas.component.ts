@@ -154,7 +154,10 @@ const PAGE_MENSAGENS = 100;
   styles: [`
     /* Quebra o padding/max-width do shell (.conteudo) para ocupar a área toda como um app de chat. */
     :host { display: block; margin: -1.75rem -1.5rem -3rem; }
-    .inbox { display: grid; grid-template-columns: 340px 1fr; height: calc(100vh - 4rem - 3.05rem);
+    /* grid-template-rows: minmax(0,1fr) dá altura DEFINIDA às colunas (sem isso a linha
+       implícita é 'auto' e cresce com o conteúdo → o chat estoura em vez de rolar por dentro). */
+    .inbox { display: grid; grid-template-columns: 340px 1fr; grid-template-rows: minmax(0, 1fr);
+      height: calc(100vh - 4rem - 3.05rem);
       background: var(--surface-ground); border-top: 1px solid var(--surface-border); }
     @media (max-width: 820px) { .inbox { grid-template-columns: 240px 1fr; } }
 
