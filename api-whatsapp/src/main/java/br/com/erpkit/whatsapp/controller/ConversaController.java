@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -69,6 +70,20 @@ public class ConversaController {
             throw new ModuloException("Conversa nao encontrada para o telefone informado", HttpStatus.NOT_FOUND);
         }
         return ResponseEntity.ok(dto);
+    }
+
+    /** Handoff: a recepcao assume a conversa — o bot para de responder aquele numero. */
+    @PostMapping("/{telefone}/assumir")
+    public ResponseEntity<Void> assumir(@PathVariable String telefone) {
+        inboxService.assumirConversa(telefone);
+        return ResponseEntity.ok().build();
+    }
+
+    /** Encerra o atendimento humano — o bot volta a responder. */
+    @PostMapping("/{telefone}/encerrar")
+    public ResponseEntity<Void> encerrar(@PathVariable String telefone) {
+        inboxService.encerrarConversa(telefone);
+        return ResponseEntity.ok().build();
     }
 
     private int sanitizarPage(int page) {

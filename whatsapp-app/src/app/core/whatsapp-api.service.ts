@@ -147,6 +147,7 @@ export interface ConversaResumo {
   totalMensagens: number;
   janelaAberta: boolean;
   janelaExpiraEm: string | null; // ISO
+  emAtendimento: boolean; // handoff: conversa sob atendimento humano (bot pausado)
 }
 
 // GET /api/whatsapp/conversas/{telefone}/mensagens → Page<MensagemResponse> (ordem cronológica ASC)
@@ -278,6 +279,15 @@ export class WhatsAppApiService {
   enviarBotoes(telefone: string, texto: string, botoes: Botao[]): Observable<EnvioResponse> {
     const body: EnviarBotoesRequest = { telefone, texto, botoes };
     return this.http.post<EnvioResponse>(`${API_BASE}/api/whatsapp/enviar-botoes`, body);
+  }
+
+  // ── Handoff (atendimento humano) ──
+  assumirConversa(telefone: string): Observable<void> {
+    return this.http.post<void>(`${API_BASE}/api/whatsapp/conversas/${encodeURIComponent(telefone)}/assumir`, {});
+  }
+
+  encerrarConversa(telefone: string): Observable<void> {
+    return this.http.post<void>(`${API_BASE}/api/whatsapp/conversas/${encodeURIComponent(telefone)}/encerrar`, {});
   }
 
   private periodo(de?: string, ate?: string): HttpParams {

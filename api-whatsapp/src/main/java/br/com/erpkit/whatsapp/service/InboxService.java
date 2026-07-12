@@ -46,11 +46,14 @@ public class InboxService {
 
     private final MensagemLogRepository mensagemRepository;
     private final ClienteZapRepository clienteRepository;
+    private final EstadoConversaService estadoConversaService;
 
     public InboxService(MensagemLogRepository mensagemRepository,
-                        ClienteZapRepository clienteRepository) {
+                        ClienteZapRepository clienteRepository,
+                        EstadoConversaService estadoConversaService) {
         this.mensagemRepository = mensagemRepository;
         this.clienteRepository = clienteRepository;
+        this.estadoConversaService = estadoConversaService;
     }
 
     /**
@@ -83,7 +86,20 @@ public class InboxService {
 
         aplicarJanela(clienteRepository.findByTelefone(telefone), agora,
                 dto::setJanelaAberta, dto::setJanelaExpiraEm);
+        dto.setEmAtendimento(estadoConversaService.estaEmAtendimento(telefone));
         return dto;
+    }
+
+    /** Assume a conversa (bot pausado). Normaliza o telefone pra bater com o guard do inbound. */
+    @Transactional
+    public void assumirConversa(String telefone) {
+        estadoConversaService.assumir(TelefoneBR.normalizar(telefone));
+    }
+
+    /** Encerra o atendimento humano (bot reativado). */
+    @Transactional
+    public void encerrarConversa(String telefone) {
+        estadoConversaService.encerrar(TelefoneBR.normalizar(telefone));
     }
 
     /**

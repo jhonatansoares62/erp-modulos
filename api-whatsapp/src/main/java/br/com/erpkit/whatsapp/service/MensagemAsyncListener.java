@@ -58,19 +58,22 @@ public class MensagemAsyncListener {
     private final ErpCallbackClient erpCallbackClient;
     private final MensagemLogService mensagemLogService;
     private final AssistenteService assistenteService;
+    private final EstadoConversaService estadoConversaService;
 
     public MensagemAsyncListener(MetaMediaClient metaMediaClient,
                                  ClienteZapService clienteZapService,
                                  ComandoExtractor comandoExtractor,
                                  ErpCallbackClient erpCallbackClient,
                                  MensagemLogService mensagemLogService,
-                                 AssistenteService assistenteService) {
+                                 AssistenteService assistenteService,
+                                 EstadoConversaService estadoConversaService) {
         this.metaMediaClient = metaMediaClient;
         this.clienteZapService = clienteZapService;
         this.comandoExtractor = comandoExtractor;
         this.erpCallbackClient = erpCallbackClient;
         this.mensagemLogService = mensagemLogService;
         this.assistenteService = assistenteService;
+        this.estadoConversaService = estadoConversaService;
     }
 
     /**
@@ -126,6 +129,17 @@ public class MensagemAsyncListener {
             log.error("Falha atualizando ultima_mensagem_em: telefone={}: {}",
                       event.telefone(), e.getMessage(), e);
             return;
+        }
+
+        // [3.5] HANDOFF: se a conversa esta em atendimento humano, o bot NAO responde — a
+        // mensagem ja foi persistida e aparece no inbox; a recepcao trata manualmente.
+        try {
+            if (estadoConversaService.estaEmAtendimento(event.telefone())) {
+                log.info("Conversa em atendimento humano — bot silenciado: telefone={}", event.telefone());
+                return;
+            }
+        } catch (Exception e) {
+            log.warn("Falha ao checar estado de atendimento (seguindo com o bot): {}", e.getMessage());
         }
 
         // [3.1] resolver id_cliente_erp no ERP se ainda NULL (D-07). Best-effort: falha

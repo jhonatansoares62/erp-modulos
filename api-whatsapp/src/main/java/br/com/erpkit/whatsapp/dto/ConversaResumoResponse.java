@@ -35,6 +35,7 @@ public class ConversaResumoResponse {
     private long totalMensagens;
     private boolean janelaAberta;
     private Instant janelaExpiraEm;
+    private boolean emAtendimento;
 
     public ConversaResumoResponse() {
     }
@@ -62,4 +63,7 @@ public class ConversaResumoResponse {
 
     public Instant getJanelaExpiraEm() { return janelaExpiraEm; }
     public void setJanelaExpiraEm(Instant janelaExpiraEm) { this.janelaExpiraEm = janelaExpiraEm; }
+
+    public boolean isEmAtendimento() { return emAtendimento; }
+    public void setEmAtendimento(boolean emAtendimento) { this.emAtendimento = emAtendimento; }
 }

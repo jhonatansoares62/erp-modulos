@@ -65,6 +65,9 @@ const PAGE_MENSAGENS = 100;
                   @if (!c.janelaAberta) {
                     <i class="pi pi-lock janela-lock" title="Janela de 24h fechada"></i>
                   }
+                  @if (c.emAtendimento) {
+                    <i class="pi pi-headphones atendimento-ico" title="Em atendimento humano"></i>
+                  }
                 </div>
               </button>
             }
@@ -90,11 +93,20 @@ const PAGE_MENSAGENS = 100;
                 <span>{{ tel }}</span>
               </div>
             </div>
-            @if (janelaAberta()) {
-              <p-tag value="Janela 24h aberta" severity="success" icon="pi pi-check-circle" />
-            } @else {
-              <p-tag value="Janela 24h fechada" severity="warn" icon="pi pi-lock" />
-            }
+            <div class="head-acoes">
+              @if (janelaAberta()) {
+                <p-tag value="Janela 24h aberta" severity="success" icon="pi pi-check-circle" />
+              } @else {
+                <p-tag value="Janela 24h fechada" severity="warn" icon="pi pi-lock" />
+              }
+              @if (selecionadoResumo()?.emAtendimento) {
+                <p-button label="Encerrar atendimento" icon="pi pi-times-circle" severity="danger"
+                          size="small" [loading]="alterandoAtendimento()" (onClick)="encerrar()" />
+              } @else {
+                <p-button label="Assumir" icon="pi pi-headphones" severity="warn"
+                          size="small" [loading]="alterandoAtendimento()" (onClick)="assumir()" />
+              }
+            </div>
           </header>
 
           @if (mensagens().length) {
@@ -190,6 +202,8 @@ const PAGE_MENSAGENS = 100;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .item-linha2 .preview.vazio { font-style: italic; opacity: .7; }
     .item-linha2 .janela-lock { font-size: .72rem; color: var(--color-warn, #d97706); flex: none; }
+    .item-linha2 .atendimento-ico { font-size: .74rem; color: var(--primary-color); flex: none; }
+    .chat-head .head-acoes { display: flex; align-items: center; gap: .5rem; flex: none; }
 
     /* Chat */
     .chat { display: flex; flex-direction: column; min-width: 0; }
@@ -280,6 +294,7 @@ export class ConversasComponent implements OnInit {
   mensagens = signal<Mensagem[]>([]);
   carregandoChat = signal(false);
   enviando = signal(false);
+  alterandoAtendimento = signal(false);
 
   rascunho = '';
 
@@ -445,6 +460,39 @@ export class ConversasComponent implements OnInit {
           : (err?.error?.mensagem || err?.error?.message || 'Não foi possível enviar a mensagem.');
         this.msg.add({ severity: 'error', summary: 'Envio', detail: detalhe });
       },
+    });
+  }
+
+  assumir(): void {
+    this.alterarAtendimento(true);
+  }
+
+  encerrar(): void {
+    this.alterarAtendimento(false);
+  }
+
+  private alterarAtendimento(assumir: boolean): void {
+    const tel = this.selecionado();
+    if (!tel || this.alterandoAtendimento()) {
+      return;
+    }
+    this.alterandoAtendimento.set(true);
+    const req = assumir ? this.api.assumirConversa(tel) : this.api.encerrarConversa(tel);
+    req.pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => this.alterandoAtendimento.set(false)),
+    ).subscribe({
+      next: () => {
+        this.msg.add({
+          severity: 'success',
+          summary: 'Atendimento',
+          detail: assumir
+            ? 'Você assumiu a conversa — o bot está pausado.'
+            : 'Atendimento encerrado — o bot voltou a responder.',
+        });
+        this.carregarLista(false);
+      },
+      error: () => this.msg.add({ severity: 'error', summary: 'Atendimento', detail: 'Não foi possível alterar o atendimento.' }),
     });
   }
 
