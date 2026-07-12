@@ -46,6 +46,13 @@ public interface WhatsAppClient {
      */
     EnvioResponse despachar(String telefone, WhatsAppRespostaDto resposta);
 
+    /**
+     * Handoff: pausa o bot e assume atendimento humano da conversa
+     * ({@code POST /api/whatsapp/conversas/{telefone}/assumir}). A partir daqui o modulo
+     * nao despacha mais comandos ao ERP para esse numero, ate a recepcao encerrar pelo inbox.
+     */
+    void assumirAtendimento(String telefone);
+
     /** Proxy do {@code GET /api/whatsapp/status}. */
     StatusResponse status();
 

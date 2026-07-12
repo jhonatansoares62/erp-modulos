@@ -113,6 +113,16 @@ public class WhatsAppClientImpl implements WhatsAppClient {
     }
 
     @Override
+    public void assumirAtendimento(String telefone) {
+        verificarHabilitado();
+        execute(() -> restClient.post()
+                .uri("/api/whatsapp/conversas/{telefone}/assumir", telefone)
+                .headers(this::aplicarApiKey)
+                .retrieve()
+                .toBodilessEntity());
+    }
+
+    @Override
     public StatusResponse status() {
         verificarHabilitado();
         return execute(() -> restClient.get()
