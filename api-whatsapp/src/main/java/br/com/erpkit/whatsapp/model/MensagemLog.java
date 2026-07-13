@@ -1,6 +1,8 @@
 package br.com.erpkit.whatsapp.model;
 
+import br.com.erpkit.whatsapp.crypto.CampoCifradoConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -60,7 +62,13 @@ public class MensagemLog {
     // schema validation. columnDefinition = "TEXT" alinha o mapeamento JPA com
     // o que Flyway aplicou em ambos H2 PG-mode e PostgreSQL real (TEXT em PG e
     // unbounded varchar nativo, sem oid/large object).
+    //
+    // Conteudo de conversa = dado sensivel (LGPD) — CIFRADO em repouso (AES-256-GCM
+    // via CampoCifradoConverter). O banco/backup guarda "v1:"+base64; a leitura decifra
+    // transparente. Todo preview/truncamento roda em Java sobre o getter ja decifrado
+    // (InboxService), e nenhuma query nativa toca conteudo — nada fura o converter.
     @Column(name = "conteudo", columnDefinition = "TEXT")
+    @Convert(converter = CampoCifradoConverter.class)
     private String conteudo;
 
     @Column(name = "media_id", length = 255)

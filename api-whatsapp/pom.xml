@@ -127,6 +127,17 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <!-- Cripto nos testes: chave em target/ (nao suja a working tree; some com mvn clean).
+                 CampoCripto le a system property whatsapp.enc.key.file. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <whatsapp.enc.key.file>${project.build.directory}/whatsapp-enc-test.key</whatsapp.enc.key.file>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

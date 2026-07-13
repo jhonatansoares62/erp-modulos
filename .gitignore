@@ -47,3 +47,6 @@ api-whatsapp/src/main/resources/static/prerendered-routes.json
 ### Secrets locais (Meta Cloud API tokens, etc) ###
 .secrets/*.env
 !.secrets/*.env.example
+
+### Chave de cripto em repouso (CampoCripto) — nunca versionar ###
+whatsapp-enc*.key

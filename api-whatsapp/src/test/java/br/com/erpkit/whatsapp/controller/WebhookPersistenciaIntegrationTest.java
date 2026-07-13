@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import br.com.erpkit.whatsapp.crypto.CampoCripto;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -256,6 +257,9 @@ class WebhookPersistenciaIntegrationTest {
 
         assertThat(tipo).isEqualTo("text");
         assertThat(conteudo)
+                .as("cifrado em repouso (LGPD) — a coluna crua nunca guarda o texto plano")
+                .startsWith("v1:");
+        assertThat(CampoCripto.decifrar(conteudo))
                 .as("UTF-8 byte-perfect preservado pelo CachedBodyHttpServletRequest (PITFALLS C-04)")
                 .isEqualTo("Olá, gostaria de um orçamento");
     }
@@ -276,6 +280,9 @@ class WebhookPersistenciaIntegrationTest {
 
         assertThat(tipo).isEqualTo("interactive_button");
         assertThat(conteudo)
+                .as("cifrado em repouso (LGPD) — a coluna crua nunca guarda o texto plano")
+                .startsWith("v1:");
+        assertThat(CampoCripto.decifrar(conteudo))
                 .as("Parser concatena id|title do button_reply (D-05 RESEARCH §5)")
                 .isEqualTo("aprovar_1234|Aprovar");
     }
@@ -295,7 +302,10 @@ class WebhookPersistenciaIntegrationTest {
         );
 
         assertThat(tipo).isEqualTo("interactive_list");
-        assertThat(conteudo).isEqualTo("boleto|Ver boleto");
+        assertThat(conteudo)
+                .as("cifrado em repouso (LGPD) — a coluna crua nunca guarda o texto plano")
+                .startsWith("v1:");
+        assertThat(CampoCripto.decifrar(conteudo)).isEqualTo("boleto|Ver boleto");
     }
 
     @Test
@@ -321,6 +331,9 @@ class WebhookPersistenciaIntegrationTest {
                 .as("media_id extraido do payload Meta — referencia para download lazy em Phase 3 (ROU-05)")
                 .isEqualTo("media-id-12345");
         assertThat(conteudo)
+                .as("cifrado em repouso (LGPD) — a coluna crua nunca guarda o texto plano")
+                .startsWith("v1:");
+        assertThat(CampoCripto.decifrar(conteudo))
                 .as("conteudo do document e o filename (D-05 RESEARCH §5)")
                 .isEqualTo("comprovante.pdf");
     }
