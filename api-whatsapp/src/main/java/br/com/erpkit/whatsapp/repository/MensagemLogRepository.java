@@ -5,8 +5,10 @@ import br.com.erpkit.whatsapp.model.MensagemLog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -102,4 +104,13 @@ public interface MensagemLogRepository extends JpaRepository<MensagemLog, Long> 
          + "WHERE m.direcao = :direcao AND m.criadoEm BETWEEN :de AND :ate GROUP BY m.resultado")
     List<Object[]> contarPorResultado(@Param("direcao") Direcao direcao,
                                       @Param("de") Instant de, @Param("ate") Instant ate);
+
+    // ── Retenção (LGPD item 4): anonimiza o conteúdo/telefone das mensagens antigas,
+    //    preservando metadados (direcao/tipo/criado_em/status) — as métricas não usam
+    //    conteudo/telefone. Idempotente (pula as já anonimizadas). Bulk, sem carregar entity.
+    @Modifying
+    @Transactional
+    @Query("UPDATE MensagemLog m SET m.conteudo = NULL, m.waId = NULL, m.telefone = 'ANONIMIZADO' "
+         + "WHERE m.criadoEm < :limite AND m.telefone <> 'ANONIMIZADO'")
+    int anonimizarAntigas(@Param("limite") Instant limite);
 }
