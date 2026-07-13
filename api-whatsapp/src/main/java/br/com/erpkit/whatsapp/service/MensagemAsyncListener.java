@@ -185,7 +185,12 @@ public class MensagemAsyncListener {
         }
 
         if (comando == null) {
-            log.debug("Sem comando para tipo={} — skip dispatch ERP", event.tipo());
+            // Mensagem nao-acionavel (video, figurinha, reacao, localizacao, tipo desconhecido ou
+            // conteudo vazio): o bot NAO fica mudo — responde a mensagem generica da persona
+            // ("nao entendi / manda menu"). A msg ja foi persistida (aparece no inbox da recepcao);
+            // so faltava dar um retorno ao paciente pra ele saber que o canal esta vivo.
+            log.debug("Sem comando para tipo={} — respondendo generico (nao_entendi)", event.tipo());
+            enviarSeguro(event.telefoneWaId(), assistenteService.mensagemNaoEntendi());
             return;
         }
 
