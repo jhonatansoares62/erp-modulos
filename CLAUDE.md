@@ -1,4 +1,3 @@
-<!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
 **ERP Modulos**
@@ -19,10 +18,8 @@ A milestone ativa adiciona o **Modulo WhatsApp** (`api-whatsapp` + `lib-whatsapp
 - **Idempotencia**: `wamid` UNIQUE em `mensagens_log` — Meta reenvia entregas se webhook nao responde 200 em <5s
 - **Janela 24h**: implicita arquiteturalmente (D3 reativo) e travada explicitamente (D5 hard-block) — gera custo se quebrada
 - **HMAC**: validacao de `X-Hub-Signature-256` obrigatoria em todo POST do Meta — webhook publico precisa rejeitar trafico nao assinado
-- **Escopo cross-repo**: Engate em ERP-MUDAS e installer ficam **fora** — esta GSD project nao toca codigo em `C:\projetos\ERP-MUDAS\`
-<!-- GSD:project-end -->
+- **Escopo cross-repo**: Engate em ERP-MUDAS e installer ficam **fora** — este projeto nao toca codigo em `C:\projetos\ERP-MUDAS\`
 
-<!-- GSD:stack-start source:codebase/STACK.md -->
 ## Technology Stack
 
 ## Languages
@@ -76,9 +73,7 @@ A milestone ativa adiciona o **Modulo WhatsApp** (`api-whatsapp` + `lib-whatsapp
 - Linux, macOS, or Windows server environment
 - Network access to external APIs:
 - SMTP server (for email sending via `api-email`)
-<!-- GSD:stack-end -->
 
-<!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
 ## Naming Patterns
@@ -170,9 +165,7 @@ A milestone ativa adiciona o **Modulo WhatsApp** (`api-whatsapp` + `lib-whatsapp
 - Service methods are implicitly transactional via Spring Data repositories
 - No explicit `@Transactional` annotations observed (relies on default Spring Boot behavior)
 - Each repository save/delete is atomic
-<!-- GSD:conventions-end -->
 
-<!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
 ## System Overview
@@ -292,32 +285,3 @@ A milestone ativa adiciona o **Modulo WhatsApp** (`api-whatsapp` + `lib-whatsapp
 - Pattern: All endpoints except public paths (`/health`, `/api/info`, `/swagger-ui`, `/v3/api-docs`) require `X-API-Key` header
 - Implementation: `lib-shared/src/main/java/br/com/erpkit/shared/security/ApiKeyFilter.java`
 - Configuration: API key sourced from environment variable `${API_KEY}`
-<!-- GSD:architecture-end -->
-
-<!-- GSD:skills-start source:skills/ -->
-## Project Skills
-
-No project skills found. Add skills to any of: `.claude/skills/`, `.agents/skills/`, `.cursor/skills/`, `.github/skills/`, or `.codex/skills/` with a `SKILL.md` index file.
-<!-- GSD:skills-end -->
-
-<!-- GSD:workflow-start source:GSD defaults -->
-## GSD Workflow Enforcement
-
-Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
-
-Use these entry points:
-- `/gsd-quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd-debug` for investigation and bug fixing
-- `/gsd-execute-phase` for planned phase work
-
-Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
-<!-- GSD:workflow-end -->
-
-
-
-<!-- GSD:profile-start -->
-## Developer Profile
-
-> Profile not yet configured. Run `/gsd-profile-user` to generate your developer profile.
-> This section is managed by `generate-claude-profile` -- do not edit manually.
-<!-- GSD:profile-end -->
