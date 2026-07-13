@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -20,16 +21,36 @@ public class EstadoConversaService {
 
     private static final Logger log = LoggerFactory.getLogger(EstadoConversaService.class);
 
+    /** Handoff auto-expira apos este tempo — rede de seguranca se a recepcao esquecer de encerrar. */
+    private static final Duration TTL = Duration.ofHours(6);
+
     private final EstadoConversaRepository repository;
 
     public EstadoConversaService(EstadoConversaRepository repository) {
         this.repository = repository;
     }
 
-    /** True se a conversa esta sob atendimento humano (bot pausado). */
-    @Transactional(readOnly = true)
+    /**
+     * True se a conversa esta sob atendimento humano (bot pausado). Se o handoff esta aberto ha
+     * mais que o {@link #TTL} (recepcao esqueceu de encerrar), auto-encerra aqui mesmo — assim o
+     * bot NAO fica mudo pra sempre naquele numero: a proxima mensagem do paciente ja volta pro bot.
+     */
+    @Transactional
     public boolean estaEmAtendimento(String telefone) {
-        return repository.findById(telefone).map(EstadoConversa::isEmAtendimento).orElse(false);
+        EstadoConversa e = repository.findById(telefone).orElse(null);
+        if (e == null || !e.isEmAtendimento()) {
+            return false;
+        }
+        Instant inicio = e.getIniciadoEm();
+        if (inicio != null && inicio.isBefore(Instant.now().minus(TTL))) {
+            e.setEmAtendimento(false);
+            e.setIniciadoEm(null);
+            e.setUltimaAtualizacao(Instant.now());
+            repository.save(e);
+            log.info("Handoff: conversa {} expirou (>{}h sem encerrar) — bot reativado", telefone, TTL.toHours());
+            return false;
+        }
+        return true;
     }
 
     @Transactional(readOnly = true)

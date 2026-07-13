@@ -60,6 +60,7 @@ public class MensagemAsyncListener {
     private final AssistenteService assistenteService;
     private final EstadoConversaService estadoConversaService;
     private final WhatsAppCloudClient cloudClient;
+    private final AvisoForaHorarioThrottle foraHorarioThrottle;
 
     public MensagemAsyncListener(MetaMediaClient metaMediaClient,
                                  ClienteZapService clienteZapService,
@@ -68,7 +69,8 @@ public class MensagemAsyncListener {
                                  MensagemLogService mensagemLogService,
                                  AssistenteService assistenteService,
                                  EstadoConversaService estadoConversaService,
-                                 WhatsAppCloudClient cloudClient) {
+                                 WhatsAppCloudClient cloudClient,
+                                 AvisoForaHorarioThrottle foraHorarioThrottle) {
         this.metaMediaClient = metaMediaClient;
         this.clienteZapService = clienteZapService;
         this.comandoExtractor = comandoExtractor;
@@ -77,6 +79,7 @@ public class MensagemAsyncListener {
         this.assistenteService = assistenteService;
         this.estadoConversaService = estadoConversaService;
         this.cloudClient = cloudClient;
+        this.foraHorarioThrottle = foraHorarioThrottle;
     }
 
     /**
@@ -147,11 +150,16 @@ public class MensagemAsyncListener {
 
         // [3.6] FORA DO HORARIO: se configurado e a mensagem chega fora do expediente, responde
         // o aviso da persona e NAO processa o bot. A clinica define o horario na tela Assistente;
-        // horario vazio = atende 24h (nunca bloqueia).
+        // horario vazio = atende 24h (nunca bloqueia). Throttle: o aviso sai no maximo 1x por
+        // numero na janela (o paciente pode mandar varias msgs fora do horario — nao spammar).
         try {
             if (assistenteService.estaForaDoHorario()) {
-                enviarSeguro(event.telefoneWaId(), assistenteService.mensagemForaHorario());
-                log.info("Fora do horario de atendimento — aviso enviado: telefone={}", event.telefone());
+                if (foraHorarioThrottle.deveAvisar(event.telefone())) {
+                    enviarSeguro(event.telefoneWaId(), assistenteService.mensagemForaHorario());
+                    log.info("Fora do horario de atendimento — aviso enviado: telefone={}", event.telefone());
+                } else {
+                    log.debug("Fora do horario — aviso ja enviado recentemente (throttle): telefone={}", event.telefone());
+                }
                 return;
             }
         } catch (Exception e) {
