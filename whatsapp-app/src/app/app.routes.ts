@@ -36,6 +36,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/testes/testes.component').then((m) => m.TestesComponent),
       },
+      {
+        path: 'auditoria',
+        loadComponent: () =>
+          import('./features/auditoria/auditoria.component').then((m) => m.AuditoriaComponent),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'conversas' },
     ],
   },

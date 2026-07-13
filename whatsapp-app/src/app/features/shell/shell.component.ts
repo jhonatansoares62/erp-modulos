@@ -31,6 +31,7 @@ import { AuthService } from '../../core/auth.service';
       <a routerLink="/configuracao" routerLinkActive="ativo"><i class="pi pi-cog"></i> Configuração</a>
       <a routerLink="/assistente" routerLinkActive="ativo"><i class="pi pi-user-edit"></i> Assistente</a>
       <a routerLink="/testes" routerLinkActive="ativo"><i class="pi pi-send"></i> Testes</a>
+      <a routerLink="/auditoria" routerLinkActive="ativo"><i class="pi pi-history"></i> Auditoria</a>
     </nav>
 
     <main class="conteudo">

@@ -48,6 +48,14 @@ export interface MetaConfigUpdate {
   verifyToken?: string;
 }
 
+// ── Auditoria: GET /api/whatsapp/auditoria (AuditoriaResponse) — trilha de acesso (LGPD) ──
+export interface AuditoriaAcesso {
+  atendenteEmail: string | null;
+  acao: string;
+  telefoneAlvo: string | null;
+  criadoEm: string | null;
+}
+
 // ── Assistente: GET/PUT /api/whatsapp/assistente (AssistenteResponse) — persona genérica ──
 export interface AssistenteConfig {
   nome: string;
@@ -223,6 +231,12 @@ export class WhatsAppApiService {
 
   salvarConfig(body: MetaConfigUpdate): Observable<MetaConfig> {
     return this.http.put<MetaConfig>(`${API_BASE}/api/whatsapp/config`, body);
+  }
+
+  // ── Auditoria de acesso (LGPD) ──
+  auditoria(page = 0, size = 50): Observable<Page<AuditoriaAcesso>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<Page<AuditoriaAcesso>>(`${API_BASE}/api/whatsapp/auditoria`, { params });
   }
 
   // ── Assistente (persona genérica) ──

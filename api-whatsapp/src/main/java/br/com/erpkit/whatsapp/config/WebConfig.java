@@ -1,7 +1,9 @@
 package br.com.erpkit.whatsapp.config;
 
+import br.com.erpkit.whatsapp.web.AuditoriaAcessoInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -26,6 +28,19 @@ import java.io.IOException;
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+    private final AuditoriaAcessoInterceptor auditoriaAcessoInterceptor;
+
+    public WebConfig(AuditoriaAcessoInterceptor auditoriaAcessoInterceptor) {
+        this.auditoriaAcessoInterceptor = auditoriaAcessoInterceptor;
+    }
+
+    /** Trilha de auditoria (LGPD): so os acessos ao dado do paciente no inbox. */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(auditoriaAcessoInterceptor)
+                .addPathPatterns("/api/whatsapp/conversas/**");
+    }
 
     /** Raiz "/" -> index.html do app (o resource handler abaixo serve o restante do SPA). */
     @Override
