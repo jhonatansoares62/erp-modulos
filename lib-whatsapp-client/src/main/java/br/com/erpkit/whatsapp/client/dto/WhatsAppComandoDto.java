@@ -17,6 +17,8 @@ package br.com.erpkit.whatsapp.client.dto;
  * @param mediaFilename nome original do arquivo — {@code null} se sem media
  * @param assistente    persona do assistente (nome/emoji/tom/saudacao) — bloco opcional/aditivo,
  *                      {@code null} quando o modulo nao envia
+ * @param wamid         id da mensagem no Meta — bloco ADITIVO/opcional para idempotencia de entrega
+ *                      no ERP (dedup do callback). {@code null} quando o modulo nao envia
  */
 public record WhatsAppComandoDto(
         String telefone,
@@ -26,14 +28,25 @@ public record WhatsAppComandoDto(
         String mediaBase64,
         String mediaMimeType,
         String mediaFilename,
-        AssistentePersonaDto assistente
+        AssistentePersonaDto assistente,
+        String wamid
 ) {
+    /**
+     * Construtor de compatibilidade (8 args, com persona sem wamid) — mantem os call sites
+     * anteriores ao {@code wamid} compilando ({@code wamid = null}).
+     */
+    public WhatsAppComandoDto(String telefone, String comando, String payload, Long idCliente,
+                              String mediaBase64, String mediaMimeType, String mediaFilename,
+                              AssistentePersonaDto assistente) {
+        this(telefone, comando, payload, idCliente, mediaBase64, mediaMimeType, mediaFilename, assistente, null);
+    }
+
     /**
      * Construtor de compatibilidade (7 args, sem persona) — mantem os call sites e testes
      * anteriores ao bloco {@code assistente} compilando ({@code assistente = null}).
      */
     public WhatsAppComandoDto(String telefone, String comando, String payload, Long idCliente,
                               String mediaBase64, String mediaMimeType, String mediaFilename) {
-        this(telefone, comando, payload, idCliente, mediaBase64, mediaMimeType, mediaFilename, null);
+        this(telefone, comando, payload, idCliente, mediaBase64, mediaMimeType, mediaFilename, null, null);
     }
 }

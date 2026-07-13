@@ -204,7 +204,7 @@ public class MensagemAsyncListener {
         // (a versao com strip do 9o digito falha no envio — validado no teste real).
         ComandoCallbackDTO payload = new ComandoCallbackDTO(
             event.telefoneWaId(), comando, event.conteudo(),
-            idClienteErp, mediaBase64, mediaMimeType, mediaFilename, assistente
+            idClienteErp, mediaBase64, mediaMimeType, mediaFilename, assistente, event.wamid()
         );
         try {
             DesfechoCallbackDTO desfecho = erpCallbackClient.despachar(payload);

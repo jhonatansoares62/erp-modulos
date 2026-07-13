@@ -22,6 +22,8 @@ package br.com.erpkit.whatsapp.dto;
  * @param assistente      persona do assistente (nome/emoji/tom/saudacao) — bloco ADITIVO/opcional
  *                        que o ERP usa para renderizar as respostas; ERP antigo ignora. {@code null}
  *                        quando indisponivel
+ * @param wamid           id da mensagem no Meta — bloco ADITIVO/opcional para o ERP deduplicar a
+ *                        entrega do callback (retry). ERP antigo ignora. {@code null} se indisponivel
  */
 public record ComandoCallbackDTO(
     String telefone,
@@ -31,14 +33,25 @@ public record ComandoCallbackDTO(
     String mediaBase64,
     String mediaMimeType,
     String mediaFilename,
-    AssistentePersonaDTO assistente
+    AssistentePersonaDTO assistente,
+    String wamid
 ) {
+    /**
+     * Construtor de compatibilidade (8 args, com persona sem wamid) — mantem os call sites
+     * anteriores ao {@code wamid} compilando ({@code wamid = null}).
+     */
+    public ComandoCallbackDTO(String telefone, String comando, String payload, Long idCliente,
+                              String mediaBase64, String mediaMimeType, String mediaFilename,
+                              AssistentePersonaDTO assistente) {
+        this(telefone, comando, payload, idCliente, mediaBase64, mediaMimeType, mediaFilename, assistente, null);
+    }
+
     /**
      * Construtor de compatibilidade (7 args, sem persona) — mantem os call sites
      * anteriores ao bloco {@code assistente} compilando ({@code assistente = null}).
      */
     public ComandoCallbackDTO(String telefone, String comando, String payload, Long idCliente,
                               String mediaBase64, String mediaMimeType, String mediaFilename) {
-        this(telefone, comando, payload, idCliente, mediaBase64, mediaMimeType, mediaFilename, null);
+        this(telefone, comando, payload, idCliente, mediaBase64, mediaMimeType, mediaFilename, null, null);
     }
 }
