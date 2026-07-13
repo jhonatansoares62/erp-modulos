@@ -1,6 +1,8 @@
 package br.com.erpkit.whatsapp.model;
 
+import br.com.erpkit.whatsapp.crypto.CampoCifradoConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -18,6 +20,9 @@ import java.time.Instant;
  * trata a entity como "nao nova" (id != null) e faz merge — INSERT na primeira vez,
  * UPDATE nas seguintes.
  *
+ * <p>Os 3 secrets sao cifrados em repouso (AES-256-GCM via {@link CampoCifradoConverter},
+ * V13) — o banco/backup guarda {@code "v1:"+base64}, nunca o token em claro.
+ *
  * <p>{@link #toString()} mascara os 3 secrets — a entity pode aparecer em log de erro.
  */
 @Entity
@@ -31,13 +36,16 @@ public class ConfigMeta {
     @Column(name = "phone_number_id", length = 64)
     private String phoneNumberId;
 
-    @Column(name = "access_token", length = 1024)
+    @Column(name = "access_token", length = 4096)
+    @Convert(converter = CampoCifradoConverter.class)
     private String accessToken;
 
-    @Column(name = "app_secret", length = 255)
+    @Column(name = "app_secret", length = 4096)
+    @Convert(converter = CampoCifradoConverter.class)
     private String appSecret;
 
-    @Column(name = "verify_token", length = 255)
+    @Column(name = "verify_token", length = 4096)
+    @Convert(converter = CampoCifradoConverter.class)
     private String verifyToken;
 
     @Column(name = "atualizado_em", nullable = false)
