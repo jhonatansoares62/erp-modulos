@@ -59,6 +59,12 @@ class MensagemAsyncListenerTest {
     @Mock ComandoExtractor comandoExtractor;
     @Mock ErpCallbackClient erpCallbackClient;
     @Mock MensagemLogService mensagemLogService;
+    // Deps adicionadas por features do canal (fora-do-horario, comando-null, handoff):
+    // sem estes mocks o @InjectMocks deixa os campos null e a rota comando-null NPEia.
+    @Mock AssistenteService assistenteService;
+    @Mock EstadoConversaService estadoConversaService;
+    @Mock WhatsAppCloudClient cloudClient;
+    @Mock AvisoForaHorarioThrottle foraHorarioThrottle;
 
     @InjectMocks MensagemAsyncListener listener;
 
