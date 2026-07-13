@@ -108,6 +108,27 @@ Repita o `GET` e confirme que o app aparece. **Sem isto, mensagens entrantes nã
    # → {"wamid":"..."}
    ```
 
+## 7. Segurança / LGPD (chave de cripto, retenção, DSAR)
+
+O módulo cifra em repouso as credenciais Meta e o **conteúdo das conversas** (AES-256-GCM).
+Pontos de operação:
+
+- **Chave de criptografia.** Fica **fora do banco**, em `WHATSAPP_ENC_KEY_FILE` (no instalado:
+  `C:\erpkit\config\<erp>\modulos\whatsapp.key`) — auto-gerada no 1º uso. Assim, um
+  `pg_dump`/backup do banco **não** expõe token nem conversa.
+  > ⚠️ **A chave PRECISA entrar no backup de arquivos do cliente.** Sem ela, o conteúdo cifrado
+  > é irrecuperável (as credenciais Meta dá pra reconfigurar pela tela; o histórico de conversas,
+  > não). Ao migrar/reinstalar a máquina, **preserve o arquivo da chave**.
+- **Retenção.** Job diário (03:30) anonimiza conversas mais velhas que
+  `WHATSAPP_RETENCAO_MENSAGENS_MESES` (default 24) e purga mídia expirada. Ajuste por env
+  (`..._MESES`, `WHATSAPP_RETENCAO_HABILITADO`, `WHATSAPP_RETENCAO_CRON`) ou rode sob demanda:
+  `curl -X POST http://localhost:9193/api/whatsapp/retencao/executar -H "X-API-Key: <API_KEY>"`.
+- **Auditoria de acesso (DPO).** `GET /api/whatsapp/auditoria` — quem acessou o dado de qual
+  paciente + as ações DSAR (com `X-API-Key` ou Bearer do atendente).
+- **DSAR (pedido do titular).** Exportar: `GET /api/whatsapp/titular/<telefone>/exportar`.
+  Esquecer (anonimiza + remove vínculos): `POST /api/whatsapp/titular/<telefone>/esquecer`.
+  Também na tela **Titular** do app do atendente.
+
 ---
 
 ## Troubleshooting
