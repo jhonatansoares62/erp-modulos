@@ -68,6 +68,26 @@ class AuditoriaAcessoInterceptorTest {
     }
 
     @Test
+    @DisplayName("GET .../titular/{telefone}/exportar -> registra exportou_dados (DSAR)")
+    void audita_exportar_dsar() {
+        prepararRequest("GET", "/api/whatsapp/titular/5546920009012/exportar", "5546920009012", "ana@clinica", 200);
+
+        interceptor().afterCompletion(request, response, new Object(), null);
+
+        verify(auditoria).registrar("ana@clinica", "exportou_dados", "5546920009012");
+    }
+
+    @Test
+    @DisplayName("POST .../titular/{telefone}/esquecer -> registra esqueceu_titular (DSAR)")
+    void audita_esquecer_dsar() {
+        prepararRequest("POST", "/api/whatsapp/titular/5546920009012/esquecer", "5546920009012", "ana@clinica", 200);
+
+        interceptor().afterCompletion(request, response, new Object(), null);
+
+        verify(auditoria).registrar("ana@clinica", "esqueceu_titular", "5546920009012");
+    }
+
+    @Test
     @DisplayName("GET /conversas (lista, polling) NAO e auditada")
     void nao_audita_lista() {
         prepararRequest("GET", "/api/whatsapp/conversas", null, "ana@clinica", 200);

@@ -35,11 +35,11 @@ public class WebConfig implements WebMvcConfigurer {
         this.auditoriaAcessoInterceptor = auditoriaAcessoInterceptor;
     }
 
-    /** Trilha de auditoria (LGPD): so os acessos ao dado do paciente no inbox. */
+    /** Trilha de auditoria (LGPD): acessos ao dado do paciente no inbox + ações DSAR. */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(auditoriaAcessoInterceptor)
-                .addPathPatterns("/api/whatsapp/conversas/**");
+                .addPathPatterns("/api/whatsapp/conversas/**", "/api/whatsapp/titular/**");
     }
 
     /** Raiz "/" -> index.html do app (o resource handler abaixo serve o restante do SPA). */

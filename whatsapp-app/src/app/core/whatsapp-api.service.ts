@@ -56,6 +56,28 @@ export interface AuditoriaAcesso {
   criadoEm: string | null;
 }
 
+// ── DSAR (LGPD): direitos do titular por telefone ──
+export interface MensagemExportada {
+  direcao: string | null;
+  tipo: string | null;
+  conteudo: string | null;
+  timestamp: string | null;
+  status: string | null;
+}
+
+export interface ExportacaoTitular {
+  telefone: string;
+  idClienteErp: number | null;
+  geradoEm: string;
+  mensagens: MensagemExportada[];
+}
+
+export interface ResultadoEsquecimento {
+  mensagensAnonimizadas: number;
+  clienteRemovido: boolean;
+  estadoRemovido: boolean;
+}
+
 // ── Assistente: GET/PUT /api/whatsapp/assistente (AssistenteResponse) — persona genérica ──
 export interface AssistenteConfig {
   nome: string;
@@ -237,6 +259,17 @@ export class WhatsAppApiService {
   auditoria(page = 0, size = 50): Observable<Page<AuditoriaAcesso>> {
     const params = new HttpParams().set('page', page).set('size', size);
     return this.http.get<Page<AuditoriaAcesso>>(`${API_BASE}/api/whatsapp/auditoria`, { params });
+  }
+
+  // ── DSAR (LGPD): direitos do titular ──
+  exportarTitular(telefone: string): Observable<ExportacaoTitular> {
+    return this.http.get<ExportacaoTitular>(
+      `${API_BASE}/api/whatsapp/titular/${encodeURIComponent(telefone)}/exportar`);
+  }
+
+  esquecerTitular(telefone: string): Observable<ResultadoEsquecimento> {
+    return this.http.post<ResultadoEsquecimento>(
+      `${API_BASE}/api/whatsapp/titular/${encodeURIComponent(telefone)}/esquecer`, {});
   }
 
   // ── Assistente (persona genérica) ──

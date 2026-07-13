@@ -98,4 +98,9 @@ public interface ClienteZapRepository extends JpaRepository<ClienteZap, Long> {
         nativeQuery = true)
     int vincularIdClienteErp(@Param("telefone") String telefone,
                              @Param("idClienteErp") Long idClienteErp);
+
+    /** DSAR (LGPD item 4): remove o vínculo telefone→paciente ao "esquecer" o titular. */
+    @Modifying
+    @Query("DELETE FROM ClienteZap c WHERE c.telefone = :telefone")
+    int deletarPorTelefone(@Param("telefone") String telefone);
 }

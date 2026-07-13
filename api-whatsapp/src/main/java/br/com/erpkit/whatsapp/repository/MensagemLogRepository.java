@@ -113,4 +113,15 @@ public interface MensagemLogRepository extends JpaRepository<MensagemLog, Long> 
     @Query("UPDATE MensagemLog m SET m.conteudo = NULL, m.waId = NULL, m.telefone = 'ANONIMIZADO' "
          + "WHERE m.criadoEm < :limite AND m.telefone <> 'ANONIMIZADO'")
     int anonimizarAntigas(@Param("limite") Instant limite);
+
+    // ── DSAR (LGPD item 4): por titular (telefone JÁ NORMALIZADO pelo caller). ──
+
+    /** Histórico completo de um telefone (cronológico) para EXPORTAR ao titular. */
+    List<MensagemLog> findByTelefoneOrderByCriadoEmAsc(String telefone);
+
+    /** ESQUECER: anonimiza todas as mensagens de um titular (conteúdo/telefone). */
+    @Modifying
+    @Query("UPDATE MensagemLog m SET m.conteudo = NULL, m.waId = NULL, m.telefone = 'ANONIMIZADO' "
+         + "WHERE m.telefone = :telefone")
+    int anonimizarPorTelefone(@Param("telefone") String telefone);
 }

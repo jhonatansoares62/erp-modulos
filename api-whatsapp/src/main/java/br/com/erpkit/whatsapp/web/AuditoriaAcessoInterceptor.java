@@ -69,6 +69,13 @@ public class AuditoriaAcessoInterceptor implements HandlerInterceptor {
         if ("POST".equals(metodo) && uri.endsWith("/encerrar")) {
             return "encerrou";
         }
+        // DSAR (LGPD item 4): auditar acesso/eliminação do titular — sempre (sem dedup).
+        if ("GET".equals(metodo) && uri.endsWith("/exportar")) {
+            return "exportou_dados";
+        }
+        if ("POST".equals(metodo) && uri.endsWith("/esquecer")) {
+            return "esqueceu_titular";
+        }
         return null;
     }
 
