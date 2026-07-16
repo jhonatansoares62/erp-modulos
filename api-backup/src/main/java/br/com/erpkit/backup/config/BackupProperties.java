@@ -35,6 +35,10 @@ public class BackupProperties {
     private String filePaths = "";
     /** Chave de licenca = prefixo do cliente no bucket off-site. Vazio ⇒ off-site inativo. */
     private String licenseKey = "";
+    /** Arquivo (relativo ao working dir) de onde ler a chave de licenca — mesmo do ERP
+     *  (license-config.json), pro prefixo off-site do modulo bater com o do backup in-JVM.
+     *  Tem precedencia sobre license-key. */
+    private String licenseConfigFile = "license-config.json";
 
     private final Retention retention = new Retention();
     private final Target target = new Target();
@@ -66,6 +70,8 @@ public class BackupProperties {
     public void setFilePaths(String filePaths) { this.filePaths = filePaths; }
     public String getLicenseKey() { return licenseKey; }
     public void setLicenseKey(String licenseKey) { this.licenseKey = licenseKey; }
+    public String getLicenseConfigFile() { return licenseConfigFile; }
+    public void setLicenseConfigFile(String licenseConfigFile) { this.licenseConfigFile = licenseConfigFile; }
     public Retention getRetention() { return retention; }
     public Target getTarget() { return target; }
     public Alert getAlert() { return alert; }

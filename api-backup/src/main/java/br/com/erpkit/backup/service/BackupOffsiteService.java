@@ -46,9 +46,32 @@ public class BackupOffsiteService {
         return cfg.isEnabled() && !licenseKey().isBlank();
     }
 
+    /**
+     * Chave de licenca = prefixo do cliente no bucket off-site. Le primeiro do
+     * {@code license-config.json} (mesmo arquivo do ERP, no working dir) pra o prefixo do modulo
+     * BATER com o do backup in-JVM; fallback = app.backup.license-key. Assim, no instalado, o
+     * off-site do modulo isola por cliente com a mesma chave que o ERP usa.
+     */
     private String licenseKey() {
+        String fromFile = lerLicenseConfig();
+        if (fromFile != null && !fromFile.isBlank()) return fromFile.trim();
         String lk = props.getLicenseKey();
         return lk == null ? "" : lk.trim();
+    }
+
+    private String lerLicenseConfig() {
+        try {
+            java.io.File f = new java.io.File(props.getLicenseConfigFile());
+            if (!f.exists()) return null;
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> cfg = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(f, java.util.Map.class);
+            Object k = cfg.get("licenseKey");
+            return k == null ? null : k.toString();
+        } catch (Exception e) {
+            log.warn("Off-site: falha ao ler {} p/ chave de licenca: {}", props.getLicenseConfigFile(), e.getMessage());
+            return null;
+        }
     }
 
     /** Prefixo por cliente no bucket (isola os dados entre instalacoes). */
