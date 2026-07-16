@@ -28,6 +28,7 @@
         <module>api-consultas</module>
         <module>api-whatsapp</module>
         <module>api-contabil</module>
+        <module>api-backup</module>
     </modules>
 
     <properties>

@@ -1,0 +1,74 @@
+server:
+  port: ${SERVER_PORT:8760}
+
+spring:
+  application:
+    name: api-backup
+
+  # Datasource do MODULO: guarda so o backup_historico (db_api_backup, schema 'backup').
+  # O ALVO a dumpar (PostgreSQL do ERP) vem em app.backup.target.*, NAO daqui. Defaults de
+  # dev; em producao o WinSW/erpkit sobrescreve por env.
+  datasource:
+    url: ${BACKUP_MODULE_DB_URL:jdbc:postgresql://localhost:5432/db_odonto_backup?currentSchema=backup}
+    username: ${BACKUP_MODULE_DB_USERNAME:erp_odonto}
+    password: ${BACKUP_MODULE_DB_PASSWORD:erp_odonto_dev}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # backup_historico vive no schema 'backup' (Flyway). Sem isso o Hibernate consulta
+        # sem qualificar e nao acha a tabela (vale p/ H2 dev e Postgres prod com currentSchema).
+        default_schema: backup
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: backup
+    default-schema: backup
+    create-schemas: true
+
+modulo:
+  versao: 0.1.0
+  api-key: ${API_KEY:}
+
+# Config do backup. O alvo (target.*) e a lista de bancos sao POR ERP — em producao o
+# instalador injeta os nomes reais (db_api_* no instalado). license-key vazio ⇒ off-site inativo.
+app:
+  backup:
+    enabled: ${BACKUP_ENABLED:false}
+    dir: ${BACKUP_DIR:backups}
+    cron: ${BACKUP_CRON:0 0 2 * * *}
+    restore-test-cron: ${BACKUP_RESTORE_TEST_CRON:0 30 3 * * SUN}
+    encrypt: ${BACKUP_ENCRYPT:true}
+    enc-key-file: ${BACKUP_ENC_KEY_FILE:C:/erpkit/config/erpodonto/backup.properties}
+    pg-dump-path: ${BACKUP_PG_DUMP_PATH:pg_dump}
+    pg-restore-path: ${BACKUP_PG_RESTORE_PATH:pg_restore}
+    databases: ${BACKUP_DATABASES:db_erp_odonto,db_odonto_whatsapp,db_odonto_email,db_odonto_storage,db_odonto_contabil}
+    principal: ${BACKUP_PRINCIPAL:db_erp_odonto}
+    restore-test-db: ${BACKUP_RESTORE_TEST_DB:db_verify_restore}
+    file-dirs: ${BACKUP_FILE_DIRS:}
+    file-paths: ${BACKUP_FILE_PATHS:}
+    license-key: ${BACKUP_LICENSE_KEY:}
+    retention:
+      daily: ${BACKUP_RETENTION_DAILY:14}
+      weekly: ${BACKUP_RETENTION_WEEKLY:8}
+      monthly: ${BACKUP_RETENTION_MONTHLY:12}
+    target:
+      host: ${BACKUP_TARGET_HOST:localhost}
+      port: ${BACKUP_TARGET_PORT:5432}
+      user: ${BACKUP_TARGET_USER:erp_odonto}
+      password: ${BACKUP_TARGET_PASSWORD:erp_odonto_dev}
+    offsite:
+      enabled: ${BACKUP_OFFSITE_ENABLED:false}
+      config-file: ${BACKUP_OFFSITE_CONFIG_FILE:C:/erpkit/config/erpodonto/backup-offsite.properties}
+    alert:
+      email: ${BACKUP_ALERT_EMAIL:}
+      nome: ${BACKUP_ALERT_NOME:}
+
+logging:
+  level:
+    br.com.erpkit.backup: INFO

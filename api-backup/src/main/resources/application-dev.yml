@@ -1,0 +1,24 @@
+# Profile 'dev' — execucao local com H2 in-memory (modo PostgreSQL) para o backup_historico,
+# sem depender de um Postgres db_api_backup. O ALVO a dumpar (app.backup.target.*) continua
+# sendo um Postgres real (o pg_dump/pg_restore precisa dele). Ativar com -Pdev + profile dev.
+spring:
+  datasource:
+    url: jdbc:h2:mem:devdb_backup;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS backup
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      "[hibernate.boot.allow_jdbc_metadata_access]": "false"
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    schemas: backup
+    default-schema: backup
+    create-schemas: true
